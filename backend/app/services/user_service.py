@@ -1,7 +1,13 @@
 from sqlmodel import Session, select
 from typing import Optional
 from datetime import datetime, timedelta
+import time
+import shutil
+from fastapi import UploadFile
+from PIL import Image
+
 from app.models.user import User, UserCreate
+from app.models.interest_tag import InterestTag
 from app.core.security import hash_password, verify_password
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -284,3 +290,130 @@ class UserService:
         session.add(user)
         session.commit()
         session.refresh(user)
+
+    @staticmethod
+    def get_user_profile(session: Session, user: User) -> User:
+        """獲取完整的用戶個人檔案，包含關聯的興趣標籤"""
+        # The user object from get_current_user might not have the tags loaded.
+        # We need to refresh it to load the relationship.
+        session.refresh(user)
+        return user
+
+    @staticmethod
+    def update_profile(session: Session, user: User, display_name: Optional[str], bio: Optional[str]) -> User:
+        """更新用戶的顯示名稱和個人簡介"""
+        if display_name is not None:
+            user.display_name = display_name
+        if bio is not None:
+            user.bio = bio
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+    @staticmethod
+    def upload_avatar(session: Session, user: User, file: UploadFile) -> str:
+        """處理頭像上傳,包括驗證、儲存和清理舊檔案"""
+        # 1. 驗證檔案類型
+        allowed_types = ["image/jpeg", "image/png"]
+        if file.content_type not in allowed_types:
+            raise ValueError("不支援的檔案類型,僅限 JPG/PNG")
+
+        # 2. 檢查檔案大小 (2MB)
+        file.file.seek(0, 2)  # 移動到檔案結尾
+        size = file.file.tell()  # 獲取檔案大小
+        file.file.seek(0)  # 重置檔案指標
+        
+        max_size = 2 * 1024 * 1024  # 2MB
+        if size > max_size:
+            raise ValueError("檔案大小不可超過 2MB")
+
+        # 3. 使用 Pillow 驗證圖片完整性和真實性
+        try:
+            img = Image.open(file.file)
+            img.verify()  # 驗證圖片完整性
+            file.file.seek(0)  # 重置檔案指標
+            
+            # 再次打開以獲取圖片格式 (verify() 後無法再使用原始 Image 物件)
+            img = Image.open(file.file)
+            file.file.seek(0)
+            
+            # 驗證圖片格式與宣告的 MIME type 一致
+            image_format = img.format
+            if image_format not in ["JPEG", "PNG"]:
+                raise ValueError("無效的圖片格式")
+                
+        except Exception as e:
+            if "無效的圖片格式" in str(e):
+                raise
+            raise ValueError("無效的圖片檔案")
+
+        # 4. 產生安全檔名 (使用時間戳避免衝突)
+        timestamp = int(time.time() * 1000)  # 使用毫秒級時間戳提高唯一性
+        extension = "jpg" if file.content_type == "image/jpeg" else "png"
+        filename = f"{user.id}_{timestamp}.{extension}"
+        
+        # 5. 儲存檔案
+        upload_dir = "uploads/avatars"
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # 6. 清理舊頭像
+        if user.avatar_url:
+            old_avatar_path = user.avatar_url.lstrip("/")
+            if os.path.exists(old_avatar_path):
+                try:
+                    os.remove(old_avatar_path)
+                except OSError:
+                    # 忽略刪除失敗的情況 (可能檔案已被刪除或權限問題)
+                    pass
+
+        # 7. 更新資料庫
+        avatar_url = f"/{file_path}"
+        user.avatar_url = avatar_url
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+        return avatar_url
+
+    @staticmethod
+    def add_interest_tag(session: Session, user: User, tag_id: int) -> User:
+        """為用戶新增興趣標籤"""
+        # 檢查標籤是否存在
+        tag = session.get(InterestTag, tag_id)
+        if not tag:
+            raise ValueError("標籤不存在")
+
+        # 檢查用戶標籤數量是否已達上限 (20)
+        if len(user.interest_tags) >= 20:
+            raise ValueError("興趣標籤數量已達上限 (20個)")
+
+        # 檢查是否已新增過此標籤
+        if tag in user.interest_tags:
+            raise ValueError("已新增過此標籤")
+
+        user.interest_tags.append(tag)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+    @staticmethod
+    def remove_interest_tag(session: Session, user: User, tag_id: int) -> User:
+        """移除用戶的興趣標籤"""
+        tag = session.get(InterestTag, tag_id)
+        if not tag:
+            raise ValueError("標籤不存在")
+
+        if tag not in user.interest_tags:
+            raise ValueError("用戶沒有此標籤")
+
+        user.interest_tags.remove(tag)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user

@@ -1,16 +1,87 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlmodel import Session
-from app.models.user import UserRead, UserUpdateDisplayName, UserLinkGoogle
+from app.models.user import User, UserRead, UserUpdateDisplayName, UserLinkGoogle, UserProfileRead, UserProfileUpdate
+from app.models.interest_tag import InterestTagRead, UserInterestTagCreate
 from app.services.user_service import UserService
 from app.db.session import get_session
 from app.core.security import get_current_user
 
 router = APIRouter()
 
+
+@router.get("/me/profile", response_model=UserProfileRead)
+def get_user_profile(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """獲取當前用戶的完整個人檔案"""
+    return UserService.get_user_profile(session, user=current_user)
+
+
+@router.put("/me/profile", response_model=UserProfileRead)
+def update_user_profile(
+    profile_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """更新當前用戶的個人檔案（顯示名稱、個人簡介）"""
+    return UserService.update_profile(
+        session=session, 
+        user=current_user, 
+        display_name=profile_data.display_name, 
+        bio=profile_data.bio
+    )
+
+
+@router.post("/me/avatar")
+def upload_avatar(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    file: UploadFile = File(...)
+):
+    """上傳新的個人頭像"""
+    try:
+        avatar_url = UserService.upload_avatar(session=session, user=current_user, file=file)
+        return {"avatar_url": avatar_url, "message": "頭像上傳成功"}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/me/interest-tags", response_model=List[InterestTagRead])
+def add_my_interest_tag(
+    tag_data: UserInterestTagCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """為當前用戶新增一個興趣標籤"""
+    try:
+        user = UserService.add_interest_tag(session, current_user, tag_data.tag_id)
+        # We need to refresh the user to get the updated tags list
+        session.refresh(user)
+        return user.interest_tags
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.delete("/me/interest-tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_my_interest_tag(
+    tag_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """移除當前用戶的一個興趣標籤"""
+    try:
+        UserService.remove_interest_tag(session, current_user, tag_id)
+        return
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @router.patch("/me/display-name", response_model=UserRead, status_code=status.HTTP_200_OK)
 def update_display_name(
     update_data: UserUpdateDisplayName,
-    token_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """
@@ -20,29 +91,18 @@ def update_display_name(
     
     - **display_name**: 新的顯示名稱（最多 50 字符）
     """
-    # 從 token 取得用戶 email
-    email = token_payload.get("sub")
-    
-    # 查詢用戶
-    user = UserService.get_by_email(session, email)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
     # 更新顯示名稱
-    user.display_name = update_data.display_name
-    session.add(user)
+    current_user.display_name = update_data.display_name
+    session.add(current_user)
     session.commit()
-    session.refresh(user)
+    session.refresh(current_user)
     
-    return user
+    return current_user
 
 @router.post("/me/link-google", status_code=status.HTTP_200_OK)
 def link_google_account(
     link_data: UserLinkGoogle,
-    token_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """
@@ -52,17 +112,6 @@ def link_google_account(
     
     - **id_token**: Google 提供的 ID Token
     """
-    # 從 token 取得用戶 email
-    email = token_payload.get("sub")
-    
-    # 查詢用戶
-    user = UserService.get_by_email(session, email)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
     # 驗證 Google ID Token
     google_info = UserService.verify_google_token(link_data.id_token)
     
@@ -74,7 +123,7 @@ def link_google_account(
     
     # 綁定 Google 帳號
     try:
-        UserService.link_google_account(session, user, google_info['google_id'])
+        UserService.link_google_account(session, current_user, google_info['google_id'])
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -85,7 +134,7 @@ def link_google_account(
 
 @router.delete("/me/unlink-google", status_code=status.HTTP_200_OK)
 def unlink_google_account(
-    token_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """
@@ -95,20 +144,9 @@ def unlink_google_account(
     
     注意：解綁前必須先設定密碼，否則會無法登入
     """
-    # 從 token 取得用戶 email
-    email = token_payload.get("sub")
-    
-    # 查詢用戶
-    user = UserService.get_by_email(session, email)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
     # 解綁 Google 帳號
     try:
-        UserService.unlink_google_account(session, user)
+        UserService.unlink_google_account(session, current_user)
     except ValueError as e:
         error_detail = str(e)
         if "no password set" in error_detail.lower():

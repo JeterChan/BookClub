@@ -1,4 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .interest_tag import InterestTag, InterestTagRead
+
+# 必須在運行時導入 UserInterestTag 作為 link_model
+from .interest_tag import UserInterestTag
+
 import re
 from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship
@@ -24,12 +31,32 @@ class User(UserBase, table=True):
     failed_login_attempts: int = Field(default=0)
     locked_until: Optional[datetime] = Field(default=None)
     
+    # 時間戳欄位
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
     # Relationships
     owned_clubs: List["BookClub"] = Relationship(back_populates="owner")
     memberships: List["BookClubMember"] = Relationship(back_populates="user")
     threads: List["DiscussionThread"] = Relationship(back_populates="author")
     posts: List["DiscussionPost"] = Relationship(back_populates="author")
     notifications: List["Notification"] = Relationship(back_populates="recipient")
+    interest_tags: List["InterestTag"] = Relationship(back_populates="users", link_model=UserInterestTag)
+
+
+class UserProfileUpdate(SQLModel):
+    """更新個人檔案請求"""
+    display_name: Optional[str] = Field(None, max_length=50)
+    bio: Optional[str] = Field(None, max_length=500)
+
+
+class UserProfileRead(UserBase):
+    """完整個人檔案讀取 schema"""
+    id: int
+    bio: Optional[str]
+    avatar_url: Optional[str]
+    interest_tags: List["InterestTagRead"] = []
+
 
 class UserCreate(UserBase):
     password: str
