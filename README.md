@@ -186,10 +186,20 @@ npm run test  # 如果有配置測試
 
 ## 📚 文檔
 
-- [API 端點文檔](./docs/api-endpoints.md)
-- [架構文檔](./docs/architecture.md)
-- [產品需求文檔 (PRD)](./docs/prd.md)
-- [開發任務](./docs/development-tasks.md)
+### 產品文檔
+- [產品需求文檔 (PRD)](./docs/prd.md) - 產品功能和路線圖
+- [開發任務](./docs/development-tasks.md) - 當前開發任務追蹤
+
+### 技術文檔
+- [架構文檔](./docs/architecture.md) - 系統架構設計
+- [API 端點文檔](./docs/api-endpoints.md) - API 快速參考
+
+### 契約文檔 (Contract Documentation)
+- [契約文件體系](./docs/contracts/README.md) - 開發契約和標準
+  - [Database Schema](./docs/contracts/database-schema.md) - 資料庫結構
+  - [API Access Guide](./docs/contracts/api-access-guide.md) - API 文件訪問指南
+  - [Data Contract](./docs/contracts/data-contract.md) - 資料格式規範
+  - [Gherkin Features](./docs/contracts/gherkin/) - BDD 驗收標準
 
 ## 🛠️ 技術棧
 

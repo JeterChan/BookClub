@@ -1,7 +1,4 @@
-.bmad-core
-.bmad-infrastructure-devops
-.gemini
-.github
+
 .vscode
 
 web-bundles
@@ -70,5 +67,16 @@ htmlcov/
 *.log
 logs/
 
+# User Uploads
+/backend/uploads/
+
 # docs
 /docs
+
+# BMad Configuration
+.bmad-core/
+.bmad/
+*.bmad
+.bmad-infrastructure-devops
+.gemini
+.github
