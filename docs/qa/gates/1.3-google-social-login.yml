@@ -1,0 +1,111 @@
+# <!-- Powered by BMAD™ Core -->
+
+schema: 1
+story: "1.3"
+story_title: "Google 社交登入"
+gate: CONCERNS
+status_reason: "功能實作完整且品質良好,但完全缺少自動化測試。已修正一個安全漏洞(OAuth用戶密碼登入保護)。建議在上線前至少加入核心業務邏輯的單元測試並實作 rate limiting。"
+reviewer: "Quinn (Test Architect)"
+updated: "2025-10-16T14:00:00+08:00"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "TEST-001"
+    severity: high
+    finding: "完全缺少自動化測試(單元測試、整合測試、E2E測試)"
+    suggested_action: "至少為核心業務邏輯(UserService OAuth方法)加入單元測試"
+    suggested_owner: "dev"
+  
+  - id: "SEC-001"
+    severity: medium
+    finding: "登入端點缺少 rate limiting,可能受到暴力攻擊"
+    suggested_action: "為 /api/auth/login 和 /api/auth/google/login 加入 rate limiting middleware"
+    suggested_owner: "dev"
+  
+  - id: "SEC-002"
+    severity: medium
+    finding: "環境變數未在啟動時驗證,GOOGLE_CLIENT_ID 缺失時靜默失敗"
+    suggested_action: "在應用啟動時驗證必要環境變數是否存在"
+    suggested_owner: "dev"
+  
+  - id: "ARCH-001"
+    severity: low
+    finding: "Email衝突處理策略簡單,當Google email與現有帳號相同時直接創建新帳號可能造成混淆"
+    suggested_action: "考慮提供帳號合併選項或明確提示用戶"
+    suggested_owner: "po"
+
+quality_score: 70
+expires: "2025-10-30T00:00:00+08:00"
+
+evidence:
+  tests_reviewed: 0
+  risks_identified: 4
+  code_quality: "良好 - 符合FastAPI最佳實踐,文檔完整,職責分離清晰"
+  security_fixes: 1
+  trace:
+    ac_covered: []  # 功能已實作但缺少測試
+    ac_gaps: [1, 2, 3, 4, 5]  # 所有AC都缺少自動化測試覆蓋
+
+nfr_validation:
+  security:
+    status: CONCERNS
+    notes: "OAuth流程實作正確,已修正密碼登入漏洞,但缺少rate limiting和環境變數驗證"
+  performance:
+    status: PASS
+    notes: "資料庫索引設計合理,查詢效率良好。Google Token驗證可能有網路延遲需監控"
+  reliability:
+    status: CONCERNS
+    notes: "缺少Google API呼叫失敗處理,缺少交易管理,完全缺少測試覆蓋"
+  maintainability:
+    status: PASS
+    notes: "程式碼結構清晰,文檔完整,但缺少測試影響未來重構信心"
+
+risk_summary:
+  totals:
+    critical: 0
+    high: 1
+    medium: 2
+    low: 1
+  highest:
+    category: "Testing"
+    score: 8
+    impact: "高風險 - 缺少測試覆蓋影響長期維護性和迴歸錯誤檢測"
+  recommendations:
+    must_fix:
+      - "加入核心業務邏輯的單元測試"
+      - "實作 rate limiting"
+    monitor:
+      - "Google API 呼叫延遲和失敗率"
+      - "OAuth 用戶登入成功率"
+
+refactoring_applied:
+  - file: "backend/app/services/user_service.py"
+    change: "在 authenticate() 方法中新增 OAuth 用戶密碼登入保護"
+    lines: "94-97"
+    reason: "防止 OAuth 用戶(password_hash=None)嘗試密碼登入時觸發 TypeError"
+    impact: "修正安全漏洞,確保 OAuth 用戶只能通過 OAuth 流程登入"
+
+recommendations:
+  immediate:
+    - action: "為核心業務邏輯加入單元測試(至少涵蓋 UserService OAuth 方法)"
+      refs: ["backend/app/services/user_service.py:125-282"]
+      priority: "P0"
+    - action: "為登入端點加入 rate limiting"
+      refs: ["backend/app/api/endpoints/auth.py:46-96", "backend/app/api/endpoints/auth.py:98-148"]
+      priority: "P1"
+  future:
+    - action: "改善 Email 衝突處理策略,提供帳號合併選項"
+      refs: ["backend/app/services/user_service.py:207-212"]
+      priority: "P2"
+    - action: "統一錯誤訊息語言(全英文或全中文)"
+      refs: ["backend/app/services/user_service.py", "backend/app/api/endpoints"]
+      priority: "P2"
+    - action: "將配置常數移至環境變數(MAX_FAILED_ATTEMPTS等)"
+      refs: ["backend/app/services/user_service.py:11-12"]
+      priority: "P3"
+
+history:
+  - at: "2025-10-16T14:00:00+08:00"
+    gate: CONCERNS
+    note: "初始審查 - 功能完整但缺少測試,已修正安全漏洞"
