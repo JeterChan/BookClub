@@ -35,6 +35,11 @@ class User(UserBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
+    # Email 驗證相關欄位
+    email_verified: bool = Field(default=False)
+    email_verification_token: Optional[str] = Field(default=None, max_length=255, index=True)
+    email_verification_token_expires_at: Optional[datetime] = Field(default=None)
+    
     # Relationships
     owned_clubs: List["BookClub"] = Relationship(back_populates="owner")
     memberships: List["BookClubMember"] = Relationship(back_populates="user")
@@ -122,3 +127,7 @@ class UserUpdateDisplayName(SQLModel):
 class UserLinkGoogle(SQLModel):
     """綁定 Google 帳號請求"""
     id_token: str
+
+class RegistrationResponse(SQLModel):
+    """註冊成功回應"""
+    message: str

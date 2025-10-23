@@ -64,6 +64,22 @@ class UserService:
         statement = select(User).where(User.email == email)
         user = session.exec(statement).first()
         return user
+
+    @staticmethod
+    def get_by_verification_token(session: Session, token: str) -> Optional[User]:
+        """
+        根據 email 驗證 token 查詢用戶
+        
+        Args:
+            session: 資料庫 session
+            token: 驗證 token
+            
+        Returns:
+            Optional[User]: 找到的用戶物件，如果不存在則返回 None
+        """
+        statement = select(User).where(User.email_verification_token == token)
+        user = session.exec(statement).first()
+        return user
     
     @staticmethod
     def authenticate(session: Session, email: str, password: str) -> Optional[User]:
@@ -79,7 +95,7 @@ class UserService:
             Optional[User]: 驗證成功返回用戶物件，失敗返回 None
             
         Raises:
-            ValueError: 當帳號被鎖定時拋出異常
+            ValueError: 當帳號被鎖定或 email 未驗證時拋出異常
         """
         # 查詢用戶
         user = UserService.get_by_email(session, email)
@@ -87,43 +103,76 @@ class UserService:
             return None
         
         # 檢查帳號是否被鎖定
-        if user.locked_until:
-            if datetime.utcnow() < user.locked_until:
-                # 帳號仍在鎖定期間
-                raise ValueError("Account is locked due to multiple failed login attempts")
-            else:
-                # 鎖定期已過，重置鎖定狀態
-                user.locked_until = None
-                user.failed_login_attempts = 0
-                session.add(user)
-                session.commit()
+        if user.locked_until and datetime.utcnow() < user.locked_until:
+            raise ValueError("Account is locked due to multiple failed login attempts")
+        
+        # 鎖定期已過，重置鎖定狀態
+        user.locked_until = None
+        user.failed_login_attempts = 0
+        session.add(user)
+        session.commit()
         
         # 檢查是否為 OAuth 用戶（沒有密碼）
         if not user.password_hash:
-            # OAuth 用戶不能使用密碼登入
             return None
         
         # 驗證密碼
         if not verify_password(password, user.password_hash):
             # 密碼錯誤，增加失敗計數
             user.failed_login_attempts += 1
-            
-            # 檢查是否達到鎖定門檻
             if user.failed_login_attempts >= MAX_FAILED_ATTEMPTS:
                 user.locked_until = datetime.utcnow() + timedelta(minutes=LOCK_DURATION_MINUTES)
-            
             session.add(user)
             session.commit()
             return None
         
+        # 檢查 email 是否已驗證
+        if not user.email_verified:
+            raise ValueError("請先完成 Email 驗證")
+
         # 密碼正確，重置失敗計數
-        if user.failed_login_attempts > 0:
-            user.failed_login_attempts = 0
-            user.locked_until = None
-            session.add(user)
-            session.commit()
-            session.refresh(user)
+        user.failed_login_attempts = 0
+        session.add(user)
+        session.commit()
+        session.refresh(user)
         
+        return user
+
+    @staticmethod
+    def verify_email(session: Session, token: str) -> Optional[User]:
+        """
+        驗證用戶的 email。
+
+        Args:
+            session: The database session.
+            token: The verification token.
+
+        Returns:
+            The verified user, or None if the token is invalid or expired.
+        """
+        # 先通過 token 查找用戶
+        user = UserService.get_by_verification_token(session, token)
+
+        # Token 無效或不存在
+        if not user:
+            # 檢查是否有已驗證的用戶（token 已被清空）
+            # 這種情況發生在用戶重複點擊驗證連結時
+            return None
+        
+        # 檢查 token 是否過期
+        if not user.email_verification_token_expires_at:
+            return None
+
+        if user.email_verification_token_expires_at < datetime.utcnow():
+            return None
+
+        # Token 有效，執行驗證
+        user.email_verified = True
+        user.email_verification_token = None
+        user.email_verification_token_expires_at = None
+        session.add(user)
+        session.commit()
+
         return user
     
     @staticmethod
@@ -210,7 +259,8 @@ class UserService:
             display_name=display_name,
             google_id=google_id,
             oauth_provider='google',
-            password_hash=None  # Google 登入用戶沒有密碼
+            password_hash=None,  # Google 登入用戶沒有密碼
+            email_verified=True  # Google 用戶自動視為已驗證
         )
         
         session.add(new_user)
@@ -417,3 +467,4 @@ class UserService:
         session.commit()
         session.refresh(user)
         return user
+

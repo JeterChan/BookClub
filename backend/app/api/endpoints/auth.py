@@ -1,9 +1,10 @@
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlmodel import Session
 from datetime import timedelta
-from app.models.user import UserCreate, UserRead, UserLogin, Token, GoogleLoginRequest, GoogleLoginResponse
+from app.models.user import UserCreate, RegistrationResponse, UserLogin, Token, GoogleLoginRequest, GoogleLoginResponse
+from app.schemas.email_verification import EmailVerificationRequest, EmailVerificationResponse
 from app.services.user_service import UserService
+from app.services.email_service import EmailService
 from app.db.session import get_session
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER
 
@@ -13,13 +14,14 @@ router = APIRouter()
 def auth_root():
     return {"message": "Auth root"}
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
 def register(
     user_data: UserCreate,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """
-    註冊新用戶
+    註冊新用戶並發送驗證郵件
     
     - **email**: 用戶的 email 地址（必須唯一）
     - **display_name**: 用戶的顯示名稱
@@ -36,7 +38,63 @@ def register(
     # 建立新用戶
     new_user = UserService.create(session, user_data)
     
-    return new_user
+    # 產生 token 並發送驗證郵件 (背景任務)
+    token = EmailService.generate_verification_token(session, new_user)
+    background_tasks.add_task(EmailService.send_verification_email, new_user, token)
+    
+    return RegistrationResponse(message="註冊成功，請至信箱查收驗證信")
+
+@router.get("/verify-email", response_model=EmailVerificationResponse, status_code=status.HTTP_200_OK)
+def verify_email(
+    token: str,
+    session: Session = Depends(get_session)
+):
+    """
+    驗證用戶的 email 地址
+
+    - **token**: 從驗證郵件中獲取的 token
+    """
+    # 先檢查這個 token 是否曾經存在過（檢查是否有對應的已驗證用戶）
+    # 這是為了提供更好的用戶體驗訊息
+    
+    user = UserService.verify_email(session, token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="無效或過期的驗證 token"
+        )
+    
+    return EmailVerificationResponse(message="Email 驗證成功，您現在可以登入了。", success=True)
+
+@router.post("/resend-verification", response_model=EmailVerificationResponse, status_code=status.HTTP_200_OK)
+def resend_verification_email(
+    request: EmailVerificationRequest,
+    session: Session = Depends(get_session),
+    background_tasks: BackgroundTasks = BackgroundTasks()
+):
+    """
+    重新發送 email 驗證信
+
+    - **email**: 要接收驗證信的 email 地址
+    """
+    # TODO: 實作更嚴謹的速率限制 (e.g., using slowapi)
+    user = UserService.get_by_email(session, request.email)
+    if not user:
+        # 即使找不到用戶，也返回成功訊息以避免洩漏用戶資訊
+        return EmailVerificationResponse(message="如果該 email 已註冊，將會收到一封新的驗證信。", success=True)
+
+    if user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="此 email 地址已經驗證過了。"
+        )
+
+    # 產生新 token 並發送郵件
+    token = EmailService.generate_verification_token(session, user)
+    background_tasks.add_task(EmailService.send_verification_email, user, token)
+
+    return EmailVerificationResponse(message="如果該 email 已註冊，將會收到一封新的驗證信。", success=True)
+
 
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
 def login(
@@ -53,36 +111,35 @@ def login(
       - True: token 有效期 7 天
     """
     try:
-        # 驗證用戶憑證
         user = UserService.authenticate(session, login_data.email, login_data.password)
     except ValueError as e:
-        # 帳號被鎖定
+        if str(e) == "請先完成 Email 驗證":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(e)
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)
         )
     
-    # 驗證失敗（用戶不存在或密碼錯誤）
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
     
-    # 檢查帳號是否為活躍狀態
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive"
         )
     
-    # 根據 remember_me 設定 token 有效期
     if login_data.remember_me:
         access_token_expires = timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER)
     else:
-        access_token_expires = None  # 使用預設的 30 分鐘
+        access_token_expires = None
     
-    # 建立 access token
     access_token = create_access_token(
         data={"sub": user.email},
         expires_delta=access_token_expires
