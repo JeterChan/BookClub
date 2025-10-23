@@ -35,6 +35,22 @@ export interface TokenResponse {
   user: User
 }
 
+export interface GoogleLoginResponse {
+  access_token: string
+  token_type: string
+  is_new_user: boolean
+  needs_display_name: boolean
+}
+
+export interface RegistrationResponse {
+  message: string;
+}
+
+export interface EmailVerificationResponse {
+  message: string;
+  success: boolean;
+}
+
 // Form data types
 export interface RegisterFormData {
   email: string
@@ -47,5 +63,5 @@ export interface RegisterFormData {
 export interface LoginFormData {
   email: string
   password: string
-  rememberMe: boolean
+  rememberMe?: boolean
 }

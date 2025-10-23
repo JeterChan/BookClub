@@ -10,6 +10,7 @@ const Register = lazy(() => import('./pages/Register'));
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -34,6 +35,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/register" element={<Layout><Register /></Layout>} />
           <Route path="/login" element={<Layout><Login /></Layout>} />
+          <Route path="/verify-email" element={<Layout><VerifyEmail /></Layout>} />
           <Route 
             path="/dashboard" 
             element={

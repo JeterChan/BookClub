@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import type { User, TokenResponse } from '../types/auth';
+import type { User, TokenResponse, GoogleLoginResponse } from '../types/auth';
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   login: (tokens: TokenResponse, rememberMe?: boolean) => void;
+  loginWithGoogle: (response: GoogleLoginResponse) => void;
   logout: () => void;
   initialize: () => void;
 }
@@ -23,6 +24,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       user: tokens.user,
       accessToken: tokens.access_token,
+      isAuthenticated: true
+    });
+  },
+  
+  loginWithGoogle: (response: GoogleLoginResponse) => {
+    // Google login only stores access token, no refresh token or full user yet
+    sessionStorage.setItem('access_token', response.access_token);
+    
+    set({
+      user: null, // User data will be fetched after navigation
+      accessToken: response.access_token,
       isAuthenticated: true
     });
   },

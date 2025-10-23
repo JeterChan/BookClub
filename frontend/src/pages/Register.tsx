@@ -4,6 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
+import { GoogleLogin } from '@react-oauth/google';
+import type { CredentialResponse } from '@react-oauth/google';
+
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
@@ -31,9 +34,10 @@ const registerSchema = z.object({
 
 export default function Register() {
   const navigate = useNavigate();
-  const login = useAuthStore(state => state.login);
+  const loginWithGoogle = useAuthStore(state => state.loginWithGoogle);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -48,38 +52,56 @@ export default function Register() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsSubmitting(true);
-    
     try {
       const response = await authService.register({
         display_name: data.displayName,
         email: data.email,
         password: data.password
       });
-      
-      login(response, true);
-      
-      toast.success('註冊成功！正在跳轉...', { duration: 2000 });
-      
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
-      
+      toast.success(response.message || '註冊成功！請查看您的電子郵件以完成驗證。', { duration: 5000 });
+      setRegistrationSuccess(true);
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || '註冊失敗，請稍後再試';
-      
       const errorMappings: Record<string, string> = {
-        'Email already registered': 'Email 已被註冊，請使用其他 Email',
-        'Invalid email format': 'Email 格式無效',
-        'Password too weak': '密碼強度不足'
+        'A user with this email already exists.': '此 Email 已被註冊，請使用其他 Email 或直接登入。',
       };
-      
       const message = errorMappings[errorMessage] || errorMessage;
       toast.error(message, { duration: 5000 });
-      
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (credentialResponse.credential) {
+      try {
+        const response = await authService.googleLogin(credentialResponse.credential);
+        loginWithGoogle(response);
+        toast.success('Google 登入成功！');
+        if (response.is_new_user && response.needs_display_name) {
+          navigate('/complete-profile'); // 假設有一個頁面讓新用戶填寫顯示名稱
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        toast.error('Google 登入失敗，請稍後再試。');
+      }
+    }
+  };
+
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+        <div className="w-full max-w-md text-center">
+          <h1 className="text-3xl font-bold text-green-600 mb-4">註冊成功！</h1>
+          <p className="text-gray-700 text-lg mb-6">我們已發送一封驗證信至您的電子郵件信箱，請點擊信中連結以啟用您的帳號。</p>
+          <Link to="/login">
+            <Button>返回登入頁面</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
@@ -94,6 +116,23 @@ export default function Register() {
             <p className="text-gray-600">
               加入線上讀書會平台
             </p>
+          </div>
+
+          <div className="my-6">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                toast.error('Google 登入失敗，請稍後再試。');
+              }}
+              useOneTap
+              width="100%"
+            />
+          </div>
+
+          <div className="my-6 flex items-center">
+            <div className="flex-grow border-t border-gray-300"></div>
+            <span className="mx-4 text-gray-500 text-sm">或使用 Email 註冊</span>
+            <div className="flex-grow border-t border-gray-300"></div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

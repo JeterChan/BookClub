@@ -14,6 +14,7 @@ export interface UserProfile {
   bio: string | null;
   avatar_url: string | null;
   interest_tags: InterestTag[];
+  oauth_provider: string | null;
 }
 
 export interface UpdateProfileData {
@@ -27,7 +28,7 @@ export interface AvatarUploadResponse {
 }
 
 // Mock data flag (set to false when backend is ready)
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 // Mock profile data
 const mockProfile: UserProfile = {
@@ -41,6 +42,7 @@ const mockProfile: UserProfile = {
     { id: 2, name: '推理懸疑', is_predefined: true },
     { id: 5, name: '歷史文學', is_predefined: true },
   ],
+  oauth_provider: null,
 };
 
 // Mock predefined tags
@@ -85,6 +87,16 @@ export const profileService = {
     }
 
     const response = await apiClient.put<UserProfile>('/api/users/me/profile', data);
+    return response.data;
+  },
+
+  linkGoogleAccount: async (idToken: string): Promise<UserProfile> => {
+    const response = await apiClient.post<UserProfile>('/api/users/me/link-google', { id_token: idToken });
+    return response.data;
+  },
+
+  unlinkGoogleAccount: async (): Promise<UserProfile> => {
+    const response = await apiClient.delete<UserProfile>('/api/users/me/unlink-google');
     return response.data;
   },
 
