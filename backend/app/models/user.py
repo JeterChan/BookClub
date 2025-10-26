@@ -14,7 +14,7 @@ from pydantic import field_validator
 class UserBase(SQLModel):
     email: str = Field(max_length=255, unique=True, index=True)
     display_name: str = Field(max_length=50)
-
+    
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     password_hash: Optional[str] = Field(default=None, max_length=255)
@@ -96,7 +96,9 @@ class UserCreate(UserBase):
         return v
 
 class UserRead(UserBase):
+    """用戶讀取 schema（統一使用 snake_case）"""
     id: int
+    avatar_url: Optional[str] = None
 
 class UserLogin(SQLModel):
     """用戶登入請求 schema"""

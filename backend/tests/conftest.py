@@ -44,8 +44,8 @@ def authenticated_client_fixture(
     def get_session_override() -> Session:
         return session
 
-    def get_current_user_override() -> User:
-        return test_user_for_auth
+    def get_current_user_override() -> dict:
+        return {"sub": test_user_for_auth.email}
 
     app.dependency_overrides[get_session] = get_session_override
     app.dependency_overrides[get_current_user] = get_current_user_override
@@ -68,3 +68,51 @@ def auth_headers_fixture(test_user_for_auth: User) -> dict[str, str]:
     """Create authentication headers for a test user."""
     token = create_access_token(data={"sub": test_user_for_auth.email})
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(name="test_user")
+def test_user_fixture(session: Session) -> User:
+    """Create a test user for general testing purposes."""
+    from app.core.security import hash_password
+    user = User(
+        email="test@example.com",
+        display_name="Test User",
+        password_hash=hash_password("TestPassword123"),
+        email_verified=True
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+@pytest.fixture(name="another_user")
+def another_user_fixture(session: Session) -> User:
+    """Create another test user for various scenarios."""
+    from app.core.security import hash_password
+    user = User(
+        email="another@example.com",
+        display_name="Another User",
+        password_hash=hash_password("TestPassword456"),
+        email_verified=True
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+@pytest.fixture(name="another_user")
+def another_user_fixture(session: Session) -> User:
+    """Create another test user for various scenarios."""
+    from app.core.security import hash_password
+    user = User(
+        email="another@example.com",
+        display_name="Another User",
+        password_hash=hash_password("TestPassword456"),
+        email_verified=True
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user

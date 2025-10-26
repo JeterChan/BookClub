@@ -8,6 +8,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.interest_tag import InterestTagRead, InterestTagCreate
 from app.services.interest_tag_service import interest_tag_service
+from app.services.user_service import UserService
 
 router = APIRouter()
 
@@ -23,10 +24,11 @@ def get_all_tags(
 @router.post("", response_model=InterestTagRead, status_code=status.HTTP_201_CREATED)
 def create_custom_tag(
     tag_data: InterestTagCreate,
-    current_user: User = Depends(get_current_user),
+    current_user_payload: dict = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """創建一個新的自定義興趣標籤"""
+    # This endpoint doesn't use the user, but we keep the dependency for authentication
     try:
         return interest_tag_service.create_custom_tag(session, tag_data.name)
     except ValueError as e:
