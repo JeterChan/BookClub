@@ -70,13 +70,13 @@ logs/
 # User Uploads
 /backend/uploads/
 
-# docs
-/docs
 
 # BMad Configuration
-.bmad-core/
-.bmad/
-*.bmad
+# .bmad-core/
+# .bmad/
+# *.bmad
 .bmad-infrastructure-devops
-.gemini
+# .gemini
 .github
+
+# !.bmad-core/agents
