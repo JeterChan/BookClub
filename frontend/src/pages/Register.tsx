@@ -14,6 +14,7 @@ import { PasswordStrengthIndicator } from '../components/forms/PasswordStrengthI
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import type { RegisterFormData } from '../types/auth';
+import type { ApiError } from '../types/error';
 
 const registerSchema = z.object({
   displayName: z.string()
@@ -60,8 +61,9 @@ export default function Register() {
       });
       toast.success(response.message || '註冊成功！請查看您的電子郵件以完成驗證。', { duration: 5000 });
       setRegistrationSuccess(true);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || '註冊失敗，請稍後再試';
+    } catch (err) {
+      const apiError = err as ApiError;
+      const errorMessage = apiError.response?.data?.detail || '註冊失敗，請稍後再試';
       const errorMappings: Record<string, string> = {
         'A user with this email already exists.': '此 Email 已被註冊，請使用其他 Email 或直接登入。',
       };
@@ -83,7 +85,7 @@ export default function Register() {
         } else {
           navigate('/dashboard');
         }
-      } catch (error) {
+      } catch {
         toast.error('Google 登入失敗，請稍後再試。');
       }
     }

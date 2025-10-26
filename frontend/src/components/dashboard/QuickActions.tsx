@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { Button } from '../ui/Button';
 
 /**
  * QuickActions - Quick action buttons for common tasks
@@ -14,7 +13,7 @@ export const QuickActions = () => {
       icon: '🔍',
       label: '探索讀書會',
       description: '發現有趣的讀書會',
-      onClick: () => navigate('/clubs/explore'),
+      onClick: () => navigate('/clubs'),
       variant: 'primary' as const,
     },
     {

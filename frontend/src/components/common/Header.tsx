@@ -4,7 +4,9 @@ import { useAuthStore } from '../../store/authStore'
 
 export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const { isAuthenticated, user, logout } = useAuthStore()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -56,9 +58,6 @@ export default function Header() {
                   儀表板
                 </Link>
                 <Link to="/clubs" className="text-gray-700 hover:text-blue-800">
-                  讀書會
-                </Link>
-                <Link to="/search" className="text-gray-700 hover:text-blue-800">
                   探索
                 </Link>
                 <Link
@@ -99,18 +98,11 @@ export default function Header() {
                       />
                       <div className="absolute right-0 z-20 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
                         <Link
-                          to="/profile"
+                          to="/dashboard"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
-                          個人檔案
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          設定
+                          個人儀表板
                         </Link>
                         <div className="border-t border-gray-100" />
                         <button

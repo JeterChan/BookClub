@@ -1,30 +1,37 @@
-import { useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin, TokenResponse } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 import { profileService, UserProfile } from '../../services/profileService';
 import { Button } from '../ui/Button';
+import type { ApiError } from '../../types/error';
 
 interface GoogleAccountTabProps {
   profile: UserProfile;
   onUpdate: (updatedProfile: UserProfile) => void;
 }
 
+// The library's TokenResponse doesn't include id_token, which is often needed.
+// We create a more specific type for our use case.
+interface GoogleTokenResponse extends TokenResponse {
+  id_token?: string;
+}
+
 export const GoogleAccountTab = ({ profile, onUpdate }: GoogleAccountTabProps) => {
   const isLinked = profile.oauth_provider === 'google';
 
   const handleLink = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    onSuccess: async (tokenResponse: GoogleTokenResponse) => {
       try {
         // Note: The library gives an access token, but our backend needs an ID token.
         // For a real app, you would exchange this access token for an ID token or use a different flow.
         // As a workaround, we'll assume the backend can handle this, or we'd need a different library/setup.
         // This is a known limitation of this specific React library.
-        // Let's pretend we get an id_token for now.
-        const id_token = (tokenResponse as any).id_token || tokenResponse.access_token;
+        const id_token = tokenResponse.id_token || tokenResponse.access_token;
         const updatedProfile = await profileService.linkGoogleAccount(id_token);
         onUpdate(updatedProfile);
         toast.success('Google 帳號已成功綁定！');
-      } catch (error: any) {
-        toast.error(error.response?.data?.detail || '綁定失敗，請稍後再試。');
+      } catch (err) {
+        const apiError = err as ApiError;
+        toast.error(apiError.response?.data?.detail || '綁定失敗，請稍後再試。');
       }
     },
     onError: () => toast.error('Google 登入失敗。'),
@@ -36,8 +43,9 @@ export const GoogleAccountTab = ({ profile, onUpdate }: GoogleAccountTabProps) =
         const updatedProfile = await profileService.unlinkGoogleAccount();
         onUpdate(updatedProfile);
         toast.success('Google 帳號已解除綁定。');
-      } catch (error: any) {
-        toast.error(error.response?.data?.detail || '解除綁定失敗，請確認您已設定密碼。');
+      } catch (err) {
+        const apiError = err as ApiError;
+        toast.error(apiError.response?.data?.detail || '解除綁定失敗，請確認您已設定密碼。');
       }
     }
   };

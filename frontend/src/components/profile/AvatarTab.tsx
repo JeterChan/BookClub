@@ -48,7 +48,7 @@ export const AvatarTab = ({ profile, onUpdate }: AvatarTabProps) => {
       toast.success('頭像更新成功');
       setSelectedFile(null);
       setPreview(null);
-    } catch (error) {
+    } catch {
       toast.error('頭像上傳失敗，請稍後再試');
     } finally {
       setUploading(false);
@@ -69,7 +69,7 @@ export const AvatarTab = ({ profile, onUpdate }: AvatarTabProps) => {
       });
 
       toast.success('頭像已移除');
-    } catch (error) {
+    } catch {
       toast.error('移除頭像失敗，請稍後再試');
     } finally {
       setRemoving(false);

@@ -13,6 +13,7 @@ import { Checkbox } from '../components/ui/Checkbox';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import type { LoginFormData } from '../types/auth';
+import type { ApiError } from '../types/error';
 
 const loginSchema = z.object({
   email: z.string().email("請輸入有效的 Email 地址"),
@@ -22,9 +23,10 @@ const loginSchema = z.object({
 
 export default function Login() {
   const navigate = useNavigate();
-  const login = useAuthStore(state => state.login);
-  const loginWithGoogle = useAuthStore(state => state.loginWithGoogle);
+  const login = useAuthStore((state) => state.login);
+  const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [emailForResend, setEmailForResend] = useState('');
 
@@ -52,14 +54,19 @@ export default function Login() {
       login(response, data.rememberMe || false);
       toast.success('登入成功！正在跳轉...');
       navigate('/dashboard');
-    } catch (error: any) {
-      const detail = error.response?.data?.detail || '登入失敗，請檢查您的帳號或密碼。';
-      if (detail === "請先完成 Email 驗證") {
+    } catch (err) {
+      const apiError = err as ApiError;
+      const detail = apiError.response?.data?.detail;
+      if (detail === "User not found") {
+        toast.error('使用者帳號不存在');
+      } else if (detail === "Incorrect password") {
+        toast.error('密碼錯誤');
+      } else if (detail === "請先完成 Email 驗證") {
         setEmailNotVerified(true);
         setEmailForResend(getValues('email'));
         toast.error(detail, { id: 'verify-email-toast' });
       } else {
-        toast.error(detail);
+        toast.error(detail || '登入失敗，請稍後再試。');
       }
     } finally {
       setIsSubmitting(false);
@@ -77,7 +84,7 @@ export default function Login() {
         } else {
           navigate('/dashboard');
         }
-      } catch (error) {
+      } catch {
         toast.error('Google 登入失敗，請稍後再試。');
       }
     }
@@ -89,10 +96,26 @@ export default function Login() {
       await authService.resendVerificationEmail(emailForResend);
       toast.success('新的驗證信已寄出，請檢查您的信箱。');
       setEmailNotVerified(false);
-    } catch (error) {
+    } catch {
       toast.error('無法重新發送驗證信，請稍後再試。');
     }
   };
+
+  const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+
+  const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+      <line x1="2" x2="22" y1="2" y2="22"/>
+    </svg>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
@@ -112,14 +135,24 @@ export default function Login() {
               {...register('email')}
               autoComplete="email"
             />
-            <Input
-              label="密碼"
-              type="password"
-              placeholder="請輸入密碼"
-              error={errors.password?.message}
-              {...register('password')}
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <Input
+                label="密碼"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="請輸入密碼"
+                error={errors.password?.message}
+                {...register('password')}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 top-7 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                aria-label={showPassword ? '隱藏密碼' : '顯示密碼'}
+              >
+                {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+              </button>
+            </div>
 
             {emailNotVerified && (
               <div className="text-center text-sm text-red-600">

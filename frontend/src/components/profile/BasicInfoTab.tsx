@@ -54,7 +54,7 @@ export const BasicInfoTab = ({ profile, onUpdate }: BasicInfoTabProps) => {
       const updated = await profileService.updateProfile(data);
       onUpdate(updated);
       toast.success('基本資料更新成功');
-    } catch (error) {
+    } catch {
       toast.error('更新失敗，請稍後再試');
     } finally {
       setLoading(false);

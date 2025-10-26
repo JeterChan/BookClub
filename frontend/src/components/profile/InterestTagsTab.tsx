@@ -28,7 +28,7 @@ export const InterestTagsTab = ({ profile, onUpdate }: InterestTagsTabProps) => 
     try {
       const tags = await profileService.getInterestTags();
       setAllTags(tags);
-    } catch (error) {
+    } catch {
       toast.error('載入標籤失敗');
     } finally {
       setLoading(false);
@@ -48,7 +48,7 @@ export const InterestTagsTab = ({ profile, onUpdate }: InterestTagsTabProps) => 
         interest_tags: updated,
       });
       toast.success('標籤已新增');
-    } catch (error) {
+    } catch {
       toast.error('新增標籤失敗');
     }
   };
@@ -61,7 +61,7 @@ export const InterestTagsTab = ({ profile, onUpdate }: InterestTagsTabProps) => 
         interest_tags: profile.interest_tags.filter((t) => t.id !== tagId),
       });
       toast.success('標籤已移除');
-    } catch (error) {
+    } catch {
       toast.error('移除標籤失敗');
     }
   };
@@ -93,7 +93,7 @@ export const InterestTagsTab = ({ profile, onUpdate }: InterestTagsTabProps) => 
       await handleAddTag(newTag.id);
       
       setCustomTagName('');
-    } catch (error) {
+    } catch {
       toast.error('創建標籤失敗');
     } finally {
       setCreating(false);

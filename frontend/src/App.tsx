@@ -11,6 +11,10 @@ const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const ClubCreate = lazy(() => import('./pages/clubs/ClubCreate'));
+const ClubExplore = lazy(() => import('./pages/clubs/ClubExplore'));
+const ClubDetail = lazy(() => import('./pages/clubs/ClubDetail'));
+const ClubSettings = lazy(() => import('./pages/clubs/ClubSettings'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -32,7 +36,7 @@ function App() {
       <Toaster position="top-right" />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/clubs" replace />} />
           <Route path="/register" element={<Layout><Register /></Layout>} />
           <Route path="/login" element={<Layout><Login /></Layout>} />
           <Route path="/verify-email" element={<Layout><VerifyEmail /></Layout>} />
@@ -52,8 +56,26 @@ function App() {
               </PrivateRoute>
             } 
           />
+          <Route 
+            path="/clubs/create" 
+            element={
+              <PrivateRoute>
+                <Layout><ClubCreate /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route path="/clubs" element={<Layout><ClubExplore /></Layout>} />
+          <Route path="/clubs/:clubId" element={<Layout><ClubDetail /></Layout>} />
+          <Route 
+            path="/clubs/:clubId/settings" 
+            element={
+              <PrivateRoute>
+                <Layout><ClubSettings /></Layout>
+              </PrivateRoute>
+            } 
+          />
           {/* Placeholder for other routes */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/clubs" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
