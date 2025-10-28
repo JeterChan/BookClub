@@ -52,3 +52,7 @@ export const removeMember = async (clubId: number, userId: number): Promise<void
 export const transferOwnership = async (clubId: number, data: TransferOwnershipRequest): Promise<void> => {
   await api.post(`/api/clubs/${clubId}/transfer-ownership`, data);
 };
+
+export const deleteClub = async (clubId: number): Promise<void> => {
+  await api.delete(`/api/clubs/${clubId}`);
+};

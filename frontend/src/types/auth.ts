@@ -5,6 +5,7 @@ export interface User {
   avatar_url?: string
   bio?: string
   is_active: boolean
+  created_at: string
 }
 
 export interface AuthState {

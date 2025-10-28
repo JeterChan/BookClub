@@ -269,4 +269,29 @@ describe('ClubDetail Component', () => {
     // 驗證錯誤提示被顯示
     expect(toast.error).toHaveBeenCalledWith('加入讀書會失敗，請稍後再試。');
   });
+
+  // 測試 8: 擁有者或管理員顯示「管理」按鈕
+  test('shows "管理" button for owner or admin', () => {
+    const mockFetchClubDetail = vi.fn();
+    (useBookClubStore as vi.Mock).mockReturnValue({
+      detailClub: { ...mockPublicClub, membership_status: 'owner' },
+      loading: false,
+      error: null,
+      fetchClubDetail: mockFetchClubDetail,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/clubs/1']}>
+        <Routes>
+          <Route path="/clubs/:clubId" element={<ClubDetail />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const manageButton = screen.getByText('管理');
+    expect(manageButton).toBeInTheDocument();
+    fireEvent.click(manageButton);
+    // Here we can't easily test navigation with this setup,
+    // but we've confirmed the button renders and is clickable.
+  });
 });

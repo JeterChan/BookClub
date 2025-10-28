@@ -28,13 +28,13 @@ const SelectValue = ({ placeholder }: { placeholder?: string }) => {
   return <option value="" disabled>{placeholder}</option>;
 };
 
-const SelectTrigger: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+const SelectTrigger = ({ children }: React.PropsWithChildren<{}>) => {
   // This component is also conceptual for structure.
   // The `Select` component itself is the trigger.
   return <>{children}</>;
 };
 
-const SelectContent: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+const SelectContent = ({ children }: React.PropsWithChildren<{}>) => {
   // The children (SelectItems) are passed directly to the Select component.
   return <>{children}</>;
 };

@@ -119,4 +119,16 @@ export const useClubManagementStore = create<ClubManagementState>((set, get) => 
       set({ error: 'Failed to update club details.', loading: false });
     }
   },
+
+  deleteClub: async (clubId) => {
+    set({ loading: true, error: null });
+    try {
+      await clubManagementService.deleteClub(clubId);
+      set({ loading: false });
+    } catch (err) {
+      const message = err.response?.data?.detail || 'Failed to delete club.';
+      set({ error: message, loading: false });
+      throw new Error(message);
+    }
+  },
 }));

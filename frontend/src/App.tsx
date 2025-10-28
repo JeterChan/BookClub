@@ -28,7 +28,10 @@ function App() {
 
   // Initialize auth state on app mount
   useEffect(() => {
-    initialize();
+    const init = async () => {
+      await initialize();
+    };
+    init();
   }, [initialize]);
 
   return (

@@ -113,27 +113,6 @@ const USE_MOCK_DATA = true;
 
 export const dashboardService = {
   /**
-   * Get current user profile
-   * GET /api/users/me
-   */
-  getUserProfile: async (): Promise<User> => {
-    if (USE_MOCK_DATA) {
-      // Return mock user data
-      return {
-        id: 1,
-        email: 'user@example.com',
-        display_name: '書蟲小明',
-        avatar_url: null,
-        bio: '熱愛閱讀的軟體工程師',
-        created_at: '2025-01-15T08:00:00Z',
-      };
-    }
-
-    const response = await apiClient.get<User>('/api/users/me');
-    return response.data;
-  },
-
-  /**
    * Get dashboard data (stats, clubs, activities)
    * GET /api/users/me/dashboard
    */

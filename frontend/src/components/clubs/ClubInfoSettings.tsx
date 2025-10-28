@@ -75,7 +75,7 @@ export const ClubInfoSettings = () => {
         {errors.cover_image_url && <p className="text-red-500 text-sm mt-1">{errors.cover_image_url.message}</p>}
       </div>
 
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" disabled={loading} className="hover:bg-blue-700 cursor-pointer">
         {loading ? '儲存中...' : '儲存變更'}
       </Button>
     </form>

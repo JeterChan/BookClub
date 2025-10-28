@@ -60,6 +60,37 @@ describe('useClubManagementStore', () => {
     expect(result.current.joinRequests).toHaveLength(0);
   });
 
+  it('should handle reject request correctly', async () => {
+    const { result } = renderHook(() => useClubManagementStore());
+    act(() => {
+      result.current.joinRequests = mockRequests;
+    });
+
+    (clubManagementService.rejectJoinRequest as vi.Mock).mockResolvedValue(undefined);
+
+    await act(async () => {
+      await result.current.rejectRequest(1, 1);
+    });
+
+    expect(result.current.joinRequests).toHaveLength(0);
+  });
+
+  it('should handle update member role correctly', async () => {
+    const { result } = renderHook(() => useClubManagementStore());
+    act(() => {
+      result.current.members = mockMembers;
+    });
+
+    const updatedMember = { ...mockMembers[0], role: 'admin' };
+    (clubManagementService.updateMemberRole as vi.Mock).mockResolvedValue(updatedMember);
+
+    await act(async () => {
+      await result.current.updateMemberRole(1, 1, 'admin');
+    });
+
+    expect(result.current.members[0].role).toBe('admin');
+  });
+
   it('should handle remove member correctly', async () => {
     const { result } = renderHook(() => useClubManagementStore());
     act(() => {
@@ -73,6 +104,32 @@ describe('useClubManagementStore', () => {
     });
 
     expect(result.current.members).toHaveLength(0);
+  });
+
+  it('should handle transfer ownership correctly', async () => {
+    const { result } = renderHook(() => useClubManagementStore());
+    (clubManagementService.transferOwnership as vi.Mock).mockResolvedValue(undefined);
+    (clubManagementService.getClubMembers as vi.Mock).mockResolvedValue(mockMembers); // For refresh
+    (clubManagementService.getJoinRequests as vi.Mock).mockResolvedValue([]); // For refresh
+
+    await act(async () => {
+      await result.current.transferOwnership(1, 2);
+    });
+
+    expect(clubManagementService.transferOwnership).toHaveBeenCalledWith(1, { new_owner_id: 2 });
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('should handle delete club correctly', async () => {
+    const { result } = renderHook(() => useClubManagementStore());
+    (clubManagementService.deleteClub as vi.Mock).mockResolvedValue(undefined);
+
+    await act(async () => {
+      await result.current.deleteClub(1);
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeNull();
   });
 
   it('should set error state on failure', async () => {

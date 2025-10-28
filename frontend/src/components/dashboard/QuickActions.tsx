@@ -25,9 +25,9 @@ export const QuickActions = () => {
     },
     {
       icon: '⚙️',
-      label: '帳號設定',
-      description: '管理帳號設定',
-      onClick: () => navigate('/settings'),
+      label: '個人檔案設定',
+      description: '管理個人檔案',
+      onClick: () => navigate('/profile'),
       variant: 'secondary' as const,
     },
   ];

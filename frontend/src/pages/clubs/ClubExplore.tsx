@@ -1,5 +1,5 @@
 // frontend/src/pages/clubs/ClubExplore.tsx
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useBookClubStore } from '../../store/bookClubStore';
 import { ClubCard } from '../../components/clubs/ClubCard';
 import { SearchBar } from '../../components/clubs/SearchBar';
@@ -26,11 +26,15 @@ const ClubExplore = () => {
     setSearchKeyword,
     setSelectedTagIds,
   } = useBookClubStore();
+  const hasFetched = useRef(false);
 
   // 初始載入
   useEffect(() => {
-    fetchClubs();
-    fetchAvailableTags();
+    if (!hasFetched.current) {
+      fetchClubs();
+      fetchAvailableTags();
+      hasFetched.current = true;
+    }
   }, [fetchClubs, fetchAvailableTags]);
 
   // 搜尋/篩選變更時重新載入
