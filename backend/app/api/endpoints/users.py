@@ -11,7 +11,8 @@ router = APIRouter()
 
 def get_user_from_payload(session: Session, payload: dict) -> User:
     email = payload.get("sub")
-    user = UserService.get_by_email(session, email)
+    user_service = UserService(session)
+    user = user_service.get_by_email(email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -22,7 +23,8 @@ def get_user_profile(
     session: Session = Depends(get_session)
 ):
     current_user = get_user_from_payload(session, current_user_payload)
-    return UserService.get_user_profile(session, user=current_user)
+    user_service = UserService(session)
+    return user_service.get_user_profile(user=current_user)
 
 
 @router.put("/me/profile", response_model=UserProfileRead)
@@ -32,8 +34,8 @@ def update_user_profile(
     session: Session = Depends(get_session)
 ):
     current_user = get_user_from_payload(session, current_user_payload)
-    return UserService.update_profile(
-        session=session, 
+    user_service = UserService(session)
+    return user_service.update_profile(
         user=current_user, 
         display_name=profile_data.display_name, 
         bio=profile_data.bio
@@ -47,8 +49,9 @@ def upload_avatar(
     file: UploadFile = File(...)
 ):
     current_user = get_user_from_payload(session, current_user_payload)
+    user_service = UserService(session)
     try:
-        avatar_url = UserService.upload_avatar(session=session, user=current_user, file=file)
+        avatar_url = user_service.upload_avatar(user=current_user, file=file)
         return {"avatar_url": avatar_url, "message": "頭像上傳成功"}
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -61,8 +64,9 @@ def add_my_interest_tag(
     session: Session = Depends(get_session)
 ):
     current_user = get_user_from_payload(session, current_user_payload)
+    user_service = UserService(session)
     try:
-        user = UserService.add_interest_tag(session, current_user, tag_data.tag_id)
+        user = user_service.add_interest_tag(current_user, tag_data.tag_id)
         session.refresh(user)
         return user.interest_tags
     except ValueError as e:
@@ -76,8 +80,9 @@ def remove_my_interest_tag(
     session: Session = Depends(get_session)
 ):
     current_user = get_user_from_payload(session, current_user_payload)
+    user_service = UserService(session)
     try:
-        UserService.remove_interest_tag(session, current_user, tag_id)
+        user_service.remove_interest_tag(current_user, tag_id)
         return
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -109,8 +114,9 @@ def link_google_account(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid Google ID token"
         )
+    user_service = UserService(session)
     try:
-        UserService.link_google_account(session, current_user, google_info['google_id'])
+        user_service.link_google_account(current_user, google_info['google_id'])
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -124,8 +130,9 @@ def unlink_google_account(
     session: Session = Depends(get_session)
 ):
     current_user = get_user_from_payload(session, current_user_payload)
+    user_service = UserService(session)
     try:
-        UserService.unlink_google_account(session, current_user)
+        user_service.unlink_google_account(current_user)
     except ValueError as e:
         error_detail = str(e)
         if "no password set" in error_detail.lower():

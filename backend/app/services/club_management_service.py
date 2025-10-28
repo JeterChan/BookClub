@@ -168,3 +168,24 @@ class ClubManagementService:
         except Exception as e:
             self.session.rollback()
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An error occurred during ownership transfer: {e}")
+
+    def delete_club(self, *, club_id: int, current_user: User) -> None:
+        book_club = self.session.get(BookClub, club_id)
+        if not book_club:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book club not found")
+
+        if book_club.owner_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the club owner can delete the club")
+
+        # Delete related join requests
+        join_requests = self.session.exec(select(ClubJoinRequest).where(ClubJoinRequest.book_club_id == club_id)).all()
+        for req in join_requests:
+            self.session.delete(req)
+
+        # Delete related memberships
+        memberships = self.session.exec(select(BookClubMember).where(BookClubMember.book_club_id == club_id)).all()
+        for member in memberships:
+            self.session.delete(member)
+
+        self.session.delete(book_club)
+        self.session.commit()

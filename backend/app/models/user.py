@@ -60,6 +60,7 @@ class UserProfileRead(UserBase):
     id: int
     bio: Optional[str]
     avatar_url: Optional[str]
+    created_at: datetime
     interest_tags: List["InterestTagRead"] = []
 
 

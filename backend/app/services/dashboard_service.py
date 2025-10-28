@@ -1,9 +1,11 @@
 from sqlmodel import Session
+from datetime import datetime, timedelta
 from app.schemas.dashboard import (
     DashboardData,
     DashboardStats,
     DashboardClub,
-    DashboardActivity
+    DashboardActivity,
+    RelatedEntity
 )
 
 
@@ -21,41 +23,58 @@ def get_user_dashboard(session: Session, user_id: int) -> DashboardData:
     Returns:
         DashboardData: 包含統計、讀書會列表和最近活動的儀表板資料
     """
-    # TODO (Epic 2): 從 BookClubMember 表統計用戶參加的讀書會數
-    # from app.models.book_club import BookClubMember
-    # clubs_count = session.query(BookClubMember).filter_by(user_id=user_id).count()
-    clubs_count = 0
+    # Mock data for demonstration
+    mock_stats = DashboardStats(clubs_count=3, books_read=12, discussions_count=48)
     
-    # TODO (Epic 3): 從 Reading 表統計閱讀完成的書籍數
-    # from app.models.reading import Reading
-    # books_read = session.query(Reading).filter_by(user_id=user_id, completed=True).count()
-    books_read = 0
+    mock_clubs = [
+        DashboardClub(
+            id=1,
+            name='科幻小說愛好者',
+            cover_image=None,
+            member_count=24,
+            last_activity=datetime.utcnow() - timedelta(days=1)
+        ),
+        DashboardClub(
+            id=2,
+            name='推理懸疑讀書會',
+            cover_image=None,
+            member_count=18,
+            last_activity=datetime.utcnow() - timedelta(days=2)
+        ),
+        DashboardClub(
+            id=3,
+            name='歷史文學交流',
+            cover_image=None,
+            member_count=32,
+            last_activity=datetime.utcnow() - timedelta(days=3)
+        ),
+    ]
     
-    # TODO (Epic 3): 從 DiscussionPost 表統計用戶參與的討論數
-    # from app.models.discussion import DiscussionPost
-    # discussions_count = session.query(DiscussionPost).filter_by(author_id=user_id).count()
-    discussions_count = 0
-    
-    # TODO (Epic 2): 查詢用戶的讀書會列表（最多3個）
-    # from app.models.book_club import BookClub
-    # clubs = session.query(BookClub).join(BookClubMember).filter(
-    #     BookClubMember.user_id == user_id
-    # ).order_by(BookClub.updated_at.desc()).limit(3).all()
-    clubs = []
-    
-    # TODO (Epic 3): 查詢用戶最近活動（最多10筆）
-    # from app.models.activity import Activity
-    # activities = session.query(Activity).filter_by(user_id=user_id).order_by(
-    #     Activity.created_at.desc()
-    # ).limit(10).all()
-    recent_activities = []
+    mock_activities = [
+        DashboardActivity(
+            id=1,
+            type='post_discussion',
+            description='在「三體」讀書會發表了新討論',
+            timestamp=datetime.utcnow() - timedelta(hours=2),
+            related_entity=RelatedEntity(id=1, name='三體', link='/clubs/1')
+        ),
+        DashboardActivity(
+            id=2,
+            type='complete_book',
+            description='完成閱讀《銀河便車指南》',
+            timestamp=datetime.utcnow() - timedelta(hours=10)
+        ),
+        DashboardActivity(
+            id=3,
+            type='join_club',
+            description='加入了「推理懸疑讀書會」',
+            timestamp=datetime.utcnow() - timedelta(days=1),
+            related_entity=RelatedEntity(id=2, name='推理懸疑讀書會', link='/clubs/2')
+        ),
+    ]
     
     return DashboardData(
-        stats=DashboardStats(
-            clubs_count=clubs_count,
-            books_read=books_read,
-            discussions_count=discussions_count
-        ),
-        clubs=clubs,
-        recent_activities=recent_activities
+        stats=mock_stats,
+        clubs=mock_clubs,
+        recent_activities=mock_activities
     )

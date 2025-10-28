@@ -18,7 +18,8 @@ def get_my_dashboard(
     current_user_payload: dict = Depends(get_current_user)
 ) -> DashboardData:
     email = current_user_payload.get("sub")
-    current_user = UserService.get_by_email(session, email)
+    user_service = UserService(session)
+    current_user = user_service.get_by_email(email)
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
     return dashboard_service.get_user_dashboard(session, current_user.id)

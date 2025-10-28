@@ -11,7 +11,8 @@ from app.models.club_tag import ClubTagRead
 from app.schemas.book_club import BookClubReadWithDetails, PaginatedBookClubList, BookClubUpdate
 from app.services import book_club_service
 from app.services.user_service import UserService
-from app.core.permissions import club_owner_or_admin_required
+from app.services.club_management_service import ClubManagementService
+from app.core.permissions import club_owner_or_admin_required, club_owner_required
 import logging
 
 router = APIRouter()
@@ -19,6 +20,9 @@ router = APIRouter()
 # Dependency for user service
 def get_user_service(session: Session = Depends(get_session)) -> UserService:
     return UserService(session)
+
+def get_club_management_service(session: Session = Depends(get_session)) -> ClubManagementService:
+    return ClubManagementService(session)
 
 
 @router.put("/{club_id}", response_model=BookClubReadWithDetails)
@@ -35,6 +39,16 @@ def update_book_club(
         book_club_update=book_club_update, 
         current_user=current_user
     )
+
+@router.delete("/{club_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_book_club(
+    *,
+    club_id: int,
+    service: ClubManagementService = Depends(get_club_management_service),
+    current_user: User = Depends(club_owner_required)
+):
+    service.delete_club(club_id=club_id, current_user=current_user)
+    return
 
 
 @router.post("", response_model=BookClubReadWithDetails, status_code=status.HTTP_201_CREATED)
