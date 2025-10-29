@@ -11,7 +11,7 @@ vi.mock('../store/authStore');
 vi.mock('../hooks/useDashboard');
 
 // Mock child components
-vi.mock('../components/dashboard/UserInfoCard', () => ({ 
+vi.mock('../components/dashboard/UserInfoCard', () => ({
   UserInfoCard: ({ user }: { user: User }) => (
     <div>
       <h2>{user.display_name}</h2>
@@ -21,6 +21,7 @@ vi.mock('../components/dashboard/UserInfoCard', () => ({
 }));
 vi.mock('../components/dashboard/MyClubsList', () => ({ MyClubsList: () => <div>My Clubs</div> }));
 vi.mock('../components/dashboard/ActivityTimeline', () => ({ ActivityTimeline: () => <div>Activity Timeline</div> }));
+vi.mock('../components/dashboard/QuickActions', () => ({ QuickActions: () => <div>Quick Actions</div> }));
 
 describe('Dashboard Page', () => {
   const mockUser: User = {
@@ -80,5 +81,6 @@ describe('Dashboard Page', () => {
     renderWithRouter(<Dashboard />);
     expect(screen.getByText('My Clubs')).toBeInTheDocument();
     expect(screen.getByText('Activity Timeline')).toBeInTheDocument();
+    expect(screen.getByText('Quick Actions')).toBeInTheDocument();
   });
 });

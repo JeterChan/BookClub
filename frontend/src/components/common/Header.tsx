@@ -104,6 +104,13 @@ export default function Header() {
                         >
                           個人儀表板
                         </Link>
+                        <Link
+                          to="/profile/settings"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          個人檔案設定
+                        </Link>
                         <div className="border-t border-gray-100" />
                         <button
                           onClick={handleLogout}

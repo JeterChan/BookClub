@@ -109,7 +109,7 @@ const mockDashboardData: DashboardData = {
 };
 
 // Use mock data flag (set to false when backend API is ready)
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 export const dashboardService = {
   /**

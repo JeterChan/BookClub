@@ -88,6 +88,7 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
         loading: false,
         error: errorMessage,
       });
+      throw error;
     }
   },
   
@@ -101,11 +102,12 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       });
     } catch (error) {
       const apiError = error as ApiError;
-      const errorMessage = apiError.response?.data?.detail || '載入標籤失敗';
+      const errorMessage = apiError.response?.data?.detail || '無法載入標籤';
       set({
         loading: false,
         error: errorMessage,
       });
+      throw error;
     }
   },
   
@@ -184,6 +186,7 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       const apiError = error as ApiError;
       const errorMessage = apiError.response?.data?.detail || '加入讀書會失敗';
       set({ loading: false, error: errorMessage });
+      throw error;
     }
   },
 
@@ -212,6 +215,7 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       const apiError = error as ApiError;
       const errorMessage = apiError.response?.data?.detail || '退出讀書會失敗';
       set({ loading: false, error: errorMessage });
+      throw error;
     }
   },
 
@@ -235,6 +239,7 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       const apiError = error as ApiError;
       const errorMessage = apiError.response?.data?.detail || '請求加入失敗';
       set({ loading: false, error: errorMessage });
+      throw error;
     }
   },
   

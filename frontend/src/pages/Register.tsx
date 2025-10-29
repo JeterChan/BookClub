@@ -4,15 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { GoogleLogin } from '@react-oauth/google';
-import type { CredentialResponse } from '@react-oauth/google';
 
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
 import { PasswordStrengthIndicator } from '../components/forms/PasswordStrengthIndicator';
 import { authService } from '../services/authService';
-import { useAuthStore } from '../store/authStore';
 import type { RegisterFormData } from '../types/auth';
 import type { ApiError } from '../types/error';
 
@@ -35,7 +32,6 @@ const registerSchema = z.object({
 
 export default function Register() {
   const navigate = useNavigate();
-  const loginWithGoogle = useAuthStore(state => state.loginWithGoogle);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
@@ -74,23 +70,6 @@ export default function Register() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    if (credentialResponse.credential) {
-      try {
-        const response = await authService.googleLogin(credentialResponse.credential);
-        loginWithGoogle(response);
-        toast.success('Google 登入成功！');
-        if (response.is_new_user && response.needs_display_name) {
-          navigate('/complete-profile'); // 假設有一個頁面讓新用戶填寫顯示名稱
-        } else {
-          navigate('/dashboard');
-        }
-      } catch {
-        toast.error('Google 登入失敗，請稍後再試。');
-      }
-    }
-  };
-
   if (registrationSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
@@ -118,23 +97,6 @@ export default function Register() {
             <p className="text-gray-600">
               加入線上讀書會平台
             </p>
-          </div>
-
-          <div className="my-6">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => {
-                toast.error('Google 登入失敗，請稍後再試。');
-              }}
-              useOneTap
-              width="100%"
-            />
-          </div>
-
-          <div className="my-6 flex items-center">
-            <div className="flex-grow border-t border-gray-300"></div>
-            <span className="mx-4 text-gray-500 text-sm">或使用 Email 註冊</span>
-            <div className="flex-grow border-t border-gray-300"></div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

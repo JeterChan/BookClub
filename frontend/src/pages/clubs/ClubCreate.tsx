@@ -1,5 +1,5 @@
 // frontend/src/pages/clubs/ClubCreate.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,6 +31,7 @@ export default function ClubCreate() {
   } = useBookClubStore();
 
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const hasFetched = useRef(false);
 
   const {
     register,
@@ -48,7 +49,10 @@ export default function ClubCreate() {
 
   // 載入標籤
   useEffect(() => {
-    fetchAvailableTags();
+    if (!hasFetched.current) {
+      fetchAvailableTags();
+      hasFetched.current = true;
+    }
   }, [fetchAvailableTags]);
 
   // 處理建立成功

@@ -6,8 +6,7 @@ import { useBookClubStore } from '../../store/bookClubStore';
 import { ClubInfoSettings } from '../../components/clubs/ClubInfoSettings';
 import { JoinRequestList } from '../../components/clubs/JoinRequestList';
 import { MemberManagement } from '../../components/clubs/MemberManagement';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Button } from '../../components/ui/Button';
+import { ClubDangerZone } from '../../components/clubs/ClubDangerZone';
 import toast from 'react-hot-toast';
 
 const ClubSettings = () => {
@@ -20,7 +19,6 @@ const ClubSettings = () => {
   const error = useClubManagementStore(state => state.error);
   const { detailClub } = useBookClubStore();
   const [activeTab, setActiveTab] = useState('info');
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const clubIdNum = parseInt(clubId || '0');
@@ -40,7 +38,6 @@ const ClubSettings = () => {
     } catch (err) {
       toast.error(err.message || '刪除失敗，請稍後再試');
     }
-    setIsModalOpen(false);
   };
 
   const renderTabContent = () => {
@@ -51,6 +48,8 @@ const ClubSettings = () => {
         return <MemberManagement />;
       case 'requests':
         return <JoinRequestList />;
+      case 'settings':
+        return <ClubDangerZone onDeleteConfirm={handleDeleteConfirm} />;
       default:
         return null;
     }
@@ -103,30 +102,24 @@ const ClubSettings = () => {
           >
             加入請求
           </button>
+          {isOwner && (
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'settings'
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              設定
+            </button>
+          )}
         </nav>
       </div>
 
       <div className="py-6">
         {renderTabContent()}
       </div>
-
-      {isOwner && (
-        <div className="mt-8 p-6 border border-red-300 rounded-lg bg-red-50">
-          <h3 className="text-lg font-semibold text-red-800">危險區域</h3>
-          <p className="text-red-600 mt-2 mb-4">刪除讀書會是永久性操作，無法復原。</p>
-          <Button variant="danger" onClick={() => setIsModalOpen(true)} className="border border-red-600 hover:bg-red-700 cursor-pointer">
-            刪除讀書會
-          </Button>
-        </div>
-      )}
-
-      <ConfirmationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleDeleteConfirm}
-        title="確認刪除讀書會"
-        message="你確定要永久刪除這個讀書會嗎？所有相關資料都將被移除，此操作無法復原。"
-      />
     </div>
   );
 };

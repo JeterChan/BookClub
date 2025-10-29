@@ -4,8 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { GoogleLogin } from '@react-oauth/google';
-import type { CredentialResponse } from '@react-oauth/google';
 
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -24,7 +22,6 @@ const loginSchema = z.object({
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
@@ -70,23 +67,6 @@ export default function Login() {
       }
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    if (credentialResponse.credential) {
-      try {
-        const response = await authService.googleLogin(credentialResponse.credential);
-        loginWithGoogle(response);
-        toast.success('Google 登入成功！');
-        if (response.is_new_user && response.needs_display_name) {
-          navigate('/complete-profile');
-        } else {
-          navigate('/dashboard');
-        }
-      } catch {
-        toast.error('Google 登入失敗，請稍後再試。');
-      }
     }
   };
 
@@ -174,22 +154,6 @@ export default function Login() {
               {isSubmitting ? '登入中...' : '登入'}
             </Button>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">或</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => toast.error('Google 登入失敗，請稍後再試。')}
-                useOneTap
-              />
-            </div>
           </form>
 
           <div className="mt-6 text-center">

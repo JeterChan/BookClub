@@ -15,6 +15,7 @@ const ClubCreate = lazy(() => import('./pages/clubs/ClubCreate'));
 const ClubExplore = lazy(() => import('./pages/clubs/ClubExplore'));
 const ClubDetail = lazy(() => import('./pages/clubs/ClubDetail'));
 const ClubSettings = lazy(() => import('./pages/clubs/ClubSettings'));
+const ProfileSettingsPage = lazy(() => import('./pages/profile/ProfileSettingsPage'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -56,6 +57,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><Profile /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/profile/settings" 
+            element={
+              <PrivateRoute>
+                <Layout><ProfileSettingsPage /></Layout>
               </PrivateRoute>
             } 
           />

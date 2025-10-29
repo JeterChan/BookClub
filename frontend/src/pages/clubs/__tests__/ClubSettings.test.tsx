@@ -1,14 +1,18 @@
 // frontend/src/pages/clubs/__tests__/ClubSettings.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
 import ClubSettings from '../ClubSettings';
 import { useBookClubStore } from '../../../store/bookClubStore';
 import { useClubManagementStore } from '../../../store/clubManagementStore';
+import * as clubManagementService from '../../../services/clubManagementService';
 
-// Mock stores
+// Mock the service layer
+vi.mock('../../../services/clubManagementService');
+
+// Mock the book club store as it's a dependency from another domain
 vi.mock('../../../store/bookClubStore');
-vi.mock('../../../store/clubManagementStore');
+
 
 describe('ClubSettings Page', () => {
   const mockClub = {
@@ -16,54 +20,72 @@ describe('ClubSettings Page', () => {
     name: 'Test Club',
   };
 
-  beforeEach(() => {
-    // Reset mocks before each test
-    vi.clearAllMocks();
-    (useClubManagementStore as vi.Mock).mockReturnValue({
-      fetchClubManagementData: vi.fn(),
-      deleteClub: vi.fn(),
-      loading: false,
-      error: null,
+  const renderComponent = (membership_status = 'owner') => {
+    // Mock the book club store to provide detailClub
+    (useBookClubStore as vi.Mock).mockReturnValue({ 
+      detailClub: { ...mockClub, membership_status } 
     });
-  });
 
-  it('should display delete button for owner', () => {
-    (useBookClubStore as vi.Mock).mockReturnValue({ detailClub: { ...mockClub, membership_status: 'owner' } });
+    // Reset the state of the actual management store before each render
+    useClubManagementStore.setState({ members: [], joinRequests: [], loading: false, error: null });
 
-    render(
-      <MemoryRouter>
-        <ClubSettings />
+    return render(
+      <MemoryRouter initialEntries={['/clubs/1/settings']}>
+        <Routes>
+          <Route path="/clubs/:clubId/settings" element={<ClubSettings />} />
+        </Routes>
       </MemoryRouter>
     );
+  };
 
-    expect(screen.getByText('刪除讀書會')).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock service implementations to return successful empty responses
+    vi.mocked(clubManagementService.getClubMembers).mockResolvedValue([]);
+    vi.mocked(clubManagementService.getJoinRequests).mockResolvedValue([]);
+    vi.mocked(clubManagementService.deleteClub).mockResolvedValue(undefined);
   });
 
-  it('should not display delete button for admin', () => {
-    (useBookClubStore as vi.Mock).mockReturnValue({ detailClub: { ...mockClub, membership_status: 'admin' } });
-
-    render(
-      <MemoryRouter>
-        <ClubSettings />
-      </MemoryRouter>
-    );
-
-    expect(screen.queryByText('刪除讀書會')).not.toBeInTheDocument();
+  it('should fetch data on mount and render tabs', async () => {
+    renderComponent('owner');
+    // Verify that the fetch function was called on mount
+    await waitFor(() => {
+        expect(clubManagementService.getClubMembers).toHaveBeenCalledWith(1);
+        expect(clubManagementService.getJoinRequests).toHaveBeenCalledWith(1);
+    });
+    // Check if tabs are rendered
+    expect(screen.getByRole('button', { name: /基本資訊/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /成員管理/i })).toBeInTheDocument();
   });
 
-  it('should open confirmation modal on delete button click', () => {
-    (useBookClubStore as vi.Mock).mockReturnValue({ detailClub: { ...mockClub, membership_status: 'owner' } });
+  it('should display settings tab for owner', async () => {
+    renderComponent('owner');
+    expect(await screen.findByRole('button', { name: /設定/i })).toBeInTheDocument();
+  });
 
-    render(
-      <MemoryRouter>
-        <ClubSettings />
-      </MemoryRouter>
-    );
+  it('should not display settings tab for non-owner (e.g., admin)', async () => {
+    renderComponent('admin');
+    // Wait for initial loading to be sure
+    await waitFor(() => expect(clubManagementService.getClubMembers).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: /設定/i })).not.toBeInTheDocument();
+  });
 
-    const deleteButton = screen.getByText('刪除讀書會');
+  it('should call deleteClub on confirmation in danger zone', async () => {
+    renderComponent('owner');
+    const settingsTab = await screen.findByRole('button', { name: /設定/i });
+    fireEvent.click(settingsTab);
+
+    const deleteButton = await screen.findByRole('button', { name: /刪除讀書會/i });
     fireEvent.click(deleteButton);
 
-    expect(screen.getByText('確認刪除讀書會')).toBeInTheDocument();
-    expect(screen.getByText(/你確定要永久刪除這個讀書會嗎/)).toBeInTheDocument();
+    // In the new implementation, ClubDangerZone has its own modal.
+    // We need to find the confirm button in that modal and click it.
+    const confirmButton = await screen.findByRole('button', { name: /確認/i });
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(clubManagementService.deleteClub).toHaveBeenCalledWith(1);
+    });
   });
 });
+

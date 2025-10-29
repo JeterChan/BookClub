@@ -11,10 +11,12 @@ export interface UserProfile {
   id: number;
   email: string;
   display_name: string;
-  bio: string | null;
-  avatar_url: string | null;
+  bio?: string;
+  avatar_url?: string;
   interest_tags: InterestTag[];
   oauth_provider: string | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface UpdateProfileData {
@@ -36,13 +38,15 @@ const mockProfile: UserProfile = {
   email: 'user@example.com',
   display_name: '書蟲小明',
   bio: '熱愛閱讀的軟體工程師，喜歡科幻、推理、歷史類書籍。',
-  avatar_url: null,
+  avatar_url: undefined,
   interest_tags: [
     { id: 1, name: '科幻小說', is_predefined: true },
     { id: 2, name: '推理懸疑', is_predefined: true },
     { id: 5, name: '歷史文學', is_predefined: true },
   ],
   oauth_provider: null,
+  is_active: true,
+  created_at: '2025-01-15T08:00:00Z',
 };
 
 // Mock predefined tags
@@ -70,6 +74,7 @@ export const profileService = {
       return { ...mockProfile };
     }
 
+    // 呼叫 API
     const response = await apiClient.get<UserProfile>('/api/users/me/profile');
     return response.data;
   },
@@ -138,7 +143,7 @@ export const profileService = {
   removeAvatar: async (): Promise<void> => {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      mockProfile.avatar_url = null;
+      mockProfile.avatar_url = undefined;
       return;
     }
 

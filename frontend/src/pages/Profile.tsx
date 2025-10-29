@@ -5,7 +5,6 @@ import { BasicInfoTab } from '../components/profile/BasicInfoTab';
 import { AvatarTab } from '../components/profile/AvatarTab';
 import { InterestTagsTab } from '../components/profile/InterestTagsTab';
 import { PrivacyTab } from '../components/profile/PrivacyTab';
-import { GoogleAccountTab } from '../components/profile/GoogleAccountTab';
 import { SkeletonCard } from '../components/common/SkeletonCard';
 import { profileService } from '../services/profileService';
 import type { UserProfile } from '../services/profileService';
@@ -98,12 +97,6 @@ const Profile = () => {
       label: '隱私設定',
       icon: '🔒',
       content: <PrivacyTab profile={profile} onUpdate={handleProfileUpdate} />,
-    },
-    {
-      id: 'google',
-      label: 'Google 帳號',
-      icon: '🇬',
-      content: <GoogleAccountTab profile={profile} onUpdate={handleProfileUpdate} />,
     },
   ];
 

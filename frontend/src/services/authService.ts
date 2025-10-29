@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import type { RegisterRequest, LoginRequest, TokenResponse, GoogleLoginResponse, RegistrationResponse, EmailVerificationResponse } from '../types/auth';
+import type { RegisterRequest, LoginRequest, TokenResponse, RegistrationResponse, EmailVerificationResponse } from '../types/auth';
 
 export const authService = {
   register: async (data: RegisterRequest): Promise<RegistrationResponse> => {
@@ -28,9 +28,4 @@ export const authService = {
     });
     return response.data;
   },
-  
-  googleLogin: async (credential: string): Promise<GoogleLoginResponse> => {
-    const response = await apiClient.post('/api/auth/google/login', { id_token: credential });
-    return response.data;
-  }
 };

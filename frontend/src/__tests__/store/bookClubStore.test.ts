@@ -8,11 +8,15 @@ vi.mock('../../services/bookClubService');
 
 describe('bookClubStore', () => {
   beforeEach(() => {
-    // Reset store state
+    // Reset store state before each test
     useBookClubStore.setState({
       clubs: [],
       availableTags: [],
-      currentClub: null,
+      detailClub: null,
+      pagination: null,
+      searchKeyword: '',
+      selectedTagIds: [],
+      currentPage: 1,
       loading: false,
       error: null,
       createSuccess: false,
@@ -78,7 +82,7 @@ describe('bookClubStore', () => {
       expect(state.createSuccess).toBe(true);
       expect(state.clubs).toHaveLength(1);
       expect(state.clubs[0]).toEqual(expectedClubInState);
-      expect(state.currentClub).toEqual(mockClubResponse);
+      expect(state.detailClub).toEqual(mockClubResponse);
       expect(state.error).toBeNull();
     });
 
@@ -107,7 +111,7 @@ describe('bookClubStore', () => {
       const state = useBookClubStore.getState();
       expect(state.loading).toBe(false);
       expect(state.createSuccess).toBe(false);
-      expect(state.error).toBe('建立讀書會失敗'); // Store uses generic message for error objects
+      expect(state.error).toBe('讀書會名稱已存在'); // Expect the specific error message
     });
 
     it('should handle generic errors when creating a book club', async () => {
@@ -161,11 +165,11 @@ describe('bookClubStore', () => {
       vi.mocked(bookClubService.getAvailableTags).mockRejectedValue(mockError);
 
       const store = useBookClubStore.getState();
-      await store.fetchAvailableTags();
+      await expect(store.fetchAvailableTags()).rejects.toEqual(mockError);
 
       const state = useBookClubStore.getState();
       expect(state.loading).toBe(false);
-      expect(state.error).toBe('載入標籤失敗'); // Store uses generic message for error objects
+      expect(state.error).toBe('無法載入標籤'); // Expect the specific error
     });
   });
 
@@ -191,8 +195,8 @@ describe('bookClubStore', () => {
     });
   });
 
-  describe('setCurrentClub', () => {
-    it('should set current club', () => {
+  describe('setDetailClub', () => {
+    it('should set detail club', () => {
       const mockClub = {
         id: 1,
         name: 'Test Club',
@@ -212,9 +216,9 @@ describe('bookClubStore', () => {
       };
 
       const store = useBookClubStore.getState();
-      store.setCurrentClub(mockClub);
+      store.setDetailClub(mockClub);
 
-      expect(useBookClubStore.getState().currentClub).toEqual(mockClub);
+      expect(useBookClubStore.getState().detailClub).toEqual(mockClub);
     });
   });
 });

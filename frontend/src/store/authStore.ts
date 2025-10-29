@@ -1,6 +1,6 @@
 // frontend/src/store/authStore.ts
 import { create } from 'zustand';
-import type { User, TokenResponse, GoogleLoginResponse } from '../types/auth';
+import type { User, TokenResponse } from '../types/auth';
 import { profileService } from '../services/profileService';
 
 // Define state properties
@@ -14,7 +14,6 @@ interface AuthState {
 // Define actions
 interface AuthActions {
   login: (tokens: TokenResponse, rememberMe?: boolean) => void;
-  loginWithGoogle: (response: GoogleLoginResponse) => void;
   logout: () => void;
   initialize: () => Promise<void>;
   setUser: (user: User | null) => void;
@@ -29,30 +28,30 @@ const initialState: AuthState = {
 
 // By defining actions outside the create call, we ensure their references are stable
 const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthActions => ({
-  login: (tokens, rememberMe = false) => {
+  login: async (tokens, rememberMe = false) => {
     const storage = rememberMe ? localStorage : sessionStorage;
     storage.setItem('access_token', tokens.access_token);
     set(state => ({ 
       ...state,
-      user: tokens.user, 
       accessToken: tokens.access_token, 
-      isAuthenticated: true 
+      isAuthenticated: true,
     }));
-  },
 
-  loginWithGoogle: (response) => {
-    sessionStorage.setItem('access_token', response.access_token);
-    set(state => ({ 
-      ...state,
-      accessToken: response.access_token, 
-      isAuthenticated: true 
-    }));
+    try {
+      const userProfile = await profileService.getProfile();
+      set(state => ({ ...state, user: userProfile, isInitializing: false }));
+    } catch (error) {
+      console.error('Failed to fetch profile after login:', error);
+      // Even if profile fetch fails, keep user authenticated but with partial data
+      set(state => ({ ...state, user: tokens.user, isInitializing: false }));
+    }
   },
 
   logout: () => {
     localStorage.removeItem('access_token');
     sessionStorage.removeItem('access_token');
-    set(() => initialState);
+    // Reset state but explicitly set isInitializing to false
+    set(() => ({ ...initialState, isInitializing: false }));
   },
 
   initialize: async () => {
@@ -64,6 +63,7 @@ const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthAction
         set(state => ({ ...state, user: userProfile }));
       }
     } catch (error) {
+      console.error('Failed to initialize auth state:', error);
       // If fetching profile fails, treat as unauthenticated
       set(() => initialState);
     } finally {
