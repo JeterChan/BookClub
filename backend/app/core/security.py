@@ -12,9 +12,13 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER = 7
 
+# Bcrypt 設定 - 開發環境使用較低的 rounds 以加快速度
+# 生產環境建議使用 12-14 rounds
+BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "4"))  # 開發環境使用 4，生產環境改為 12
+
 def hash_password(password: str) -> str:
     password_bytes = password.encode('utf-8')
-    salt = bcrypt.gensalt()
+    salt = bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
     hashed = bcrypt.hashpw(password_bytes, salt)
     return hashed.decode('utf-8')
 

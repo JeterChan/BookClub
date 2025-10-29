@@ -18,6 +18,7 @@ interface AuthActions {
   logout: () => void;
   initialize: () => Promise<void>;
   setUser: (user: User | null) => void;
+  syncFromStorage: () => Promise<void>;
 }
 
 const initialState: AuthState = {
@@ -29,7 +30,7 @@ const initialState: AuthState = {
 
 // By defining actions outside the create call, we ensure their references are stable
 const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthActions => ({
-  login: (tokens, rememberMe = false) => {
+  login: (tokens, rememberMe = true) => {
     const storage = rememberMe ? localStorage : sessionStorage;
     storage.setItem('access_token', tokens.access_token);
     set(state => ({ 
@@ -41,7 +42,7 @@ const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthAction
   },
 
   loginWithGoogle: (response) => {
-    sessionStorage.setItem('access_token', response.access_token);
+    localStorage.setItem('access_token', response.access_token);
     set(state => ({ 
       ...state,
       accessToken: response.access_token, 
@@ -52,7 +53,7 @@ const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthAction
   logout: () => {
     localStorage.removeItem('access_token');
     sessionStorage.removeItem('access_token');
-    set(() => initialState);
+    set(() => ({ ...initialState, isInitializing: false }));
   },
 
   initialize: async () => {
@@ -61,13 +62,44 @@ const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthAction
       if (token) {
         set(state => ({ ...state, accessToken: token, isAuthenticated: true }));
         const userProfile = await profileService.getProfile();
-        set(state => ({ ...state, user: userProfile }));
+        // Convert UserProfile to User by adding missing fields
+        const user: User = {
+          ...userProfile,
+          avatar_url: userProfile.avatar_url ?? undefined,
+          bio: userProfile.bio ?? undefined,
+          is_active: true, // Assume active if profile fetch succeeds
+          created_at: new Date().toISOString() // Use current time as fallback
+        };
+        set(state => ({ ...state, user }));
       }
     } catch (error) {
       // If fetching profile fails, treat as unauthenticated
-      set(() => initialState);
+      set(() => ({ ...initialState, isInitializing: false }));
     } finally {
       set(state => ({ ...state, isInitializing: false }));
+    }
+  },
+
+  syncFromStorage: async () => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      if (token) {
+        set(state => ({ ...state, accessToken: token, isAuthenticated: true }));
+        const userProfile = await profileService.getProfile();
+        // Convert UserProfile to User by adding missing fields
+        const user: User = {
+          ...userProfile,
+          avatar_url: userProfile.avatar_url ?? undefined,
+          bio: userProfile.bio ?? undefined,
+          is_active: true,
+          created_at: new Date().toISOString()
+        };
+        set(state => ({ ...state, user }));
+      } else {
+        set(() => ({ ...initialState, isInitializing: false }));
+      }
+    } catch (error) {
+      set(() => ({ ...initialState, isInitializing: false }));
     }
   },
 

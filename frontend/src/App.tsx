@@ -1,86 +1,118 @@
-import { useEffect, Suspense, lazy } from 'react';
+﻿import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
-import { PrivateRoute } from './components/common/PrivateRoute';
-import Layout from './components/common/Layout';
 
-// Lazy load pages
-const Register = lazy(() => import('./pages/Register'));
-const Login = lazy(() => import('./pages/Login'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Profile = lazy(() => import('./pages/Profile'));
-const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
-const ClubCreate = lazy(() => import('./pages/clubs/ClubCreate'));
-const ClubExplore = lazy(() => import('./pages/clubs/ClubExplore'));
-const ClubDetail = lazy(() => import('./pages/clubs/ClubDetail'));
-const ClubSettings = lazy(() => import('./pages/clubs/ClubSettings'));
+// Pages
+import Mainpage from './pages/mainpage';
+import Dashboard from './pages/dashboard';
+import Account from './pages/account';
+import ClubDirectory from './pages/club';
+import ClubDetail from './pages/club/Detail';
+import ClubCreate from './pages/club/Create';
+import Discussions from './pages/discussions';
+import DiscussionDetail from './pages/discussions/Detail';
+import DiscussionNew from './pages/discussions/New';
 
-// Loading component
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-  </div>
-);
+// Protected Route Component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
 
 function App() {
   const initialize = useAuthStore((state) => state.initialize);
+  const syncFromStorage = useAuthStore((state) => state.syncFromStorage);
+  const isInitializing = useAuthStore((state) => state.isInitializing);
 
-  // Initialize auth state on app mount
+  // 初始化認證狀態（從 localStorage/sessionStorage 恢復）
   useEffect(() => {
-    const init = async () => {
-      await initialize();
-    };
-    init();
+    initialize();
   }, [initialize]);
+
+  // 監聽 storage 事件以同步不同分頁的登入狀態
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // 當 access_token 改變時，同步狀態
+      if (e.key === 'access_token' || e.key === null) {
+        syncFromStorage();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [syncFromStorage]);
+
+  // 顯示載入畫面直到初始化完成
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-[#04c0f4]/5 to-[#04c0f4]/10">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#04c0f4] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>
       <Toaster position="top-right" />
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/clubs" replace />} />
-          <Route path="/register" element={<Layout><Register /></Layout>} />
-          <Route path="/login" element={<Layout><Login /></Layout>} />
-          <Route path="/verify-email" element={<Layout><VerifyEmail /></Layout>} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <PrivateRoute>
-                <Layout><Dashboard /></Layout>
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/profile" 
-            element={
-              <PrivateRoute>
-                <Layout><Profile /></Layout>
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/clubs/create" 
-            element={
-              <PrivateRoute>
-                <Layout><ClubCreate /></Layout>
-              </PrivateRoute>
-            } 
-          />
-          <Route path="/clubs" element={<Layout><ClubExplore /></Layout>} />
-          <Route path="/clubs/:clubId" element={<Layout><ClubDetail /></Layout>} />
-          <Route 
-            path="/clubs/:clubId/settings" 
-            element={
-              <PrivateRoute>
-                <Layout><ClubSettings /></Layout>
-              </PrivateRoute>
-            } 
-          />
-          {/* Placeholder for other routes */}
-          <Route path="*" element={<Navigate to="/clubs" replace />} />
-        </Routes>
-      </Suspense>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Mainpage />} />
+        
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/account"
+          element={
+            <ProtectedRoute>
+              <Account />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Club Routes */}
+        <Route path="/clubs" element={<ClubDirectory />} />
+        <Route path="/clubs/:id" element={<ClubDetail />} />
+        <Route
+          path="/clubs/create"
+          element={
+            <ProtectedRoute>
+              <ClubCreate />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Discussion Routes */}
+        <Route path="/discussions" element={<Discussions />} />
+        <Route path="/discussions/:id" element={<DiscussionDetail />} />
+        <Route
+          path="/discussions/new"
+          element={
+            <ProtectedRoute>
+              <DiscussionNew />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* 404 Not Found */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }
