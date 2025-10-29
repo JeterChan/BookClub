@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlmodel import Session
 from datetime import timedelta
-from app.models.user import UserCreate, RegistrationResponse, UserLogin, Token, GoogleLoginRequest, GoogleLoginResponse
+from app.models.user import UserCreate, RegistrationResponse, UserLogin, Token, TokenWithUser, UserRead
 from app.schemas.email_verification import EmailVerificationRequest, EmailVerificationResponse
 from app.services.user_service import UserService
 from app.services.email_service import EmailService
@@ -76,7 +76,7 @@ def resend_verification_email(
     return EmailVerificationResponse(message="如果該 email 已註冊，將會收到一封新的驗證信。", success=True)
 
 
-@router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
+@router.post("/login", response_model=TokenWithUser, status_code=status.HTTP_200_OK)
 def login(
     login_data: UserLogin,
     user_service: UserService = Depends(get_user_service)
@@ -116,40 +116,4 @@ def login(
         expires_delta=access_token_expires
     )
     
-    return Token(access_token=access_token, token_type="bearer")
-
-@router.post("/google/login", response_model=GoogleLoginResponse, status_code=status.HTTP_200_OK)
-def google_login(
-    login_data: GoogleLoginRequest,
-    user_service: UserService = Depends(get_user_service)
-):
-    google_info = user_service.verify_google_token(login_data.id_token)
-    
-    if not google_info:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid Google ID token"
-        )
-    
-    user, is_new_user, needs_display_name = user_service.get_or_create_google_user(
-        google_id=google_info['google_id'],
-        email=google_info['email'],
-        name=google_info.get('name')
-    )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is inactive"
-        )
-    
-    access_token = create_access_token(
-        data={"sub": user.email}
-    )
-    
-    return GoogleLoginResponse(
-        access_token=access_token,
-        token_type="bearer",
-        is_new_user=is_new_user,
-        needs_display_name=needs_display_name
-    )
+    return TokenWithUser(access_token=access_token, token_type="bearer", user=UserRead.from_orm(user))

@@ -10,8 +10,6 @@ from PIL import Image
 from app.models.user import User, UserCreate
 from app.models.interest_tag import InterestTag
 from app.core.security import hash_password, verify_password
-from google.oauth2 import id_token
-from google.auth.transport import requests
 import os
 
 # Account protection settings
@@ -89,78 +87,6 @@ class UserService:
         self.session.add(user)
         self.session.commit()
         return user
-
-    @staticmethod
-    def verify_google_token(token: str) -> Optional[dict]:
-        try:
-            client_id = os.getenv("GOOGLE_CLIENT_ID")
-            if not client_id:
-                return None
-            idinfo = id_token.verify_oauth2_token(token, requests.Request(), client_id)
-            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-                return None
-            return {
-                'google_id': idinfo['sub'],
-                'email': idinfo.get('email'),
-                'name': idinfo.get('name'),
-                'picture': idinfo.get('picture')
-            }
-        except ValueError:
-            return None
-
-    def get_or_create_google_user(self, google_id: str, email: str, name: Optional[str] = None) -> tuple[User, bool, bool]:
-        statement = select(User).where(User.google_id == google_id)
-        user = self.session.exec(statement).first()
-        if user:
-            return (user, False, False)
-
-        existing_user = self.get_by_email(email)
-        if existing_user:
-            pass
-        
-        needs_display_name = not name or name.strip() == ""
-        display_name = name if name and name.strip() else email.split('@')[0]
-        
-        new_user = User(
-            email=email,
-            display_name=display_name,
-            google_id=google_id,
-            oauth_provider='google',
-            password_hash=None,
-            email_verified=True
-        )
-        self.session.add(new_user)
-        self.session.commit()
-        self.session.refresh(new_user)
-        return (new_user, True, needs_display_name)
-
-    def get_by_google_id(self, google_id: str) -> Optional[User]:
-        statement = select(User).where(User.google_id == google_id)
-        user = self.session.exec(statement).first()
-        return user
-
-    def link_google_account(self, user: User, google_id: str) -> None:
-        existing_user = self.get_by_google_id(google_id)
-        if existing_user and existing_user.id != user.id:
-            raise ValueError("This Google account is already linked to another user")
-        if user.google_id:
-            raise ValueError("This account is already linked to a Google account")
-        user.google_id = google_id
-        user.oauth_provider = 'google'
-        self.session.add(user)
-        self.session.commit()
-        self.session.refresh(user)
-
-    def unlink_google_account(self, user: User) -> None:
-        if not user.google_id:
-            raise ValueError("No Google account linked")
-        if not user.password_hash:
-            raise ValueError("Cannot unlink Google account: no password set. Please set a password first.")
-        user.google_id = None
-        user.oauth_provider = None
-        self.session.add(user)
-        self.session.commit()
-        self.session.refresh(user)
 
     def get_user_profile(self, user: User) -> User:
         self.session.refresh(user)

@@ -2,6 +2,9 @@ from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .interest_tag import InterestTag, InterestTagRead
+    from .book_club import BookClub, BookClubMember
+    from .discussion import DiscussionThread, DiscussionPost
+    from .notification import Notification
 
 # 必須在運行時導入 UserInterestTag 作為 link_model
 from .interest_tag import UserInterestTag
@@ -18,10 +21,6 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     password_hash: Optional[str] = Field(default=None, max_length=255)
-    
-    # OAuth 相關欄位
-    google_id: Optional[str] = Field(default=None, unique=True, index=True, max_length=255)
-    oauth_provider: Optional[str] = Field(default=None, max_length=50)
     
     bio: Optional[str] = Field(default=None, max_length=500)
     avatar_url: Optional[str] = Field(default=None, max_length=255)
@@ -61,6 +60,7 @@ class UserProfileRead(UserBase):
     bio: Optional[str]
     avatar_url: Optional[str]
     created_at: datetime
+    is_active: bool
     interest_tags: List["InterestTagRead"] = []
 
 
@@ -111,6 +111,9 @@ class Token(SQLModel):
     """JWT Token 回應 schema"""
     access_token: str
     token_type: str = "bearer"
+
+class TokenWithUser(Token):
+    user: UserRead
 
 class GoogleLoginRequest(SQLModel):
     """Google OAuth 登入請求"""

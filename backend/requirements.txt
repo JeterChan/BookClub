@@ -6,8 +6,6 @@ psycopg2-binary
 python-dotenv
 bcrypt
 python-jose[cryptography]>=3.3.0
-google-auth>=2.23.0
-requests>=2.31.0
 python-multipart
 Pillow
 sendgrid>=6.11.0

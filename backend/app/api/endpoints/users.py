@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlmodel import Session
-from app.models.user import User, UserRead, UserUpdateDisplayName, UserLinkGoogle, UserProfileRead, UserProfileUpdate
+from app.models.user import User, UserRead, UserUpdateDisplayName, UserProfileRead, UserProfileUpdate
 from app.models.interest_tag import InterestTagRead, UserInterestTagCreate
 from app.services.user_service import UserService
 from app.db.session import get_session
@@ -100,49 +100,3 @@ def update_display_name(
     session.commit()
     session.refresh(current_user)
     return current_user
-
-@router.post("/me/link-google", status_code=status.HTTP_200_OK)
-def link_google_account(
-    link_data: UserLinkGoogle,
-    current_user_payload: dict = Depends(get_current_user),
-    session: Session = Depends(get_session)
-):
-    current_user = get_user_from_payload(session, current_user_payload)
-    google_info = UserService.verify_google_token(link_data.id_token)
-    if not google_info:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid Google ID token"
-        )
-    user_service = UserService(session)
-    try:
-        user_service.link_google_account(current_user, google_info['google_id'])
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
-    return {"message": "Google account linked successfully"}
-
-@router.delete("/me/unlink-google", status_code=status.HTTP_200_OK)
-def unlink_google_account(
-    current_user_payload: dict = Depends(get_current_user),
-    session: Session = Depends(get_session)
-):
-    current_user = get_user_from_payload(session, current_user_payload)
-    user_service = UserService(session)
-    try:
-        user_service.unlink_google_account(current_user)
-    except ValueError as e:
-        error_detail = str(e)
-        if "no password set" in error_detail.lower():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_detail
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=error_detail
-            )
-    return {"message": "Google account unlinked successfully"}
