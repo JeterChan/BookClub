@@ -8,6 +8,7 @@ import { PrivacyTab } from '../components/profile/PrivacyTab';
 import { SkeletonCard } from '../components/common/SkeletonCard';
 import { profileService } from '../services/profileService';
 import type { UserProfile } from '../services/profileService';
+import { useAuthStore } from '../store/authStore';
 
 /**
  * Profile - Profile management page
@@ -15,29 +16,25 @@ import type { UserProfile } from '../services/profileService';
  * Protected by PrivateRoute
  */
 const Profile = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { user, setUser } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        const data = await profileService.getProfile();
+        setUser(data);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to load profile'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      const data = await profileService.getProfile();
-      setProfile(data);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load profile'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProfileUpdate = (updated: UserProfile) => {
-    setProfile(updated);
-  };
+  }, [setUser]);
 
   // Loading state
   if (loading) {
@@ -52,7 +49,7 @@ const Profile = () => {
   }
 
   // Error state
-  if (error || !profile) {
+  if (error || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-md text-center">
@@ -62,7 +59,7 @@ const Profile = () => {
             {error?.message || '無法載入個人檔案，請稍後再試'}
           </p>
           <button
-            onClick={loadProfile}
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             重新載入
@@ -78,25 +75,25 @@ const Profile = () => {
       id: 'basic',
       label: '基本資料',
       icon: '👤',
-      content: <BasicInfoTab profile={profile} onUpdate={handleProfileUpdate} />,
+      content: <BasicInfoTab profile={user} onUpdate={setUser} />,
     },
     {
       id: 'avatar',
       label: '頭像設定',
       icon: '📷',
-      content: <AvatarTab profile={profile} onUpdate={handleProfileUpdate} />,
+      content: <AvatarTab profile={user} onUpdate={setUser} />,
     },
     {
       id: 'tags',
       label: '興趣標籤',
       icon: '🏷️',
-      content: <InterestTagsTab profile={profile} onUpdate={handleProfileUpdate} />,
+      content: <InterestTagsTab profile={user} onUpdate={setUser} />,
     },
     {
       id: 'privacy',
       label: '隱私設定',
       icon: '🔒',
-      content: <PrivacyTab profile={profile} onUpdate={handleProfileUpdate} />,
+      content: <PrivacyTab />,
     },
   ];
 

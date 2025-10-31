@@ -1,11 +1,11 @@
 // frontend/src/store/authStore.ts
 import { create } from 'zustand';
-import type { User, TokenResponse } from '../types/auth';
 import { profileService } from '../services/profileService';
+import type { UserProfile } from '../services/profileService';
 
 // Define state properties
 interface AuthState {
-  user: User | null;
+  user: UserProfile | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   isInitializing: boolean;
@@ -16,7 +16,7 @@ interface AuthActions {
   login: (tokens: TokenResponse, rememberMe?: boolean) => void;
   logout: () => void;
   initialize: () => Promise<void>;
-  setUser: (user: User | null) => void;
+  setUser: (user: UserProfile | null) => void;
 }
 
 const initialState: AuthState = {

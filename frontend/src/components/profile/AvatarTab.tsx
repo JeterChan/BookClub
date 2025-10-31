@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { FileUpload } from '../ui/FileUpload';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
+import { useAuthStore } from '../../store/authStore';
 import { profileService } from '../../services/profileService';
 import type { UserProfile } from '../../services/profileService';
 
@@ -44,6 +45,7 @@ export const AvatarTab = ({ profile, onUpdate }: AvatarTabProps) => {
         ...profile,
         avatar_url: result.avatar_url,
       });
+      useAuthStore.getState().setUser({ ...profile, avatar_url: result.avatar_url });
 
       toast.success('頭像更新成功');
       setSelectedFile(null);

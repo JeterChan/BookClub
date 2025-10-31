@@ -15,6 +15,9 @@ const ClubCreate = lazy(() => import('./pages/clubs/ClubCreate'));
 const ClubExplore = lazy(() => import('./pages/clubs/ClubExplore'));
 const ClubDetail = lazy(() => import('./pages/clubs/ClubDetail'));
 const ClubSettings = lazy(() => import('./pages/clubs/ClubSettings'));
+const Discussions = lazy(() => import('./pages/clubs/Discussions'));
+const DiscussionNew = lazy(() => import('./pages/clubs/DiscussionNew'));
+const DiscussionDetail = lazy(() => import('./pages/clubs/DiscussionDetail'));
 const ProfileSettingsPage = lazy(() => import('./pages/profile/ProfileSettingsPage'));
 
 // Loading component
@@ -37,7 +40,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Toaster position="top-right" />
+
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<Navigate to="/clubs" replace />} />
@@ -83,6 +86,30 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><ClubSettings /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/clubs/:clubId/discussions" 
+            element={
+              <PrivateRoute>
+                <Layout><Discussions /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/clubs/:clubId/discussions/new" 
+            element={
+              <PrivateRoute>
+                <Layout><DiscussionNew /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/clubs/:clubId/discussions/:topicId" 
+            element={
+              <PrivateRoute>
+                <Layout><DiscussionDetail /></Layout>
               </PrivateRoute>
             } 
           />

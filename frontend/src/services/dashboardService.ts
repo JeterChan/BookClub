@@ -123,7 +123,7 @@ export const dashboardService = {
       return mockDashboardData;
     }
 
-    const response = await apiClient.get<DashboardData>('/api/users/me/dashboard');
+    const response = await apiClient.get<DashboardData>('/api/v1/users/me/dashboard');
     return response.data;
   },
 };

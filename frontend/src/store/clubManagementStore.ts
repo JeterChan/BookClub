@@ -8,6 +8,7 @@ import type {
   MemberRole,
 } from '../types/clubManagement';
 import { useBookClubStore } from './bookClubStore';
+import type { ApiError } from '../types/error';
 
 interface ClubManagementState {
   members: ClubMember[];
@@ -21,6 +22,7 @@ interface ClubManagementState {
   removeMember: (clubId: number, userId: number) => Promise<void>;
   transferOwnership: (clubId: number, newOwnerId: number) => Promise<void>;
   updateClubDetails: (clubId: number, data: BookClubUpdateRequest) => Promise<void>;
+  deleteClub: (clubId: number) => Promise<void>;
 }
 
 export const useClubManagementStore = create<ClubManagementState>((set, get) => ({
@@ -126,7 +128,7 @@ export const useClubManagementStore = create<ClubManagementState>((set, get) => 
       await clubManagementService.deleteClub(clubId);
       set({ loading: false });
     } catch (err) {
-      const message = err.response?.data?.detail || 'Failed to delete club.';
+      const message = (err as ApiError).response?.data?.detail || 'Failed to delete club.';
       set({ error: message, loading: false });
       throw new Error(message);
     }

@@ -23,7 +23,7 @@ export const ClubCard = ({ club }: ClubCardProps) => {
   return (
     <div
       onClick={handleClick}
-      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer overflow-hidden"
+      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -42,7 +42,7 @@ export const ClubCard = ({ club }: ClubCardProps) => {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-brand-light">
             <span className="text-6xl">📚</span>
           </div>
         )}
@@ -70,7 +70,7 @@ export const ClubCard = ({ club }: ClubCardProps) => {
             {club.tags.slice(0, 2).map((tag) => (
               <span
                 key={tag.id}
-                className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
+                className="px-2 py-1 bg-brand-50 text-brand-700 rounded-full text-xs"
               >
                 {tag.name}
               </span>

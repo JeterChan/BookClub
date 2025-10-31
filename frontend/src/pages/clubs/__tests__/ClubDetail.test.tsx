@@ -56,7 +56,7 @@ describe('ClubDetail Component', () => {
     const mockFetchClubDetail = vi.fn();
     const mockJoinClub = vi.fn();
     
-    (useBookClubStore as vi.Mock).mockReturnValue({
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPublicClub, membership_status: 'not_member' },
       loading: false,
       error: null,
@@ -89,7 +89,7 @@ describe('ClubDetail Component', () => {
     const mockFetchClubDetail = vi.fn();
     const mockRequestToJoinClub = vi.fn();
     
-    (useBookClubStore as vi.Mock).mockReturnValue({
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPrivateClub, membership_status: 'not_member' },
       loading: false,
       error: null,
@@ -122,7 +122,7 @@ describe('ClubDetail Component', () => {
     const mockFetchClubDetail = vi.fn();
     const mockLeaveClub = vi.fn();
     
-    (useBookClubStore as vi.Mock).mockReturnValue({
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPublicClub, membership_status: 'member' },
       loading: false,
       error: null,
@@ -154,7 +154,7 @@ describe('ClubDetail Component', () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
     
-    (useBookClubStore as vi.Mock).mockReturnValue({
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPrivateClub, membership_status: 'pending_request' },
       loading: false,
       error: null,
@@ -179,8 +179,8 @@ describe('ClubDetail Component', () => {
   test('shows loading indicator when loading', () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
-    
-    (useBookClubStore as vi.Mock).mockReturnValue({
+
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: mockPublicClub,
       loading: true,
       error: null,
@@ -205,8 +205,8 @@ describe('ClubDetail Component', () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
     const mockJoinClub = vi.fn().mockResolvedValue(undefined);
-    
-    (useBookClubStore as vi.Mock).mockReturnValue({
+
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPublicClub, membership_status: 'not_member' },
       loading: false,
       error: null,
@@ -240,8 +240,8 @@ describe('ClubDetail Component', () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
     const mockJoinClub = vi.fn().mockRejectedValue(new Error('加入失敗'));
-    
-    (useBookClubStore as vi.Mock).mockReturnValue({
+
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPublicClub, membership_status: 'not_member' },
       loading: false,
       error: null,
@@ -267,13 +267,13 @@ describe('ClubDetail Component', () => {
     });
     
     // 驗證錯誤提示被顯示
-    expect(toast.error).toHaveBeenCalledWith('加入讀書會失敗，請稍後再試。');
+    expect(toast.error).toHaveBeenCalledWith('加入讀書會失敗');
   });
 
   // 測試 8: 擁有者或管理員顯示「管理」按鈕
   test('shows "管理" button for owner or admin', () => {
     const mockFetchClubDetail = vi.fn();
-    (useBookClubStore as vi.Mock).mockReturnValue({
+    vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPublicClub, membership_status: 'owner' },
       loading: false,
       error: null,

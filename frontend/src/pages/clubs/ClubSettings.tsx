@@ -36,7 +36,7 @@ const ClubSettings = () => {
       toast.success('讀書會已成功刪除');
       navigate('/clubs');
     } catch (err) {
-      toast.error(err.message || '刪除失敗，請稍後再試');
+      toast.error(err as string || '刪除失敗，請稍後再試');
     }
   };
 
@@ -60,7 +60,7 @@ const ClubSettings = () => {
   }
 
   if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
+    return <div className="text-red-500">Error: {error}</div>;
   }
 
   const isOwner = detailClub?.membership_status === 'owner';
