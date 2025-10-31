@@ -178,3 +178,8 @@ class UserService:
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def deactivate_account(self, user: User) -> None:
+        user.is_active = False
+        self.session.add(user)
+        self.session.commit()

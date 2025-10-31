@@ -6,7 +6,7 @@ from app.models.user import User
 
 def test_get_dashboard_authenticated_user_success(authenticated_client: TestClient, test_user_for_auth: User, auth_headers: dict):
     """測試認證用戶成功獲取儀表板（200）"""
-    response = authenticated_client.get("/api/users/me/dashboard", headers=auth_headers)
+    response = authenticated_client.get("/api/v1/users/me/dashboard", headers=auth_headers)
     
     assert response.status_code == 200
     data = response.json()
@@ -28,14 +28,14 @@ def test_get_dashboard_authenticated_user_success(authenticated_client: TestClie
 
 def test_get_dashboard_unauthenticated_user_rejected(client: TestClient):
     """測試未認證用戶拒絕存取（403）"""
-    response = client.get("/api/users/me/dashboard")
+    response = client.get("/api/v1/users/me/dashboard")
     
     assert response.status_code == 403
 
 
 def test_dashboard_response_camelcase_format(authenticated_client: TestClient, test_user_for_auth: User, auth_headers: dict):
     """測試回應格式為 camelCase"""
-    response = authenticated_client.get("/api/users/me/dashboard", headers=auth_headers)
+    response = authenticated_client.get("/api/v1/users/me/dashboard", headers=auth_headers)
     
     assert response.status_code == 200
     data = response.json()
@@ -55,7 +55,7 @@ def test_dashboard_response_camelcase_format(authenticated_client: TestClient, t
 
 def test_dashboard_stats_are_zero_in_epic1(authenticated_client: TestClient, test_user_for_auth: User, auth_headers: dict):
     """測試統計資料為預設值（0）- Epic 1 階段"""
-    response = authenticated_client.get("/api/users/me/dashboard", headers=auth_headers)
+    response = authenticated_client.get("/api/v1/users/me/dashboard", headers=auth_headers)
     
     assert response.status_code == 200
     data = response.json()
@@ -69,7 +69,7 @@ def test_dashboard_stats_are_zero_in_epic1(authenticated_client: TestClient, tes
 
 def test_dashboard_lists_are_empty_in_epic1(authenticated_client: TestClient, test_user_for_auth: User, auth_headers: dict):
     """測試 clubs 和 activities 為空陣列 - Epic 1 階段"""
-    response = authenticated_client.get("/api/users/me/dashboard", headers=auth_headers)
+    response = authenticated_client.get("/api/v1/users/me/dashboard", headers=auth_headers)
     
     assert response.status_code == 200
     data = response.json()
@@ -85,6 +85,6 @@ def test_dashboard_lists_are_empty_in_epic1(authenticated_client: TestClient, te
 def test_dashboard_invalid_token_rejected(client: TestClient):
     """測試無效 token 被拒絕"""
     invalid_headers = {"Authorization": "Bearer invalid_token_123"}
-    response = client.get("/api/users/me/dashboard", headers=invalid_headers)
+    response = client.get("/api/v1/users/me/dashboard", headers=invalid_headers)
     
     assert response.status_code == 401

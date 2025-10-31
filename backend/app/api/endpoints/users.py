@@ -9,20 +9,13 @@ from app.core.security import get_current_user
 
 router = APIRouter()
 
-def get_user_from_payload(session: Session, payload: dict) -> User:
-    email = payload.get("sub")
-    user_service = UserService(session)
-    user = user_service.get_by_email(email)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+
 
 @router.get("/me/profile", response_model=UserProfileRead)
 def get_user_profile(
-    current_user_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    current_user = get_user_from_payload(session, current_user_payload)
     user_service = UserService(session)
     return user_service.get_user_profile(user=current_user)
 
@@ -30,10 +23,9 @@ def get_user_profile(
 @router.put("/me/profile", response_model=UserProfileRead)
 def update_user_profile(
     profile_data: UserProfileUpdate,
-    current_user_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    current_user = get_user_from_payload(session, current_user_payload)
     user_service = UserService(session)
     return user_service.update_profile(
         user=current_user, 
@@ -44,11 +36,10 @@ def update_user_profile(
 
 @router.post("/me/avatar")
 def upload_avatar(
-    current_user_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     file: UploadFile = File(...)
 ):
-    current_user = get_user_from_payload(session, current_user_payload)
     user_service = UserService(session)
     try:
         avatar_url = user_service.upload_avatar(user=current_user, file=file)
@@ -60,10 +51,9 @@ def upload_avatar(
 @router.post("/me/interest-tags", response_model=List[InterestTagRead])
 def add_my_interest_tag(
     tag_data: UserInterestTagCreate,
-    current_user_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    current_user = get_user_from_payload(session, current_user_payload)
     user_service = UserService(session)
     try:
         user = user_service.add_interest_tag(current_user, tag_data.tag_id)
@@ -76,10 +66,9 @@ def add_my_interest_tag(
 @router.delete("/me/interest-tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_my_interest_tag(
     tag_id: int,
-    current_user_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    current_user = get_user_from_payload(session, current_user_payload)
     user_service = UserService(session)
     try:
         user_service.remove_interest_tag(current_user, tag_id)
@@ -91,12 +80,20 @@ def remove_my_interest_tag(
 @router.patch("/me/display-name", response_model=UserRead, status_code=status.HTTP_200_OK)
 def update_display_name(
     update_data: UserUpdateDisplayName,
-    current_user_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    current_user = get_user_from_payload(session, current_user_payload)
     current_user.display_name = update_data.display_name
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
     return current_user
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def deactivate_account(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    user_service = UserService(session)
+    user_service.deactivate_account(user=current_user)
+    return

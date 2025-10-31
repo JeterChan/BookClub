@@ -31,7 +31,7 @@ class BookClub(SQLModel, table=True):
     # Relationships
     owner: "User" = Relationship(back_populates="owned_clubs")
     members: List["BookClubMember"] = Relationship(back_populates="book_club")
-    threads: List["DiscussionThread"] = Relationship(back_populates="book_club")
+    threads: List["DiscussionTopic"] = Relationship(back_populates="book_club")
     tags: List["ClubTag"] = Relationship(back_populates="book_clubs", link_model=BookClubTagLink)
 
 

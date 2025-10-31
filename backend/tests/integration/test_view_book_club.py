@@ -28,7 +28,7 @@ def test_get_club_detail_success(client: TestClient, session: Session):
     session.add(BookClubMember(user_id=user.id, book_club_id=club.id, role=MemberRole.OWNER))
     session.commit()
     
-    response = client.get(f"/api/clubs/{club.id}")
+    response = client.get(f"/api/v1/clubs/{club.id}")
     
     assert response.status_code == 200
     data = response.json()
@@ -41,7 +41,7 @@ def test_get_club_detail_success(client: TestClient, session: Session):
 
 def test_get_club_detail_not_found(client: TestClient):
     """測試讀書會不存在時返回 404"""
-    response = client.get("/api/clubs/99999")
+    response = client.get("/api/v1/clubs/99999")
     
     assert response.status_code == 404
     assert "不存在" in response.json()["detail"]
@@ -60,7 +60,7 @@ def test_get_club_detail_camelcase_response(client: TestClient, session: Session
     session.add(BookClubMember(user_id=user.id, book_club_id=club.id, role=MemberRole.OWNER))
     session.commit()
     
-    response = client.get(f"/api/clubs/{club.id}")
+    response = client.get(f"/api/v1/clubs/{club.id}")
     
     assert response.status_code == 200
     data = response.json()
@@ -86,7 +86,7 @@ def test_get_club_detail_includes_owner(client: TestClient, session: Session):
     session.add(BookClubMember(user_id=user.id, book_club_id=club.id, role=MemberRole.OWNER))
     session.commit()
     
-    response = client.get(f"/api/clubs/{club.id}")
+    response = client.get(f"/api/v1/clubs/{club.id}")
     
     assert response.status_code == 200
     data = response.json()
@@ -117,7 +117,7 @@ def test_get_club_detail_includes_tags(client: TestClient, session: Session):
     session.add(BookClubMember(user_id=user.id, book_club_id=club.id, role=MemberRole.OWNER))
     session.commit()
     
-    response = client.get(f"/api/clubs/{club.id}")
+    response = client.get(f"/api/v1/clubs/{club.id}")
     
     assert response.status_code == 200
     data = response.json()
@@ -146,7 +146,7 @@ def test_get_club_detail_member_count(client: TestClient, session: Session):
     session.add(BookClubMember(user_id=user3.id, book_club_id=club.id, role=MemberRole.MEMBER))
     session.commit()
     
-    response = client.get(f"/api/clubs/{club.id}")
+    response = client.get(f"/api/v1/clubs/{club.id}")
     
     assert response.status_code == 200
     data = response.json()

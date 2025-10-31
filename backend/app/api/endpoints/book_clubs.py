@@ -55,14 +55,9 @@ def delete_book_club(
 def create_book_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
-    current_user_payload: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     book_club_data: BookClubCreate
 ) -> BookClubReadWithDetails:
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
     return book_club_service.create_book_club(
         session=session,
         current_user=current_user,
@@ -112,15 +107,9 @@ def list_book_clubs(
 def get_book_club_detail(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: Optional[dict] = Depends(get_optional_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ) -> BookClubReadWithDetails:
-    current_user = None
-    if current_user_payload:
-        email = current_user_payload.get("sub")
-        current_user = user_service.get_by_email(email)
-
     return book_club_service.get_book_club_by_id(session, club_id, current_user)
 
 
@@ -133,22 +122,15 @@ logger = logging.getLogger(__name__)
 def join_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    logger.info(f"Attempting to join club {club_id} for user {current_user_payload.get('sub')}")
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        logger.warning(f"User with email {email} not found in DB for join club action.")
-        raise HTTPException(status_code=404, detail="User not found")
-    
+    logger.info(f"Attempting to join club {club_id} for user {current_user.email}")
     try:
         book_club_service.join_book_club(session, club_id, current_user.id)
-        logger.info(f"User {email} successfully joined club {club_id}")
+        logger.info(f"User {current_user.email} successfully joined club {club_id}")
     except HTTPException as e:
-        logger.error(f"Error during join_book_club service call for user {email} and club {club_id}: {e.detail}")
+        logger.error(f"Error during join_book_club service call for user {current_user.email} and club {club_id}: {e.detail}")
         raise e
     return
 
@@ -158,14 +140,9 @@ def join_club(
 def leave_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
     book_club_service.leave_book_club(session, club_id, current_user.id)
     return
 
@@ -174,13 +151,8 @@ def leave_club(
 def request_to_join_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
     book_club_service.request_to_join_book_club(session, club_id, current_user.id)
     return

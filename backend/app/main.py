@@ -30,7 +30,7 @@ app.add_middleware(
 # 掛載靜態檔案目錄
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="/api/v1")
 
 # 解析 Pydantic/SQLModel 中的前向參照 (Pydantic v2)
 UserProfileRead.model_rebuild()

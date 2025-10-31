@@ -1,16 +1,18 @@
 # backend/app/core/permissions.py
+print("Loading permissions.py")
+
 from functools import wraps
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from sqlmodel import Session
 
-from app.db.session import get_session
 from app.core.security import get_current_user
-from app.models.user import User
-from app.services.user_service import UserService
-from app.services.member_service import MemberService
+from app.db.session import get_session
 from app.models.book_club_member import MemberRole
+from app.models.user import User
+from app.services.member_service import MemberService
+from app.services.user_service import UserService
 
 def get_member_service(session: Session = Depends(get_session)) -> MemberService:
     return MemberService(session)
@@ -19,16 +21,7 @@ class ClubPermissionChecker:
     def __init__(self, *, required_roles: list[MemberRole]):
         self.required_roles = required_roles
 
-    def __call__(
-        self,
-        club_id: int,
-        current_user_payload: Annotated[dict, Depends(get_current_user)],
-        member_service: Annotated[MemberService, Depends(get_member_service)],
-    ) -> User:
-        current_user = member_service.user_service.get_by_email(email=current_user_payload.get("sub"))
-        if not current_user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
+    def __call__(self, club_id: int, current_user: User = Depends(get_current_user), member_service: MemberService = Depends(get_member_service)) -> User:
         membership = member_service.get_membership(user_id=current_user.id, club_id=club_id)
 
         if not membership or membership.role not in self.required_roles:

@@ -10,7 +10,7 @@ from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
 
 # Helper to get auth headers
 def get_auth_headers(client: TestClient, email: str, password: str = "TestPassword123") -> dict:
-    response = client.post("/api/auth/login", json={"email": email, "password": password})
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
@@ -70,25 +70,25 @@ def join_request_fixture(session: Session, test_club: BookClub, requester: User)
 
 def test_owner_can_see_join_requests(client: TestClient, test_club: BookClub, club_owner: User, join_request: ClubJoinRequest):
     headers = get_auth_headers(client, club_owner.email)
-    response = client.get(f"/api/clubs/{test_club.id}/join-requests", headers=headers)
+    response = client.get(f"/api/v1/clubs/{test_club.id}/join-requests", headers=headers)
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["id"] == join_request.id
 
 def test_admin_can_approve_join_request(client: TestClient, test_club: BookClub, club_admin: User, join_request: ClubJoinRequest):
     headers = get_auth_headers(client, club_admin.email)
-    response = client.post(f"/api/clubs/{test_club.id}/join-requests/{join_request.id}/approve", headers=headers)
+    response = client.post(f"/api/v1/clubs/{test_club.id}/join-requests/{join_request.id}/approve", headers=headers)
     assert response.status_code == 204
 
 def test_member_cannot_see_join_requests(client: TestClient, test_club: BookClub, club_member: User):
     headers = get_auth_headers(client, club_member.email)
-    response = client.get(f"/api/clubs/{test_club.id}/join-requests", headers=headers)
+    response = client.get(f"/api/v1/clubs/{test_club.id}/join-requests", headers=headers)
     assert response.status_code == 403
 
 def test_owner_can_promote_member_to_admin(client: TestClient, test_club: BookClub, club_owner: User, club_member: User):
     headers = get_auth_headers(client, club_owner.email)
     response = client.put(
-        f"/api/clubs/{test_club.id}/members/{club_member.id}/role",
+        f"/api/v1/clubs/{test_club.id}/members/{club_member.id}/role",
         headers=headers,
         json={"role": "admin"}
     )
@@ -98,7 +98,7 @@ def test_owner_can_promote_member_to_admin(client: TestClient, test_club: BookCl
 def test_admin_cannot_promote_member_to_admin(client: TestClient, test_club: BookClub, club_admin: User, club_member: User):
     headers = get_auth_headers(client, club_admin.email)
     response = client.put(
-        f"/api/clubs/{test_club.id}/members/{club_member.id}/role",
+        f"/api/v1/clubs/{test_club.id}/members/{club_member.id}/role",
         headers=headers,
         json={"role": "admin"}
     )
@@ -106,18 +106,18 @@ def test_admin_cannot_promote_member_to_admin(client: TestClient, test_club: Boo
 
 def test_admin_can_remove_member(client: TestClient, test_club: BookClub, club_admin: User, club_member: User):
     headers = get_auth_headers(client, club_admin.email)
-    response = client.delete(f"/api/clubs/{test_club.id}/members/{club_member.id}", headers=headers)
+    response = client.delete(f"/api/v1/clubs/{test_club.id}/members/{club_member.id}", headers=headers)
     assert response.status_code == 204
 
 def test_admin_cannot_remove_owner(client: TestClient, test_club: BookClub, club_admin: User, club_owner: User):
     headers = get_auth_headers(client, club_admin.email)
-    response = client.delete(f"/api/clubs/{test_club.id}/members/{club_owner.id}", headers=headers)
+    response = client.delete(f"/api/v1/clubs/{test_club.id}/members/{club_owner.id}", headers=headers)
     assert response.status_code == 403
 
 def test_owner_can_transfer_ownership(client: TestClient, test_club: BookClub, club_owner: User, club_admin: User):
     headers = get_auth_headers(client, club_owner.email)
     response = client.post(
-        f"/api/clubs/{test_club.id}/transfer-ownership",
+        f"/api/v1/clubs/{test_club.id}/transfer-ownership",
         headers=headers,
         json={"new_owner_id": club_admin.id}
     )
@@ -125,15 +125,15 @@ def test_owner_can_transfer_ownership(client: TestClient, test_club: BookClub, c
 
 def test_owner_can_delete_club(client: TestClient, test_club: BookClub, club_owner: User):
     headers = get_auth_headers(client, club_owner.email)
-    response = client.delete(f"/api/clubs/{test_club.id}", headers=headers)
+    response = client.delete(f"/api/v1/clubs/{test_club.id}", headers=headers)
     assert response.status_code == 204
 
 def test_admin_cannot_delete_club(client: TestClient, test_club: BookClub, club_admin: User):
     headers = get_auth_headers(client, club_admin.email)
-    response = client.delete(f"/api/clubs/{test_club.id}", headers=headers)
+    response = client.delete(f"/api/v1/clubs/{test_club.id}", headers=headers)
     assert response.status_code == 403
 
 def test_member_cannot_delete_club(client: TestClient, test_club: BookClub, club_member: User):
     headers = get_auth_headers(client, club_member.email)
-    response = client.delete(f"/api/clubs/{test_club.id}", headers=headers)
+    response = client.delete(f"/api/v1/clubs/{test_club.id}", headers=headers)
     assert response.status_code == 403

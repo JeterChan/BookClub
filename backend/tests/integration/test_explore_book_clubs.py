@@ -24,7 +24,7 @@ def test_get_clubs_list_success(client: TestClient, session: Session):
     session.commit()
     
     # 請求
-    response = client.get("/api/clubs")
+    response = client.get("/api/v1/clubs")
     
     assert response.status_code == 200
     data = response.json()
@@ -46,7 +46,7 @@ def test_get_clubs_list_only_public(client: TestClient, session: Session):
     session.add_all([public_club, private_club])
     session.commit()
     
-    response = client.get("/api/clubs")
+    response = client.get("/api/v1/clubs")
     
     assert response.status_code == 200
     data = response.json()
@@ -68,7 +68,7 @@ def test_get_clubs_list_with_pagination(client: TestClient, session: Session):
     session.commit()
     
     # 請求第一頁（每頁 10 個）
-    response = client.get("/api/clubs?page=1&page_size=10")
+    response = client.get("/api/v1/clubs?page=1&page_size=10")
     
     assert response.status_code == 200
     data = response.json()
@@ -93,7 +93,7 @@ def test_get_clubs_list_with_search(client: TestClient, session: Session):
     session.add_all([club1, club2])
     session.commit()
     
-    response = client.get("/api/clubs?keyword=Python")
+    response = client.get("/api/v1/clubs?keyword=Python")
     
     assert response.status_code == 200
     data = response.json()
@@ -121,7 +121,7 @@ def test_get_clubs_list_with_tag_filter(client: TestClient, session: Session):
     session.add(BookClubTagLink(book_club_id=club1.id, tag_id=tag.id))
     session.commit()
     
-    response = client.get(f"/api/clubs?tag_ids={tag.id}")
+    response = client.get(f"/api/v1/clubs?tag_ids={tag.id}")
     
     assert response.status_code == 200
     data = response.json()
@@ -143,7 +143,7 @@ def test_get_clubs_list_camelcase_response(client: TestClient, session: Session)
     session.add(BookClubMember(user_id=user.id, book_club_id=club.id, role=MemberRole.OWNER))
     session.commit()
     
-    response = client.get("/api/clubs")
+    response = client.get("/api/v1/clubs")
     
     assert response.status_code == 200
     data = response.json()
@@ -162,7 +162,7 @@ def test_get_clubs_list_camelcase_response(client: TestClient, session: Session)
 
 def test_get_clubs_list_empty_results(client: TestClient, session: Session):
     """測試空結果"""
-    response = client.get("/api/clubs")
+    response = client.get("/api/v1/clubs")
     
     assert response.status_code == 200
     data = response.json()
@@ -189,7 +189,7 @@ def test_get_clubs_list_includes_owner_and_tags(client: TestClient, session: Ses
     session.add(BookClubMember(user_id=user.id, book_club_id=club.id, role=MemberRole.OWNER))
     session.commit()
     
-    response = client.get("/api/clubs")
+    response = client.get("/api/v1/clubs")
     
     assert response.status_code == 200
     data = response.json()
