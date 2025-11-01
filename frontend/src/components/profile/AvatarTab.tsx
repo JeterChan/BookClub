@@ -40,16 +40,19 @@ export const AvatarTab = ({ profile, onUpdate }: AvatarTabProps) => {
       setUploading(true);
       const result = await profileService.uploadAvatar(selectedFile);
       
-      // Update profile with new avatar URL
-      onUpdate({
-        ...profile,
-        avatar_url: result.avatar_url,
-      });
-      useAuthStore.getState().setUser({ ...profile, avatar_url: result.avatar_url });
-
-      toast.success('頭像更新成功');
+      // Clear preview and selected file FIRST
       setSelectedFile(null);
       setPreview(null);
+      
+      // Then update profile with new avatar URL
+      const updatedProfile = {
+        ...profile,
+        avatar_url: result.avatar_url,
+      };
+      onUpdate(updatedProfile);
+      useAuthStore.getState().setUser(updatedProfile);
+
+      toast.success('頭像更新成功');
     } catch {
       toast.error('頭像上傳失敗，請稍後再試');
     } finally {
@@ -62,13 +65,14 @@ export const AvatarTab = ({ profile, onUpdate }: AvatarTabProps) => {
 
     try {
       setRemoving(true);
-      await profileService.removeAvatar();
+      const updatedProfile = await profileService.removeAvatar();
       
       // Update profile to remove avatar
       onUpdate({
         ...profile,
-        avatar_url: null,
+        avatar_url: updatedProfile.avatar_url,
       });
+      useAuthStore.getState().setUser(updatedProfile);
 
       toast.success('頭像已移除');
     } catch {
@@ -103,7 +107,7 @@ export const AvatarTab = ({ profile, onUpdate }: AvatarTabProps) => {
         <FileUpload
           onFileSelect={handleFileSelect}
           preview={preview}
-          currentImage={!preview ? profile.avatar_url : undefined}
+          currentImage={preview ? undefined : undefined}
           loading={uploading}
         />
       </div>
@@ -128,7 +132,7 @@ export const AvatarTab = ({ profile, onUpdate }: AvatarTabProps) => {
         {profile.avatar_url && !preview && (
           <Button
             onClick={handleRemove}
-            variant="secondary"
+            variant="destructive"
             disabled={removing}
             loading={removing}
           >

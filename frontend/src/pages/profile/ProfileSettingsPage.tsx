@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { profileService,type UpdateProfileData } from '../../services/profileService';
+import { profileService, type UpdateProfileData, getAvatarUrl } from '../../services/profileService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
@@ -96,7 +96,7 @@ const ProfileSettingsPage = () => {
         setUser({ ...user, avatar_url: response.avatar_url });
       }
       toast.success('大頭貼已成功更新！');
-    } catch (error) {
+    } catch (_error) {
       toast.error('大頭貼上傳失敗，請稍後再試。');
     } finally {
       setIsUploading(false);
@@ -106,19 +106,17 @@ const ProfileSettingsPage = () => {
     }
   };
 
-  const handleRemoveConfirm = async () => {
+  const handleRemoveAvatar = async () => {
+    setIsRemoveModalOpen(false);
     setIsRemoving(true);
     try {
-      await profileService.removeAvatar();
-      if (user) {
-        setUser({ ...user, avatar_url: undefined });
-      }
-      toast.success('大頭貼已成功移除。');
-    } catch (error) {
-      toast.error('移除大頭貼失敗，請稍後再試。');
+      const updatedProfile = await profileService.removeAvatar();
+      setUser(updatedProfile);
+      toast.success('大頭貼已移除');
+    } catch (_error) {
+      toast.error('移除失敗，請稍後再試');
     } finally {
       setIsRemoving(false);
-      setIsRemoveModalOpen(false);
     }
   };
 
@@ -165,7 +163,7 @@ const ProfileSettingsPage = () => {
         <h2 className="text-xl font-semibold mb-4">個人大頭貼</h2>
         <div className="flex items-center gap-6">
           <img 
-            src={user?.avatar_url || '/default-avatar.png'} 
+            src={getAvatarUrl(user?.avatar_url)}
             alt="User Avatar" 
             className="w-24 h-24 rounded-full object-cover bg-gray-200"
             onError={(e) => { e.currentTarget.src = '/default-avatar.png'; }}
@@ -199,7 +197,7 @@ const ProfileSettingsPage = () => {
       <ConfirmationModal 
         isOpen={isRemoveModalOpen}
         onClose={() => setIsRemoveModalOpen(false)}
-        onConfirm={handleRemoveConfirm}
+        onConfirm={handleRemoveAvatar}
         title="確認移除大頭貼"
         message="您確定要移除您的大頭貼嗎？此操作無法復原。"
       />

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Button } from './Button';
+import { getAvatarUrl } from '../../services/profileService';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -53,7 +54,8 @@ export const FileUpload = ({
     fileInputRef.current?.click();
   };
 
-  const displayImage = preview || currentImage;
+  // Use preview if available (data URL), otherwise use full avatar URL
+  const displayImage = preview || (currentImage ? getAvatarUrl(currentImage) : null);
 
   return (
     <div className="w-full">
@@ -72,6 +74,7 @@ export const FileUpload = ({
             src={displayImage}
             alt="Preview"
             className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+            onError={(e) => { e.currentTarget.src = '/default-avatar.png'; }}
           />
         </div>
       )}

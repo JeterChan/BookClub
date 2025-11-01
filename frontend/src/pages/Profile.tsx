@@ -7,7 +7,6 @@ import { InterestTagsTab } from '../components/profile/InterestTagsTab';
 import { PrivacyTab } from '../components/profile/PrivacyTab';
 import { SkeletonCard } from '../components/common/SkeletonCard';
 import { profileService } from '../services/profileService';
-import type { UserProfile } from '../services/profileService';
 import { useAuthStore } from '../store/authStore';
 
 /**

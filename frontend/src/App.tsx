@@ -19,6 +19,8 @@ const Discussions = lazy(() => import('./pages/clubs/Discussions'));
 const DiscussionNew = lazy(() => import('./pages/clubs/DiscussionNew'));
 const DiscussionDetail = lazy(() => import('./pages/clubs/DiscussionDetail'));
 const ProfileSettingsPage = lazy(() => import('./pages/profile/ProfileSettingsPage'));
+const EventCreate = lazy(() => import('./pages/clubs/events/EventCreate'));
+const EventsPage = lazy(() => import('./pages/clubs/events/EventsPage'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -110,6 +112,22 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><DiscussionDetail /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/clubs/:clubId/events/create" 
+            element={
+              <PrivateRoute>
+                <Layout><EventCreate /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/clubs/:clubId/events" 
+            element={
+              <PrivateRoute>
+                <Layout><EventsPage /></Layout>
               </PrivateRoute>
             } 
           />

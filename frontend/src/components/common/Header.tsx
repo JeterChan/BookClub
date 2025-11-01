@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { getAvatarUrl } from '../../services/profileService'
 
 export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -76,9 +77,10 @@ export default function Header() {
                   >
                     {user?.avatar_url ? (
                       <img
-                        src={user.avatar_url}
+                        src={getAvatarUrl(user.avatar_url)}
                         alt={user.display_name}
-                        className="h-8 w-8 rounded-full"
+                        className="h-8 w-8 rounded-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-800 text-white">

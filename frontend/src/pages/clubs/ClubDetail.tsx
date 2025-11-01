@@ -79,6 +79,12 @@ const ClubDetail = () => {
       return (
         <div className="flex gap-2">
           <Button 
+            onClick={() => navigate(`/clubs/${clubId}/events`)}
+            className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            活動
+          </Button>
+          <Button 
             onClick={() => navigate(`/clubs/${clubId}/discussions`)}
             className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
           >
@@ -98,6 +104,12 @@ const ClubDetail = () => {
     if (membershipStatus === 'member') {
       return (
         <div className="flex gap-2">
+          <Button 
+            onClick={() => navigate(`/clubs/${clubId}/events`)}
+            className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            活動
+          </Button>
           <Button 
             onClick={() => navigate(`/clubs/${clubId}/discussions`)}
             className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"

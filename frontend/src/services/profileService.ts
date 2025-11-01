@@ -19,6 +19,25 @@ export interface UserProfile {
   created_at: string;
 }
 
+/**
+ * Get full avatar URL from backend
+ * Converts relative path to absolute URL using API base
+ */
+export const getAvatarUrl = (avatarPath?: string): string => {
+  if (!avatarPath) {
+    return '/default-avatar.png';
+  }
+  
+  // If already a full URL, return as is
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+    return avatarPath;
+  }
+  
+  // Convert relative path to full backend URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  return `${API_BASE_URL}${avatarPath}`;
+};
+
 export interface UpdateProfileData {
   display_name?: string;
   bio?: string;
@@ -140,14 +159,15 @@ export const profileService = {
    * Remove avatar
    * DELETE /api/v1/users/me/avatar
    */
-  removeAvatar: async (): Promise<void> => {
+  removeAvatar: async (): Promise<UserProfile> => {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 300));
       mockProfile.avatar_url = undefined;
-      return;
+      return { ...mockProfile };
     }
 
-    await apiClient.delete('/api/v1/users/me/avatar');
+    const response = await apiClient.delete<UserProfile>('/api/v1/users/me/avatar');
+    return response.data;
   },
 
   /**

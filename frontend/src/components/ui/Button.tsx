@@ -23,7 +23,7 @@ export const Button = ({
     primary: 'bg-blue-700 text-white hover:bg-blue-800 focus:ring-blue-500',
     secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400',
     outline: 'border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-400',
-    destructive: 'bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-500'
+    destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
   };
 
   return (
