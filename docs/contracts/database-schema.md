@@ -135,6 +135,29 @@ entity "ClubJoinRequest" as clubjoinrequest {
     updated_at: TIMESTAMP
 }
 
+entity "Event" as event {
+    primary_key(id: INTEGER)
+    --
+    title: VARCHAR(100)
+    description: VARCHAR(2000)
+    event_datetime: TIMESTAMP
+    meeting_url: VARCHAR(255)
+    max_participants: INTEGER
+    status: VARCHAR(50)
+    foreign_key(club_id: INTEGER)
+    foreign_key(organizer_id: INTEGER)
+    created_at: TIMESTAMP
+    updated_at: TIMESTAMP
+}
+
+entity "EventParticipant" as eventparticipant {
+    primary_key(event_id: INTEGER)
+    primary_key(user_id: INTEGER)
+    --
+    status: VARCHAR(50)
+    registered_at: TIMESTAMP
+}
+
 ' Relationships
 user ||--o{ bookclub : "owns"
 user ||--o{ bookclubmember : "joins"
@@ -143,11 +166,16 @@ user ||--o{ discussiontopic : "creates"
 user ||--o{ discussioncomment : "writes"
 user ||--o{ notification : "receives"
 user ||--o{ clubjoinrequest : "requests to join"
+user ||--o{ event : "organizes"
+user ||--o{ eventparticipant : "participates in"
 
 bookclub ||--o{ bookclubmember : "has members"
 bookclub ||--o{ discussiontopic : "contains"
 bookclub ||--o{ bookclubtaglink : "has tags"
 bookclub ||--o{ clubjoinrequest : "has requests"
+bookclub ||--o{ event : "hosts"
+
+event ||--o{ eventparticipant : "has participants"
 
 discussiontopic ||--o{ discussioncomment : "contains"
 
@@ -166,6 +194,12 @@ bookclubmember }o--|| bookclub
 
 clubjoinrequest }o--|| user
 clubjoinrequest }o--|| bookclub
+
+eventparticipant }o--|| user
+eventparticipant }o--|| event
+
+event }o--|| bookclub
+event }o--|| user
 
 @enduml
 ```
@@ -204,6 +238,8 @@ clubjoinrequest }o--|| bookclub
 - `notifications`: One-to-Many → Notification (recipient_id)
 - `interest_tags`: Many-to-Many → InterestTag (via UserInterestTag)
 - `join_requests`: One-to-Many → ClubJoinRequest (user_id)
+- `organized_events`: One-to-Many → Event (organizer_id)
+- `event_participations`: One-to-Many → EventParticipant (user_id)
 
 ### 2. InterestTag (興趣標籤表)
 
@@ -253,6 +289,7 @@ clubjoinrequest }o--|| bookclub
 - `threads`: One-to-Many → DiscussionTopic
 - `tags`: Many-to-Many → ClubTag (via BookClubTagLink)
 - `join_requests`: One-to-Many → ClubJoinRequest
+- `events`: One-to-Many → Event
 
 ### 5. ClubTag (讀書會標籤表)
 
@@ -362,6 +399,72 @@ clubjoinrequest }o--|| bookclub
 **Relationships**:
 - `book_club`: Many-to-One → BookClub
 - `user`: Many-to-One → User
+
+---
+
+### 12. Event (讀書會活動表)
+
+**Table Name**: `event`  
+**Description**: 儲存讀書會的線上活動資訊，包含討論會、讀書會等各類活動。
+
+| Column Name | Type | Constraints | Default | Description |
+|---|---|---|---|---|
+| `id` | INTEGER | PRIMARY KEY | AUTO | 活動唯一識別碼 |
+| `club_id` | INTEGER | FOREIGN KEY, NOT NULL, INDEX | - | 所屬讀書會 ID |
+| `title` | VARCHAR(100) | NOT NULL | - | 活動名稱 |
+| `description` | VARCHAR(2000) | NOT NULL | - | 活動內容描述 |
+| `event_datetime` | TIMESTAMP | NOT NULL, INDEX | - | 活動時間 (UTC) |
+| `meeting_url` | VARCHAR(255) | NOT NULL | - | 線上會議連結 |
+| `organizer_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 發起人用戶 ID |
+| `max_participants` | INTEGER | NULLABLE | NULL | 參與人數上限 (NULL = 無限制) |
+| `status` | VARCHAR(50) | NOT NULL, INDEX | 'draft' | 活動狀態 (draft, published, completed, cancelled) |
+| `created_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 建立時間 |
+| `updated_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 最後更新時間 |
+
+**Relationships**:
+- `book_club`: Many-to-One → BookClub
+- `organizer`: Many-to-One → User
+- `participants`: One-to-Many → EventParticipant
+
+**Business Rules**:
+- `event_datetime` 必須為未來時間（建立時驗證）
+- `status` 值域：`draft` (草稿), `published` (已發布), `completed` (已結束), `cancelled` (已取消)
+- 當 `max_participants` 為 NULL 時，不限制報名人數
+- 只有 `status = 'published'` 的活動對成員可見
+- 活動結束後系統自動將 `status` 更新為 `completed`
+
+**Indexes**:
+- `idx_event_club_id` ON (club_id) - 查詢讀書會所有活動
+- `idx_event_datetime` ON (event_datetime) - 依時間排序活動
+- `idx_event_status` ON (status) - 篩選活動狀態
+
+---
+
+### 13. EventParticipant (活動參與者關聯表)
+
+**Table Name**: `eventparticipant`  
+**Description**: 儲存用戶報名參加活動的關聯關係。
+
+| Column Name | Type | Constraints | Default | Description |
+|---|---|---|---|---|
+| `event_id` | INTEGER | PRIMARY KEY, FOREIGN KEY | - | 活動 ID |
+| `user_id` | INTEGER | PRIMARY KEY, FOREIGN KEY | - | 用戶 ID |
+| `status` | VARCHAR(50) | NOT NULL | 'registered' | 參與狀態 (registered, cancelled) |
+| `registered_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 報名時間 |
+
+**Relationships**:
+- `event`: Many-to-One → Event
+- `user`: Many-to-One → User
+
+**Business Rules**:
+- 用戶只能對同一活動報名一次（複合主鍵保證）
+- `status = 'registered'` 表示有效報名
+- `status = 'cancelled'` 表示已取消報名（保留記錄但不計入人數）
+- 當活動達到 `max_participants` 時，禁止新報名
+- 用戶必須是該讀書會成員才能報名活動
+
+**Indexes**:
+- `idx_eventparticipant_status` ON (status) - 統計有效報名人數
 
 ---
 

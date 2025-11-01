@@ -1,0 +1,110 @@
+schema: 1
+story: '2.6.1'
+story_title: '建立活動'
+gate: PASS
+status_reason: '所有核心功能完整實作，20/20 後端測試通過，API 合約正確，無阻塞性問題'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-11-01T15:35:00Z'
+
+top_issues: []
+
+waiver:
+  active: false
+
+quality_score: 95
+expires: '2025-11-15T15:35:00Z'
+
+evidence:
+  tests_reviewed: 20
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: |
+      - HTTPS URL 驗證已實作
+      - 成員權限檢查正確
+      - 認證機制已整合
+      - 無 SQL injection 風險（使用 SQLModel ORM）
+  performance:
+    status: PASS
+    notes: |
+      - 資料庫索引已正確設置（club_id, event_datetime, status）
+      - 無 N+1 query 問題
+      - API 回應結構簡潔
+  reliability:
+    status: PASS
+    notes: |
+      - 完整的錯誤處理（400, 403, 404, 500）
+      - 輸入驗證層次分明（Pydantic + Service Layer）
+      - 時區處理統一使用 UTC
+  maintainability:
+    status: CONCERNS
+    notes: |
+      - ⚠️ 前端 textarea 缺少 htmlFor binding (minor)
+      - ⚠️ Event model 使用 datetime.utcnow() 應改為 timezone-aware
+      - ✅ Code 結構清晰，遵循 Service-Repository 模式
+      - ✅ Pydantic v2 alias 問題已完美解決
+
+requirements_traceability:
+  AC1_create_event_with_fields:
+    tests:
+      - 'test_create_event_success (unit + integration)'
+      - 'test_create_event_invalid_title_length'
+      - 'test_create_event_invalid_description_length'
+    coverage: COMPLETE
+    
+  AC2_max_participants_optional:
+    tests:
+      - 'test_create_event_without_max_participants'
+      - 'test_create_event_success (with maxParticipants)'
+    coverage: COMPLETE
+    
+  AC3_draft_and_published:
+    tests:
+      - 'test_create_event_success (draft)'
+      - 'test_create_event_published_status'
+    coverage: COMPLETE
+    
+  AC4_future_datetime_validation:
+    tests:
+      - 'test_future_datetime_valid'
+      - 'test_past_datetime_invalid'
+      - 'test_current_datetime_invalid'
+      - 'test_create_event_past_datetime_fails'
+    coverage: COMPLETE
+    
+  AC5_valid_url_format:
+    tests:
+      - 'test_valid_https_google_meet'
+      - 'test_valid_https_zoom'
+      - 'test_valid_https_teams'
+      - 'test_invalid_http_url'
+      - 'test_invalid_url_format'
+      - 'test_create_event_invalid_url_fails'
+    coverage: COMPLETE
+    
+  AC6_notification_on_publish:
+    tests:
+      - 'test_create_event_published_status'
+    coverage: PARTIAL
+    notes: '通知觸發邏輯已實作，但未獨立測試 notify_event_created()'
+
+recommendations:
+  immediate: []
+  
+  future:
+    - action: '改用 timezone-aware datetime'
+      priority: MEDIUM
+      refs: ['backend/app/models/event.py']
+      
+    - action: '為 notify_event_created() 建立單元測試'
+      priority: MEDIUM
+      refs: ['backend/app/services/notification_service.py']
+      
+    - action: '修正前端 textarea label binding'
+      priority: LOW
+      refs: ['frontend/src/pages/clubs/events/EventCreate.tsx']
