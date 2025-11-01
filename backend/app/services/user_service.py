@@ -153,6 +153,26 @@ class UserService:
         self.session.refresh(user)
         return avatar_url
 
+    def remove_avatar(self, user: User) -> User:
+        """Remove user's avatar and delete the file from filesystem"""
+        if not user.avatar_url:
+            raise ValueError("用戶沒有設定大頭貼")
+        
+        # Delete the avatar file from filesystem
+        old_avatar_path = user.avatar_url.lstrip("/")
+        if os.path.exists(old_avatar_path):
+            try:
+                os.remove(old_avatar_path)
+            except OSError:
+                pass  # Ignore if file cannot be deleted
+        
+        # Clear avatar_url in database
+        user.avatar_url = None
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
     def add_interest_tag(self, user: User, tag_id: int) -> User:
         tag = self.session.get(InterestTag, tag_id)
         if not tag:

@@ -48,6 +48,19 @@ def upload_avatar(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
+@router.delete("/me/avatar", response_model=UserProfileRead)
+def remove_avatar(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    user_service = UserService(session)
+    try:
+        user = user_service.remove_avatar(user=current_user)
+        return user_service.get_user_profile(user=user)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @router.post("/me/interest-tags", response_model=List[InterestTagRead])
 def add_my_interest_tag(
     tag_data: UserInterestTagCreate,
