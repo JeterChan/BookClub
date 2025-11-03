@@ -86,3 +86,48 @@ class EmailService:
             # 在生產環境中，您應該啟用此 raise 或使用適當的錯誤處理
             # raise
             pass
+
+    @staticmethod
+    def send_password_reset_email(user: User, token: str) -> None:
+        """
+        使用 SendGrid 發送密碼重置郵件。
+
+        Args:
+            user: 接收郵件的用戶物件
+            token: 密碼重置 token
+        """
+        # 從環境變數讀取 SendGrid 設定
+        SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+        SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@example.com")
+        SENDGRID_PASSWORD_RESET_TEMPLATE_ID = os.getenv("SENDGRID_PASSWORD_RESET_TEMPLATE_ID")
+        FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
+
+        if not all([SENDGRID_API_KEY, SENDGRID_PASSWORD_RESET_TEMPLATE_ID]):
+            print("SendGrid API Key 或 Password Reset Template ID 未設定，無法發送郵件。")
+            return
+
+        # 建立密碼重置連結
+        reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
+
+        # 建立郵件訊息
+        message = Mail(
+            from_email=SENDGRID_FROM_EMAIL,
+            to_emails=user.email,
+        )
+
+        # 設定動態模板資料
+        message.dynamic_template_data = {
+            "display_name": user.display_name,
+            "reset_url": reset_url,
+            "expiry_hours": 1,
+        }
+        message.template_id = SENDGRID_PASSWORD_RESET_TEMPLATE_ID
+
+        # 發送郵件
+        try:
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            response = sg.send(message)
+            print(f"Password reset email sent to {user.email}, Status Code: {response.status_code}")
+        except Exception as e:
+            print(f"Failed to send password reset email to {user.email} using SendGrid: {e}")
+            pass

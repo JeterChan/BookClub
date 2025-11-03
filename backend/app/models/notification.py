@@ -6,9 +6,9 @@ from enum import Enum
 from .user import User
 
 class NotificationType(str, Enum):
-    NEW_POST = "new_post"
-    NEW_MEMBER = "new_member"
-    EVENT_CREATED = "event_created"
+    NEW_POST = "NEW_POST"
+    NEW_MEMBER = "NEW_MEMBER"
+    EVENT_CREATED = "EVENT_CREATED"
 
 class Notification(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

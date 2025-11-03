@@ -5,8 +5,8 @@ from typing import Optional
 from app.db.session import get_session
 from app.core.security import get_current_user
 from app.models.user import User
-from app.models.event import EventCreate, EventRead, EventListResponse, EventStatus
-from app.services.event_service import create_event, list_events
+from app.models.event import EventCreate, EventRead, EventListResponse, EventStatus, EventListItem, EventDetail
+from app.services import event_service
 
 router = APIRouter()
 
@@ -44,7 +44,7 @@ def create_club_event(
     - 404: 讀書會不存在
     """
     try:
-        return create_event(
+        return event_service.create_event(
             session=session,
             current_user=current_user,
             club_id=club_id,
@@ -92,7 +92,7 @@ def get_club_events(
     - 404: 讀書會不存在
     """
     try:
-        return list_events(
+        return event_service.list_events(
             session=session,
             current_user=current_user,
             club_id=club_id,
@@ -109,3 +109,63 @@ def get_club_events(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"查詢活動列表時發生錯誤: {str(e)}"
         )
+
+
+@router.get("/clubs/{club_id}/events/{event_id}", response_model=EventDetail)
+def get_club_event_detail(
+    club_id: int,
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+) -> EventDetail:
+    """
+    取得活動詳細資訊
+    
+    權限：讀書會成員
+    """
+    return event_service.get_event_detail(
+        session=session,
+        current_user=current_user,
+        club_id=club_id,
+        event_id=event_id
+    )
+
+
+@router.post("/clubs/{club_id}/events/{event_id}/join", response_model=EventDetail)
+def join_club_event(
+    club_id: int,
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+) -> EventDetail:
+    """
+    加入活動
+    
+    權限：讀書會成員
+    """
+    return event_service.join_event(
+        session=session,
+        current_user=current_user,
+        club_id=club_id,
+        event_id=event_id
+    )
+
+
+@router.post("/clubs/{club_id}/events/{event_id}/leave", response_model=EventDetail)
+def leave_club_event(
+    club_id: int,
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+) -> EventDetail:
+    """
+    退出活動
+    
+    權限：讀書會成員
+    """
+    return event_service.leave_event(
+        session=session,
+        current_user=current_user,
+        club_id=club_id,
+        event_id=event_id
+    )

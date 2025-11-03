@@ -141,6 +141,25 @@ class EventListItem(BaseModel):
     created_at: Annotated[datetime, Field(serialization_alias="createdAt")]
 
 
+class EventDetail(BaseModel):
+    """活動詳細資訊 schema"""
+    model_config = ConfigDict(populate_by_name=True)
+    
+    id: int
+    club_id: Annotated[int, Field(serialization_alias="clubId")]
+    title: str
+    description: str
+    event_datetime: Annotated[datetime, Field(serialization_alias="eventDatetime")]
+    meeting_url: Annotated[str, Field(serialization_alias="meetingUrl")]
+    current_participants: Annotated[int, Field(serialization_alias="currentParticipants")]
+    max_participants: Annotated[Optional[int], Field(serialization_alias="maxParticipants")]
+    status: EventStatus
+    organizer: OrganizerInfo
+    is_organizer: Annotated[bool, Field(serialization_alias="isOrganizer")]
+    is_participating: Annotated[bool, Field(serialization_alias="isParticipating")]
+    created_at: Annotated[datetime, Field(serialization_alias="createdAt")]
+
+
 class PaginationMetadata(BaseModel):
     """分頁元資料"""
     model_config = ConfigDict(populate_by_name=True)
