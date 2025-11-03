@@ -5,6 +5,7 @@ import { getAvatarUrl } from '../../services/profileService'
 
 export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
@@ -14,6 +15,7 @@ export default function Header() {
     logout()
     navigate('/login')
     setIsUserMenuOpen(false)
+    setIsMobileMenuOpen(false)
   }
 
   return (
@@ -33,9 +35,6 @@ export default function Header() {
               <>
                 <Link to="/" className="text-gray-700 hover:text-blue-800">
                   首頁
-                </Link>
-                <Link to="/about" className="text-gray-700 hover:text-blue-800">
-                  關於我們
                 </Link>
                 <Link
                   to="/login"
@@ -65,7 +64,7 @@ export default function Header() {
                   to="/notifications"
                   className="text-gray-700 hover:text-blue-800"
                 >
-                  🔔
+                  通知
                 </Link>
 
                 {/* User Menu */}
@@ -107,7 +106,7 @@ export default function Header() {
                           個人儀表板
                         </Link>
                         <Link
-                          to="/profile/settings"
+                          to="/profile"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
@@ -130,11 +129,119 @@ export default function Header() {
 
           {/* Mobile Menu Button (Placeholder) */}
           <div className="lg:hidden">
-            <button className="text-gray-700" aria-label="開啟選單">
-              ☰
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-gray-700 p-2" 
+              aria-label="開啟選單"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
             </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-gray-200">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {!isAuthenticated ? (
+                <>
+                  <Link 
+                    to="/" 
+                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    首頁
+                  </Link>
+                  <Link 
+                    to="/login" 
+                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    登入
+                  </Link>
+                  <Link 
+                    to="/register" 
+                    className="block px-3 py-2 rounded-md bg-blue-800 text-white hover:bg-blue-900"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    註冊
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {/* User Info */}
+                  <div className="flex items-center space-x-3 px-3 py-3 border-b border-gray-200">
+                    {user?.avatar_url ? (
+                      <img
+                        src={getAvatarUrl(user.avatar_url)}
+                        alt={user.display_name}
+                        className="h-10 w-10 rounded-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-800 text-white">
+                        {user?.display_name?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user?.display_name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Navigation Links */}
+                  <Link 
+                    to="/dashboard" 
+                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    儀表板
+                  </Link>
+                  <Link 
+                    to="/clubs" 
+                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    探索
+                  </Link>
+                  <Link 
+                    to="/notifications" 
+                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    通知
+                  </Link>
+                  <Link 
+                    to="/profile" 
+                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    個人檔案設定
+                  </Link>
+                  
+                  <div className="border-t border-gray-200 my-2" />
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                  >
+                    登出
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   )

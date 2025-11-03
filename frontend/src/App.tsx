@@ -11,6 +11,8 @@ const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ClubCreate = lazy(() => import('./pages/clubs/ClubCreate'));
 const ClubExplore = lazy(() => import('./pages/clubs/ClubExplore'));
 const ClubDetail = lazy(() => import('./pages/clubs/ClubDetail'));
@@ -21,6 +23,7 @@ const DiscussionDetail = lazy(() => import('./pages/clubs/DiscussionDetail'));
 const ProfileSettingsPage = lazy(() => import('./pages/profile/ProfileSettingsPage'));
 const EventCreate = lazy(() => import('./pages/clubs/events/EventCreate'));
 const EventsPage = lazy(() => import('./pages/clubs/events/EventsPage'));
+const EventDetail = lazy(() => import('./pages/clubs/events/EventDetail').then(m => ({ default: m.EventDetail })));
 
 // Loading component
 const LoadingFallback = () => (
@@ -42,13 +45,36 @@ function App() {
 
   return (
     <BrowserRouter>
-
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<Navigate to="/clubs" replace />} />
           <Route path="/register" element={<Layout><Register /></Layout>} />
           <Route path="/login" element={<Layout><Login /></Layout>} />
           <Route path="/verify-email" element={<Layout><VerifyEmail /></Layout>} />
+          <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
+          <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
           <Route 
             path="/dashboard" 
             element={
@@ -62,14 +88,6 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><Profile /></Layout>
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/profile/settings" 
-            element={
-              <PrivateRoute>
-                <Layout><ProfileSettingsPage /></Layout>
               </PrivateRoute>
             } 
           />
@@ -120,6 +138,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><EventCreate /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/clubs/:clubId/events/:eventId" 
+            element={
+              <PrivateRoute>
+                <Layout><EventDetail /></Layout>
               </PrivateRoute>
             } 
           />

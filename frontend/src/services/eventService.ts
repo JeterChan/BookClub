@@ -63,6 +63,25 @@ export interface EventListItem {
 }
 
 /**
+ * 活動詳細資訊介面
+ */
+export interface EventDetail {
+  id: number;
+  clubId: number;
+  title: string;
+  description: string;
+  eventDatetime: string;
+  meetingUrl: string;
+  currentParticipants: number;
+  maxParticipants: number | null;
+  status: EventStatus;
+  organizer: OrganizerInfo;
+  isOrganizer: boolean;
+  isParticipating: boolean;
+  createdAt: string;
+}
+
+/**
  * 分頁元資料介面
  */
 export interface PaginationMetadata {
@@ -216,4 +235,98 @@ export const isEventPast = (eventDatetime: string): boolean => {
   const eventTime = new Date(eventDatetime);
   const now = new Date();
   return eventTime < now;
+};
+
+/**
+ * 取得活動詳細資訊
+ * @param clubId 讀書會 ID
+ * @param eventId 活動 ID
+ * @returns 活動詳細資料
+ */
+export const getEventDetail = async (
+  clubId: number,
+  eventId: number
+): Promise<EventDetail> => {
+  try {
+    const response = await api.get(`/api/v1/clubs/${clubId}/events/${eventId}`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data) {
+      const data = error.response.data;
+      switch (error.response.status) {
+        case 403:
+          throw new Error(data.detail || '您不是此讀書會成員');
+        case 404:
+          throw new Error(data.detail || '活動不存在');
+        default:
+          throw new Error(data.detail || '取得活動詳情時發生錯誤');
+      }
+    }
+    
+    throw new Error('網路連線錯誤，請稍後再試');
+  }
+};
+
+/**
+ * 加入活動
+ * @param clubId 讀書會 ID
+ * @param eventId 活動 ID
+ * @returns 更新後的活動資料
+ */
+export const joinEvent = async (
+  clubId: number,
+  eventId: number
+): Promise<EventDetail> => {
+  try {
+    const response = await api.post(`/api/v1/clubs/${clubId}/events/${eventId}/join`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data) {
+      const data = error.response.data;
+      switch (error.response.status) {
+        case 400:
+          throw new Error(data.detail || '無法加入活動');
+        case 403:
+          throw new Error(data.detail || '您不是此讀書會成員');
+        case 404:
+          throw new Error(data.detail || '活動不存在');
+        default:
+          throw new Error(data.detail || '加入活動時發生錯誤');
+      }
+    }
+    
+    throw new Error('網路連線錯誤，請稍後再試');
+  }
+};
+
+/**
+ * 退出活動
+ * @param clubId 讀書會 ID
+ * @param eventId 活動 ID
+ * @returns 更新後的活動資料
+ */
+export const leaveEvent = async (
+  clubId: number,
+  eventId: number
+): Promise<EventDetail> => {
+  try {
+    const response = await api.post(`/api/v1/clubs/${clubId}/events/${eventId}/leave`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data) {
+      const data = error.response.data;
+      switch (error.response.status) {
+        case 400:
+          throw new Error(data.detail || '無法退出活動');
+        case 403:
+          throw new Error(data.detail || '您不是此讀書會成員');
+        case 404:
+          throw new Error(data.detail || '活動不存在');
+        default:
+          throw new Error(data.detail || '退出活動時發生錯誤');
+      }
+    }
+    
+    throw new Error('網路連線錯誤，請稍後再試');
+  }
 };

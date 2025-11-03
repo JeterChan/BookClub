@@ -28,4 +28,22 @@ export const authService = {
     });
     return response.data;
   },
+
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await apiClient.post('/api/v1/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  verifyResetToken: async (token: string): Promise<{ valid: boolean; email: string | null }> => {
+    const response = await apiClient.get('/api/v1/auth/verify-reset-token', { params: { token } });
+    return response.data;
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await apiClient.post('/api/v1/auth/reset-password', {
+      token,
+      new_password: newPassword
+    });
+    return response.data;
+  },
 };

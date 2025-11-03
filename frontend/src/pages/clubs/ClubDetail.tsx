@@ -331,12 +331,12 @@ const ClubDetail = () => {
 
         {/* 返回按鈕 */}
         <div className="mt-6 text-center">
-          <button
+          <Button
             onClick={() => navigate('/clubs')}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline"
+            variant="outline"
           >
             ← 返回探索頁面
-          </button>
+          </Button>
         </div>
       </div>
     </div>

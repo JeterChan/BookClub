@@ -7,6 +7,7 @@ import { ClubInfoSettings } from '../../components/clubs/ClubInfoSettings';
 import { JoinRequestList } from '../../components/clubs/JoinRequestList';
 import { MemberManagement } from '../../components/clubs/MemberManagement';
 import { ClubDangerZone } from '../../components/clubs/ClubDangerZone';
+import { Button } from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 
 const ClubSettings = () => {
@@ -67,6 +68,15 @@ const ClubSettings = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
+      <div className="mb-4">
+        <Button
+          onClick={() => navigate(`/clubs/${clubId}`)}
+          variant="outline"
+        >
+          ← 返回讀書會
+        </Button>
+      </div>
+      
       <h1 className="text-3xl font-bold mb-2">管理: {detailClub?.name}</h1>
       <p className="text-gray-600 mb-6">在此頁面更新你的讀書會設定。</p>
       

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getEventsList, isEventPast } from '../../../services/eventService';
 import type { EventListItem } from '../../../services/eventService';
 import { EventCard } from '../../../components/events/EventCard';
+import { Button } from '../../../components/ui/Button';
 import { toast } from 'react-hot-toast';
 
 export const EventsPage: React.FC = () => {
@@ -69,6 +70,16 @@ export const EventsPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* 返回按鈕 */}
+      <div className="mb-4">
+        <Button
+          onClick={() => navigate(`/clubs/${clubId}`)}
+          variant="outline"
+        >
+          ← 返回讀書會
+        </Button>
+      </div>
+      
       {/* 頁面標題 */}
       <div className="flex justify-between items-center mb-8">
         <div>

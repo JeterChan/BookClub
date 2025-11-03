@@ -109,6 +109,15 @@ export default function EventCreate() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-4">
+          <Button
+            onClick={() => navigate(`/clubs/${clubId}`)}
+            variant="outline"
+          >
+            ← 返回讀書會
+          </Button>
+        </div>
+        
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">建立活動</h1>
 
@@ -161,7 +170,10 @@ export default function EventCreate() {
               placeholder="不填寫則無人數限制"
               error={errors.maxParticipants?.message}
               helperText="選填，預設為無限制"
-              {...register('maxParticipants')}
+              {...register('maxParticipants', { 
+                valueAsNumber: true,
+                setValueAs: (value) => value === '' || isNaN(value) ? null : value
+              })}
             />
 
             {/* 操作按鈕 */}

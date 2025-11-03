@@ -46,16 +46,23 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
         <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
           {event.title}
         </h3>
-        {isPast && (
-          <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full shrink-0">
-            已結束
-          </span>
-        )}
-        {!isPast && event.isParticipating && (
-          <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full shrink-0">
-            已報名
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-1 ml-2">
+          {event.isOrganizer && (
+            <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded-full font-medium shrink-0">
+              我是發起人
+            </span>
+          )}
+          {isPast && (
+            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full shrink-0">
+              已結束
+            </span>
+          )}
+          {!isPast && event.isParticipating && !event.isOrganizer && (
+            <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full shrink-0">
+              已報名
+            </span>
+          )}
+        </div>
       </div>
 
       {/* 活動時間 */}
@@ -78,25 +85,25 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
 
       {/* 發起人資訊 */}
       <div className="flex items-center text-sm text-gray-600 mb-3">
-        <div className="flex items-center">
-          {event.organizer.avatarUrl ? (
-            <img
-              src={event.organizer.avatarUrl}
-              alt={event.organizer.displayName}
-              className="w-6 h-6 rounded-full mr-2"
-            />
-          ) : (
-            <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center mr-2 text-xs">
-              {event.organizer.displayName.charAt(0)}
-            </div>
+        <svg
+          className="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+        <span>
+          發起人：{event.organizer.displayName}
+          {event.isOrganizer && (
+            <span className="ml-1 text-blue-600">(我)</span>
           )}
-          <span>
-            發起人：{event.organizer.displayName}
-            {event.isOrganizer && (
-              <span className="ml-1 text-blue-600">(我)</span>
-            )}
-          </span>
-        </div>
+        </span>
       </div>
 
       {/* 報名人數 */}
