@@ -1,10 +1,10 @@
 # Database Schema Documentation
 
-**版本**: 1.1  
-**最後更新**: 2025-10-30  
+**版本**: 1.2  
+**最後更新**: 2025-11-05  
 **擁有者**: Architect Winston, Dev James  
-**狀態**: ✅ 已完成 (Story 3.2)  
-**Current Schema Version**: d4c044f9fbde
+**狀態**: ✅ 已完成 (Story 3.3)  
+**Current Schema Version**: b2a6d580feb2
 
 ---
 
@@ -104,6 +104,7 @@ entity "DiscussionTopic" as discussiontopic {
   --
   title: VARCHAR(255)
   content: TEXT
+  comment_count: INTEGER
   foreign_key(club_id: INTEGER)
   foreign_key(owner_id: INTEGER)
 }
@@ -141,9 +142,9 @@ entity "Event" as event {
     title: VARCHAR(100)
     description: VARCHAR(2000)
     event_datetime: TIMESTAMP
-    meeting_url: VARCHAR(255)
+    meeting_url: VARCHAR(500)
     max_participants: INTEGER
-    status: VARCHAR(50)
+    status: VARCHAR(20)
     foreign_key(club_id: INTEGER)
     foreign_key(organizer_id: INTEGER)
     created_at: TIMESTAMP
@@ -154,8 +155,19 @@ entity "EventParticipant" as eventparticipant {
     primary_key(event_id: INTEGER)
     primary_key(user_id: INTEGER)
     --
-    status: VARCHAR(50)
+    status: VARCHAR(20)
     registered_at: TIMESTAMP
+}
+
+entity "PasswordResetToken" as passwordresettoken {
+    primary_key(id: INTEGER)
+    --
+    unique_key(token: VARCHAR(255))
+    foreign_key(user_id: INTEGER)
+    expires_at: TIMESTAMP
+    used: BOOLEAN
+    created_at: TIMESTAMP
+    ip_address: VARCHAR(45)
 }
 
 ' Relationships
@@ -168,38 +180,21 @@ user ||--o{ notification : "receives"
 user ||--o{ clubjoinrequest : "requests to join"
 user ||--o{ event : "organizes"
 user ||--o{ eventparticipant : "participates in"
+user ||--o{ passwordresettoken : "has reset tokens"
 
 bookclub ||--o{ bookclubmember : "has members"
-bookclub ||--o{ discussiontopic : "contains"
+bookclub ||--o{ discussiontopic : "contains topics"
 bookclub ||--o{ bookclubtaglink : "has tags"
-bookclub ||--o{ clubjoinrequest : "has requests"
-bookclub ||--o{ event : "hosts"
+bookclub ||--o{ clubjoinrequest : "has join requests"
+bookclub ||--o{ event : "hosts events"
 
 event ||--o{ eventparticipant : "has participants"
 
-discussiontopic ||--o{ discussioncomment : "contains"
+discussiontopic ||--o{ discussioncomment : "has comments"
 
-interesttag ||--o{ userinteresttag : "tagged by"
+interesttag ||--o{ userinteresttag : "tagged by users"
 
-clubtag ||--o{ bookclubtaglink : "tagged by"
-
-userinteresttag }o--|| user
-userinteresttag }o--|| interesttag
-
-bookclubtaglink }o--|| bookclub
-bookclubtaglink }o--|| clubtag
-
-bookclubmember }o--|| user
-bookclubmember }o--|| bookclub
-
-clubjoinrequest }o--|| user
-clubjoinrequest }o--|| bookclub
-
-eventparticipant }o--|| user
-eventparticipant }o--|| event
-
-event }o--|| bookclub
-event }o--|| user
+clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 
 @enduml
 ```
@@ -240,6 +235,7 @@ event }o--|| user
 - `join_requests`: One-to-Many → ClubJoinRequest (user_id)
 - `organized_events`: One-to-Many → Event (organizer_id)
 - `event_participations`: One-to-Many → EventParticipant (user_id)
+- `password_reset_tokens`: One-to-Many → PasswordResetToken (user_id)
 
 ### 2. InterestTag (興趣標籤表)
 
@@ -326,7 +322,7 @@ event }o--|| user
 |---|---|---|---|---|
 | `user_id` | INTEGER | PRIMARY KEY, FOREIGN KEY | - | 用戶 ID |
 | `book_club_id` | INTEGER | PRIMARY KEY, FOREIGN KEY | - | 讀書會 ID |
-| `role` | VARCHAR(50) | NOT NULL | 'member' | 成員角色 |
+| `role` | VARCHAR(50) | NOT NULL | 'member' | 成員角色 (owner, admin, member) |
 
 **Relationships**:
 - `user`: Many-to-One → User
@@ -342,6 +338,7 @@ event }o--|| user
 | `id` | INTEGER | PRIMARY KEY | AUTO | 討論主題唯一識別碼 |
 | `title` | VARCHAR(255) | NOT NULL | - | 討論標題 |
 | `content` | TEXT | NOT NULL | - | 討論內容 |
+| `comment_count` | INTEGER | NOT NULL | 0 | 回覆數量 |
 | `club_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 所屬讀書會 ID |
 | `owner_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 作者用戶 ID |
 
@@ -375,7 +372,7 @@ event }o--|| user
 |---|---|---|---|---|
 | `id` | INTEGER | PRIMARY KEY | AUTO | 通知唯一識別碼 |
 | `content` | JSON | NOT NULL | - | 通知內容（JSON 格式） |
-| `type` | VARCHAR(50) | NOT NULL | - | 通知類型 |
+| `type` | VARCHAR(50) | NOT NULL | - | 通知類型 (NEW_POST, NEW_MEMBER, EVENT_CREATED) |
 | `is_read` | BOOLEAN | NOT NULL | FALSE | 是否已讀 |
 | `recipient_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 接收者用戶 ID |
 
@@ -414,10 +411,10 @@ event }o--|| user
 | `title` | VARCHAR(100) | NOT NULL | - | 活動名稱 |
 | `description` | VARCHAR(2000) | NOT NULL | - | 活動內容描述 |
 | `event_datetime` | TIMESTAMP | NOT NULL, INDEX | - | 活動時間 (UTC) |
-| `meeting_url` | VARCHAR(255) | NOT NULL | - | 線上會議連結 |
+| `meeting_url` | VARCHAR(500) | NOT NULL | - | 線上會議連結 |
 | `organizer_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 發起人用戶 ID |
 | `max_participants` | INTEGER | NULLABLE | NULL | 參與人數上限 (NULL = 無限制) |
-| `status` | VARCHAR(50) | NOT NULL, INDEX | 'draft' | 活動狀態 (draft, published, completed, cancelled) |
+| `status` | VARCHAR(20) | NOT NULL, INDEX | 'draft' | 活動狀態 (draft, published, completed, cancelled) |
 | `created_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 建立時間 |
 | `updated_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 最後更新時間 |
 
@@ -449,7 +446,7 @@ event }o--|| user
 |---|---|---|---|---|
 | `event_id` | INTEGER | PRIMARY KEY, FOREIGN KEY | - | 活動 ID |
 | `user_id` | INTEGER | PRIMARY KEY, FOREIGN KEY | - | 用戶 ID |
-| `status` | VARCHAR(50) | NOT NULL | 'registered' | 參與狀態 (registered, cancelled) |
+| `status` | VARCHAR(20) | NOT NULL | 'registered' | 參與狀態 (registered, cancelled) |
 | `registered_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 報名時間 |
 
 **Relationships**:
@@ -468,6 +465,37 @@ event }o--|| user
 
 ---
 
+### 14. PasswordResetToken (密碼重置 Token 表)
+
+**Table Name**: `password_reset_tokens`  
+**Description**: 儲存密碼重置請求的驗證 Token，用於忘記密碼功能。
+
+| Column Name | Type | Constraints | Default | Description |
+|---|---|---|---|---|
+| `id` | INTEGER | PRIMARY KEY | AUTO | Token 唯一識別碼 |
+| `user_id` | INTEGER | FOREIGN KEY, NOT NULL, INDEX | - | 用戶 ID |
+| `token` | VARCHAR(255) | UNIQUE, NOT NULL, INDEX | - | 重置驗證 Token |
+| `expires_at` | TIMESTAMP | NOT NULL, INDEX | - | Token 過期時間 |
+| `used` | BOOLEAN | NOT NULL | FALSE | 是否已使用 |
+| `created_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 建立時間 |
+| `ip_address` | VARCHAR(45) | NULLABLE | NULL | 請求來源 IP 地址 |
+
+**Relationships**:
+- `user`: Many-to-One → User
+
+**Business Rules**:
+- 每個 Token 只能使用一次（`used = TRUE` 後無法再次使用）
+- Token 有時效性，過期後無法使用
+- 當用戶請求新的重置 Token 時，舊的未使用 Token 應失效
+- 記錄 IP 地址用於安全審計
+
+**Indexes**:
+- `idx_password_reset_token` ON (token) - 快速查詢 Token
+- `idx_password_reset_user_id` ON (user_id) - 查詢用戶的重置請求
+- `idx_password_reset_expires` ON (expires_at) - 清理過期 Token
+
+---
+
 ## 🔄 Alembic Migration History
 
 | Migration ID | Description | Date | Status |
@@ -479,7 +507,14 @@ event }o--|| user
 | `c0ad6aeb438a` | Add user timestamps | 2025-10-22 | ✅ Applied |
 | `8dc583baeb87` | Add email verification fields | 2025-10-23 | ✅ Applied |
 | `96905e63a696` | Add club tags and cover image | 2025-10-24 | ✅ Applied |
+| `cb5434e13b4e` | Add predefined club tags | 2025-10-24 | ✅ Applied |
 | `c50ef87cb809` | Add club join request table | 2025-10-25 | ✅ Applied |
+| `9e4ac07fa28e` | Update member roles | 2025-10-26 | ✅ Applied |
 | `d4c044f9fbde` | Add discussion topic and comment models | 2025-10-30 | ✅ Applied |
+| `ed5146efcb57` | Add discussion topic and comment models (merge) | 2025-10-30 | ✅ Applied |
+| `931f80d46dc0` | Add comment_count to DiscussionTopic | 2025-10-31 | ✅ Applied |
+| `f53859748ef5` | Add event and event participant tables | 2025-11-01 | ✅ Applied |
+| `9a61d7bbe93c` | Add EVENT_CREATED to notification type enum | 2025-11-02 | ✅ Applied |
+| `b2a6d580feb2` | Add password reset tokens table | 2025-11-02 | ✅ Applied |
 
-**Current Schema Version**: `d4c044f9fbde`
+**Current Schema Version**: `b2a6d580feb2`
