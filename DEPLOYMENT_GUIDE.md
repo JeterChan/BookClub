@@ -62,7 +62,7 @@ git push origin feature/backend
 3. 配置 Web Service：
    - **Name**: `bookclub-backend`
    - **Region**: 與資料庫相同區域（Oregon）
-   - **Branch**: `feature/backend`
+   - **Branch**: `master`
    - **Root Directory**: `backend`
    - **Runtime**: **Python 3**
    - **Build Command**: 
@@ -124,6 +124,29 @@ git push origin feature/backend
 ### 步驟 1: 準備 Frontend
 
 1. 確認 `frontend/.env.example` 已創建（已完成）
+
+2. **(可選但建議) 本地測試打包**：
+   
+   在部署前先測試打包是否成功：
+   
+   ```bash
+   cd frontend
+   
+   # 執行打包
+   npm run build
+   
+   # 打包成功會看到：
+   # ✓ 1071 modules transformed.
+   # dist/index.html    0.45 kB
+   # dist/assets/...    (各種 JS/CSS 檔案)
+   # ✓ built in X.XXs
+   
+   # 本地預覽打包結果（模擬生產環境）
+   npm run preview
+   # 瀏覽器打開 http://localhost:4173 測試
+   ```
+   
+   **注意**：Vercel 會自動執行 `npm run build`，你不需要手動打包並上傳 `dist/` 目錄。
 
 ### 步驟 2: 部署到 Vercel
 
@@ -356,6 +379,74 @@ alembic upgrade head
 - [ ] 讀書會列表載入
 - [ ] 討論區功能運作
 - [ ] 個人資料更新
+
+---
+
+## ❓ 常見問題 (FAQ)
+
+### Q: 部署前需要手動執行 `npm run build` 嗎？
+
+**A**: **不需要**。Vercel 會自動執行打包流程：
+
+1. 自動偵測到 Vite 專案
+2. 執行 `npm install` 安裝依賴
+3. 執行 `npm run build` 打包應用
+4. 部署 `dist/` 目錄到 CDN
+
+但**建議在部署前本地測試打包**，確保沒有錯誤：
+
+```bash
+cd frontend
+npm run build        # 測試打包
+npm run preview      # 預覽打包結果
+```
+
+### Q: 為什麼 `build` script 不執行 TypeScript 檢查？
+
+**A**: 專案的 `build` script 設定為：
+
+```json
+"build": "vite build"
+"build:check": "tsc -b && vite build"  // 有類型檢查的版本
+```
+
+這是為了：
+- **快速部署**：跳過 TypeScript 檢查，加速建置時間
+- **避免測試檔案錯誤**：測試檔案的類型錯誤不會阻擋部署
+- **運行時安全**：Vite 仍會轉譯 TypeScript，只是不做嚴格類型檢查
+
+如果需要類型檢查，可以在本地執行 `npm run build:check`。
+
+### Q: `dist/` 目錄需要提交到 Git 嗎？
+
+**A**: **不需要**。`dist/` 是打包產物，已在 `.gitignore` 中忽略。Vercel 會在雲端重新打包，不需要提交打包後的檔案。
+
+### Q: Vercel 如何知道要打包什麼？
+
+**A**: Vercel 讀取 `package.json` 的 `build` script：
+
+```json
+{
+  "scripts": {
+    "build": "vite build"
+  }
+}
+```
+
+並自動偵測 Vite 的配置（`vite.config.ts`），知道輸出目錄是 `dist/`。
+
+### Q: 打包後的檔案大小是多少？
+
+**A**: 以本專案為例：
+- **原始大小**: ~314 KB (index.js)
+- **Gzip 壓縮後**: ~104 KB
+- **總體資產**: ~600 KB (包含 CSS、圖片等)
+
+Vite 會自動：
+- 程式碼分割 (Code Splitting)
+- Tree Shaking (移除未使用的程式碼)
+- 壓縮與最小化
+- 現代瀏覽器優化
 
 ---
 
