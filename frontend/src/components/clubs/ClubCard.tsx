@@ -1,6 +1,8 @@
 // frontend/src/components/clubs/ClubCard.tsx
 import { useNavigate } from 'react-router-dom';
 import type { BookClubListItem } from '../../types/bookClub';
+import { getImageUrl } from '../../utils/imageUrl';
+
 
 interface ClubCardProps {
   club: BookClubListItem;
@@ -36,7 +38,7 @@ export const ClubCard = ({ club }: ClubCardProps) => {
       <div className="h-48 bg-gray-200 overflow-hidden">
         {club.cover_image_url ? (
           <img
-            src={club.cover_image_url}
+            src={getImageUrl(club.cover_image_url) || ''}
             alt={club.name}
             className="w-full h-full object-cover"
             loading="lazy"

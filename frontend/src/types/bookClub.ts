@@ -51,7 +51,7 @@ export interface BookClubCreateRequest {
   description?: string;
   visibility: BookClubVisibility;
   tag_ids: number[];
-  cover_image_url?: string;
+  cover_image?: File;
 }
 
 export interface PaginationMeta {

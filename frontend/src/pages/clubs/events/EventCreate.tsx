@@ -10,7 +10,6 @@ import { Input } from '../../../components/ui/Input';
 import { Textarea } from '../../../components/ui/Textarea';
 import { DateTimePicker, convertLocalToUTC } from '../../../components/ui/DateTimePicker';
 import { createEvent, validateMeetingUrl, validateEventDatetime } from '../../../services/eventService';
-import type { EventStatus } from '../../../services/eventService';
 
 // 表單驗證 schema
 const eventCreateSchema = z.object({
@@ -32,10 +31,9 @@ const eventCreateSchema = z.object({
       message: '會議連結必須為有效的 HTTPS URL',
     }),
   maxParticipants: z.number()
-    .nullable()
     .optional()
-    .refine((val) => val === null || val === undefined || val > 0, {
-      message: '人數上限必須大於 0',
+    .refine((val) => val === undefined || val === 0 || val > 0, {
+      message: '人數上限必須為 0（無限制）或大於 0',
     }),
 });
 
@@ -57,7 +55,7 @@ export default function EventCreate() {
       description: '',
       eventDatetime: '',
       meetingUrl: '',
-      maxParticipants: null,
+      maxParticipants: 0,
     },
   });
 
@@ -68,7 +66,7 @@ export default function EventCreate() {
     }
   }, [clubId, navigate]);
 
-  const onSubmit = async (data: EventCreateForm, status: EventStatus) => {
+  const onSubmit = async (data: EventCreateForm) => {
     if (!clubId) return;
 
     setIsSubmitting(true);
@@ -81,18 +79,14 @@ export default function EventCreate() {
         description: data.description.trim(),
         eventDatetime: utcDatetime,
         meetingUrl: data.meetingUrl.trim(),
-        maxParticipants: data.maxParticipants || null,
-        status,
+        maxParticipants: data.maxParticipants || 0,
+        status: 'published',
       });
 
-      if (status === 'draft') {
-        toast.success('活動已儲存為草稿');
-      } else {
-        toast.success('活動已發布！所有成員將收到通知');
-      }
+      toast.success('活動已發布！所有成員將收到通知');
 
-      // 導向活動詳細頁面（未來實作）
-      navigate(`/clubs/${clubId}`);
+      // 導向活動列表頁面
+      navigate(`/clubs/${clubId}/events`);
     } catch (error: any) {
       toast.error(error.message || '建立活動失敗，請稍後再試');
     } finally {
@@ -100,8 +94,7 @@ export default function EventCreate() {
     }
   };
 
-  const handleSaveDraft = handleSubmit((data) => onSubmit(data, 'draft'));
-  const handlePublish = handleSubmit((data) => onSubmit(data, 'published'));
+  const handlePublish = handleSubmit(onSubmit);
   const handleCancel = () => {
     navigate(`/clubs/${clubId}`);
   };
@@ -166,13 +159,13 @@ export default function EventCreate() {
             <Input
               label="參與人數上限"
               type="number"
-              min="1"
-              placeholder="不填寫則無人數限制"
+              min="0"
+              placeholder="0 表示無人數限制"
               error={errors.maxParticipants?.message}
-              helperText="選填，預設為無限制"
+              helperText="預設為 0（無限制），填寫大於 0 的數字來限制人數"
               {...register('maxParticipants', { 
                 valueAsNumber: true,
-                setValueAs: (value) => value === '' || isNaN(value) ? null : value
+                setValueAs: (value) => value === '' || isNaN(value) ? 0 : value
               })}
             />
 
@@ -186,16 +179,6 @@ export default function EventCreate() {
                 className="flex-1"
               >
                 取消
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSaveDraft}
-                disabled={isSubmitting}
-                className="flex-1"
-              >
-                {isSubmitting ? '儲存中...' : '儲存草稿'}
               </Button>
               
               <Button
@@ -214,10 +197,10 @@ export default function EventCreate() {
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-sm font-medium text-blue-900 mb-2">💡 提示</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• 儲存草稿後可稍後再編輯和發布</li>
               <li>• 發布後，所有讀書會成員將收到活動通知</li>
               <li>• 活動時間必須為未來時間</li>
               <li>• 會議連結必須使用 HTTPS 協議以確保安全性</li>
+              <li>• 人數上限設為 0 表示無人數限制</li>
             </ul>
           </div>
         </div>

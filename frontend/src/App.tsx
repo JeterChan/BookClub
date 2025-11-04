@@ -17,13 +17,14 @@ const ClubCreate = lazy(() => import('./pages/clubs/ClubCreate'));
 const ClubExplore = lazy(() => import('./pages/clubs/ClubExplore'));
 const ClubDetail = lazy(() => import('./pages/clubs/ClubDetail'));
 const ClubSettings = lazy(() => import('./pages/clubs/ClubSettings'));
+const MyClubs = lazy(() => import('./pages/clubs/MyClubs'));
 const Discussions = lazy(() => import('./pages/clubs/Discussions'));
 const DiscussionNew = lazy(() => import('./pages/clubs/DiscussionNew'));
 const DiscussionDetail = lazy(() => import('./pages/clubs/DiscussionDetail'));
-const ProfileSettingsPage = lazy(() => import('./pages/profile/ProfileSettingsPage'));
 const EventCreate = lazy(() => import('./pages/clubs/events/EventCreate'));
 const EventsPage = lazy(() => import('./pages/clubs/events/EventsPage'));
 const EventDetail = lazy(() => import('./pages/clubs/events/EventDetail').then(m => ({ default: m.EventDetail })));
+const MyEvents = lazy(() => import('./pages/activities/MyEvents'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -99,6 +100,14 @@ function App() {
               </PrivateRoute>
             } 
           />
+          <Route 
+            path="/clubs/my-clubs" 
+            element={
+              <PrivateRoute>
+                <Layout><MyClubs /></Layout>
+              </PrivateRoute>
+            } 
+          />
           <Route path="/clubs" element={<Layout><ClubExplore /></Layout>} />
           <Route path="/clubs/:clubId" element={<Layout><ClubDetail /></Layout>} />
           <Route 
@@ -154,6 +163,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><EventsPage /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/activities/my-events" 
+            element={
+              <PrivateRoute>
+                <Layout><MyEvents /></Layout>
               </PrivateRoute>
             } 
           />

@@ -85,7 +85,8 @@ export const EventDetail: React.FC = () => {
   }
 
   const isPast = isEventPast(event.eventDatetime);
-  const isFull = event.maxParticipants !== null && event.currentParticipants >= event.maxParticipants;
+  // 當 maxParticipants 為 null 或 0 時，表示無人數限制
+  const isFull = event.maxParticipants !== null && event.maxParticipants !== 0 && event.currentParticipants >= event.maxParticipants;
   const canJoin = !event.isOrganizer && !event.isParticipating && !isPast && !isFull && event.status === 'published';
 
   return (
@@ -166,7 +167,8 @@ export const EventDetail: React.FC = () => {
                 <h2 className="text-sm font-medium text-gray-500 mb-1">參與人數</h2>
                 <p className="text-lg text-gray-900">
                   {event.currentParticipants}
-                  {event.maxParticipants !== null && ` / ${event.maxParticipants}`}
+                  {event.maxParticipants !== null && event.maxParticipants !== 0 && ` / ${event.maxParticipants}`}
+                  {(event.maxParticipants === null || event.maxParticipants === 0) && <span className="ml-2 text-sm text-gray-600">（無限制）</span>}
                   {isFull && <span className="ml-2 text-sm text-red-600">（已額滿）</span>}
                 </p>
               </div>

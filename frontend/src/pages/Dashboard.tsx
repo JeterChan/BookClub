@@ -3,7 +3,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { UserInfoCard } from '../components/dashboard/UserInfoCard';
 import { QuickActions } from '../components/dashboard/QuickActions';
 import { MyClubsList } from '../components/dashboard/MyClubsList';
-import { ActivityTimeline } from '../components/dashboard/ActivityTimeline';
+import { RecentEvents } from '../components/dashboard/RecentEvents';
 import { SkeletonCard, SkeletonCircle } from '../components/common/SkeletonCard';
 
 /**
@@ -65,7 +65,7 @@ const Dashboard = () => {
           <main className="flex-grow space-y-6">
             <QuickActions />
             <MyClubsList clubs={dashboard.clubs} />
-            <ActivityTimeline activities={dashboard.recentActivities} />
+            <RecentEvents />
           </main>
           
           {/* Sidebar (Right Column) */}

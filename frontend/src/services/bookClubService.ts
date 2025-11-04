@@ -12,7 +12,18 @@ import type { DiscussionTopic, DiscussionComment } from '../types/discussion';
  * 建立新的讀書會
  */
 export const createBookClub = async (data: BookClubCreateRequest): Promise<BookClubRead> => {
-  const response = await api.post<BookClubRead>('/api/v1/clubs', data);
+  const formData = new FormData();
+  formData.append('name', data.name);
+  if (data.description) formData.append('description', data.description);
+  formData.append('visibility', data.visibility);
+  formData.append('tag_ids', JSON.stringify(data.tag_ids));
+  if (data.cover_image) formData.append('cover_image', data.cover_image);
+
+  const response = await api.post<BookClubRead>('/api/v1/clubs', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 
@@ -32,6 +43,7 @@ export const listBookClubs = async (params?: {
   pageSize?: number;
   keyword?: string;
   tagIds?: number[];
+  myClubs?: boolean;
 }): Promise<PaginatedBookClubList> => {
   const queryParams = new URLSearchParams();
   
@@ -41,6 +53,7 @@ export const listBookClubs = async (params?: {
   if (params?.tagIds && params.tagIds.length > 0) {
     queryParams.append('tag_ids', params.tagIds.join(','));
   }
+  if (params?.myClubs) queryParams.append('my_clubs', 'true');
   
   const response = await api.get<PaginatedBookClubList>(
     `/api/v1/clubs${queryParams.toString() ? '?' + queryParams.toString() : ''}`

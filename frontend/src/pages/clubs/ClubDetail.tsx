@@ -5,6 +5,7 @@ import { useBookClubStore } from '../../store/bookClubStore';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { SkeletonCard } from '../../components/common/SkeletonCard';
+import { getImageUrl } from '../../utils/imageUrl';
 import toast from 'react-hot-toast';
 
 /**
@@ -220,12 +221,13 @@ const ClubDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 封面圖片區域 */}
-      <div className="w-full h-64 md:h-80 bg-gray-200 overflow-hidden">
+      <div className="w-full h-64 md:h-96 bg-gray-200 overflow-hidden">
         {detailClub.cover_image_url ? (
           <img
-            src={detailClub.cover_image_url}
+            src={getImageUrl(detailClub.cover_image_url) || ''}
             alt={detailClub.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500">

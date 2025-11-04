@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useBookClubStore } from '../../store/bookClubStore';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getImageUrl } from '../../utils/imageUrl';
 
 const DiscussionDetail: React.FC = () => {
   const { clubId, topicId } = useParams<{ clubId: string; topicId: string }>();
@@ -36,12 +37,20 @@ const DiscussionDetail: React.FC = () => {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex items-center mb-4">
           <div className="flex-shrink-0">
-            <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-500">
-              <span className="text-lg font-medium leading-none text-white">{currentTopic.owner?.display_name?.charAt(0)}</span>
-            </div>
+            {currentTopic.author?.avatar_url ? (
+              <img
+                src={getImageUrl(currentTopic.author.avatar_url) || undefined}
+                alt={currentTopic.author.display_name}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-500">
+                <span className="text-lg font-medium leading-none text-white">{currentTopic.author?.display_name?.charAt(0)}</span>
+              </div>
+            )}
           </div>
           <div className="ml-4">
-            <div className="text-sm font-semibold text-gray-900">{currentTopic.owner?.display_name}</div>
+            <div className="text-sm font-semibold text-gray-900">{currentTopic.author?.display_name}</div>
             <div className="text-sm text-gray-500">發起人</div>
           </div>
         </div>
@@ -55,12 +64,20 @@ const DiscussionDetail: React.FC = () => {
           {currentTopic.comments && currentTopic.comments.map((comment) => (
             <div key={comment.id} className="flex items-start space-x-4">
               <div className="flex-shrink-0">
-                <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-500">
-                  <span className="text-lg font-medium leading-none text-white">{comment.owner?.display_name?.charAt(0)}</span>
-                </div>
+                {comment.author?.avatar_url ? (
+                  <img
+                    src={getImageUrl(comment.author.avatar_url) || undefined}
+                    alt={comment.author.display_name}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-500">
+                    <span className="text-lg font-medium leading-none text-white">{comment.author?.display_name?.charAt(0)}</span>
+                  </div>
+                )}
               </div>
               <div className="flex-1">
-                <div className="text-sm font-semibold text-gray-900">{comment.owner?.display_name}</div>
+                <div className="text-sm font-semibold text-gray-900">{comment.author?.display_name}</div>
                 <p className="text-gray-700 whitespace-pre-wrap mt-1">{comment.content}</p>
               </div>
             </div>

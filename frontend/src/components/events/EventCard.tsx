@@ -24,7 +24,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
 
   // 人數顯示邏輯
   const participantsDisplay = () => {
-    if (event.maxParticipants === null) {
+    // 當 maxParticipants 為 null 或 0 時，表示無人數限制
+    if (event.maxParticipants === null || event.maxParticipants === 0) {
       return `${event.currentParticipants}人已報名`;
     }
     const isFull = event.currentParticipants >= event.maxParticipants;

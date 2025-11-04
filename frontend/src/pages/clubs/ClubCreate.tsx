@@ -12,6 +12,7 @@ const clubCreateSchema = z.object({
   name: z.string().min(1, '請輸入讀書會名稱').max(50, '名稱最多 50 個字元'),
   description: z.string().max(500, '描述最多 500 個字元').optional(),
   tag_ids: z.array(z.number()).min(1, '請至少選擇一個標籤'),
+  cover_image: z.instanceof(File).optional(),
 });
 
 type ClubCreateForm = z.infer<typeof clubCreateSchema>;
@@ -31,6 +32,8 @@ export default function ClubCreate() {
   } = useBookClubStore();
 
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const hasFetched = useRef(false);
 
   const {
@@ -80,12 +83,41 @@ export default function ClubCreate() {
     setValue('tag_ids', newSelectedTags, { shouldValidate: true });
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 驗證檔案類型
+      if (!file.type.startsWith('image/')) {
+        toast.error('請選擇圖片檔案');
+        return;
+      }
+      // 驗證檔案大小 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('圖片檔案不能超過 5MB');
+        return;
+      }
+      setCoverImageFile(file);
+      // 建立預覽
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
+  };
+
   const onSubmit = async (data: ClubCreateForm) => {
     try {
       await createBookClub({
         ...data,
         visibility: 'public', // Hardcode to public
         tag_ids: selectedTags,
+        cover_image: coverImageFile || undefined,
       });
     } catch {
       // Error handled by store and useEffect
@@ -113,6 +145,51 @@ export default function ClubCreate() {
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+
+            {/* 讀書會封面照片 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                讀書會封面照片
+              </label>
+              {coverImagePreview ? (
+                <div className="relative">
+                  <img 
+                    src={coverImagePreview} 
+                    alt="封面預覽" 
+                    className="w-full h-64 object-cover rounded-lg border-2 border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="cover-image-input"
+                  />
+                  <label
+                    htmlFor="cover-image-input"
+                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  >
+                    <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm text-gray-600 mb-1">點擊上傳封面照片</p>
+                    <p className="text-xs text-gray-500">支援 JPG, PNG, GIF (最大 5MB)</p>
+                  </label>
+                </div>
               )}
             </div>
 

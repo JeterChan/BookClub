@@ -25,7 +25,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <span className="text-xl font-bold text-blue-800 lg:text-2xl">
-              讀書會平台
+              OnlineBookClub
             </span>
           </Link>
 
@@ -58,15 +58,8 @@ export default function Header() {
                   儀表板
                 </Link>
                 <Link to="/clubs" className="text-gray-700 hover:text-blue-800">
-                  探索
+                  探索讀書會
                 </Link>
-                <Link
-                  to="/notifications"
-                  className="text-gray-700 hover:text-blue-800"
-                >
-                  通知
-                </Link>
-
                 {/* User Menu */}
                 <div className="relative">
                   <button
