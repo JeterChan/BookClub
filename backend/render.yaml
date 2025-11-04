@@ -1,0 +1,29 @@
+services:
+  # FastAPI Backend Service
+  - type: web
+    name: bookclub-backend
+    env: python
+    region: oregon
+    plan: free
+    branch: feature/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bookclub-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  - name: bookclub-db
+    databaseName: bookclub_db
+    user: bookclub_user
+    plan: free

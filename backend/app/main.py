@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api import api_router
 from app.models.user import UserProfileRead
 from app.models.interest_tag import InterestTagRead
+import os
 
 app = FastAPI(title="Book Club API")
 
@@ -18,6 +19,11 @@ origins = [
     "http://127.0.0.1:5175",
     "http://127.0.0.1:3000",
 ]
+
+# 生產環境：從環境變數讀取允許的前端 URL
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    origins.append(frontend_url)
 
 app.add_middleware(
     CORSMiddleware,
