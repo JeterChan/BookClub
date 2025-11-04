@@ -58,7 +58,15 @@ def get_discussion_topic(
     member: BookClubMember = Depends(get_club_member)
 ):
     """獲取單一主題及其所有回覆"""
-    topic = db.get(DiscussionTopic, topic_id)
+    topic = db.exec(
+        select(DiscussionTopic)
+        .where(DiscussionTopic.id == topic_id)
+        .options(
+            selectinload(DiscussionTopic.author),
+            selectinload(DiscussionTopic.comments).selectinload(DiscussionComment.owner)
+        )
+    ).first()
+    
     if not topic or topic.club_id != club_id:
         raise HTTPException(status_code=404, detail="Topic not found")
     return topic
@@ -87,4 +95,12 @@ def create_discussion_comment(
     db.add(topic)
     db.commit()
     db.refresh(comment)
+    
+    # 重新載入 comment 以包含 owner 關聯資料
+    comment = db.exec(
+        select(DiscussionComment)
+        .where(DiscussionComment.id == comment.id)
+        .options(selectinload(DiscussionComment.owner))
+    ).first()
+    
     return comment
