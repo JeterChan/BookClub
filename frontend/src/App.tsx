@@ -13,6 +13,8 @@ const Profile = lazy(() => import('./pages/Profile'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'));
 const ClubCreate = lazy(() => import('./pages/clubs/ClubCreate'));
 const ClubExplore = lazy(() => import('./pages/clubs/ClubExplore'));
 const ClubDetail = lazy(() => import('./pages/clubs/ClubDetail'));
@@ -76,6 +78,8 @@ function App() {
           <Route path="/verify-email" element={<Layout><VerifyEmail /></Layout>} />
           <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
           <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
+          <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
+          <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
           <Route 
             path="/dashboard" 
             element={

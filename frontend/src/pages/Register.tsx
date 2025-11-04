@@ -138,6 +138,22 @@ export default function Register() {
               required
             />
 
+            <div className="pt-2">
+              <Checkbox {...register('agreedToTerms')}>
+                我同意{' '}
+                <a href="/terms" target="_blank" className="text-blue-600 hover:underline">
+                  服務條款
+                </a>
+                {' '}與{' '}
+                <a href="/privacy" target="_blank" className="text-blue-600 hover:underline">
+                  隱私政策
+                </a>
+              </Checkbox>
+              {errors.agreedToTerms && (
+                <p className="mt-1 text-sm text-red-600">{errors.agreedToTerms.message}</p>
+              )}
+            </div>
+
             <Button
               type="submit"
               fullWidth
