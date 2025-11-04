@@ -7,39 +7,51 @@
 
 ## 1. 系統整體架構
 
-```mermaid
-graph TB
-    Start([使用者訪問系統]) --> CheckAuth{已登入?}
-    
-    CheckAuth -->|是| ShowHeader[Header 元件<br/>含登出選項]
-    CheckAuth -->|否| ShowMainpage[Mainpage 未登入版<br/>Hero + Features + Testimonials + Newsletter]
-    
-    ShowMainpage --> UserAction{使用者操作}
-    UserAction -->|點擊登入按鈕| OpenLoginModal[開啟 AuthModal<br/>mode='login']
-    UserAction -->|點擊註冊按鈕| OpenRegisterModal[開啟 AuthModal<br/>mode='register']
-    UserAction -->|瀏覽內容| BrowseContent[查看功能介紹<br/>評價、訂閱電子報]
-    
-    OpenLoginModal --> AuthSuccess[認證成功]
-    OpenRegisterModal --> AuthSuccess
-    
-    AuthSuccess --> SaveToken[儲存 Token 至<br/>localStorage/sessionStorage]
-    SaveToken --> SyncAuth[authStore 同步認證狀態]
-    SyncAuth --> RedirectToDashboard[重新導向至 /dashboard]
-    
-    ShowHeader --> MainNav[主要導覽]
-    MainNav --> NavOptions{選擇頁面}
-    
-    NavOptions -->|/dashboard| Dashboard[儀表板頁面<br/>2 Tabs: 總覽、留言]
-    NavOptions -->|/account| Account[帳號設定頁面<br/>4 Tabs: 個人設定、通知、我的社團、我的留言]
-    NavOptions -->|/clubs| ClubDirectory[社團目錄]
-    NavOptions -->|/discussions| Discussions[討論區列表]
-    NavOptions -->|/clubs/create| ClubCreate[建立社團<br/>Protected]
-    
-    style CheckAuth fill:#FFE5B4
-    style AuthSuccess fill:#90EE90
-    style SaveToken fill:#87CEEB
-    style Dashboard fill:#FFB6C1
-    style Account fill:#DDA0DD
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:使用者訪問系統;
+
+if (已登入?) then (是)
+  #FFE5B4:Header 元件\n含登出選項;
+  :主要導覽;
+  
+  if (選擇頁面) then (/dashboard)
+    #FFB6C1:儀表板頁面\n2 Tabs: 總覽、留言;
+  elseif (選擇頁面) then (/account)
+    #DDA0DD:帳號設定頁面\n4 Tabs: 個人設定、通知、我的社團、我的留言;
+  elseif (選擇頁面) then (/clubs)
+    :社團目錄;
+  elseif (選擇頁面) then (/discussions)
+    :討論區列表;
+  else (/clubs/create)
+    :建立社團\nProtected;
+  endif
+  
+else (否)
+  :Mainpage 未登入版\nHero + Features + Testimonials + Newsletter;
+  
+  if (使用者操作) then (點擊登入按鈕)
+    :開啟 AuthModal\nmode='login';
+    #90EE90:認證成功;
+  elseif (使用者操作) then (點擊註冊按鈕)
+    :開啟 AuthModal\nmode='register';
+    #90EE90:認證成功;
+  else (瀏覽內容)
+    :查看功能介紹\n評價、訂閱電子報;
+    stop
+  endif
+  
+  #87CEEB:儲存 Token 至\nlocalStorage/sessionStorage;
+  :authStore 同步認證狀態;
+  :重新導向至 /dashboard;
+endif
+
+stop
+@enduml
 ```
 
 ### 關鍵說明
@@ -54,90 +66,96 @@ graph TB
 
 ### 2.1 登入流程
 
-```mermaid
-graph TB
-    Start([使用者點擊登入按鈕]) --> OpenModal[呼叫 handleOpenAuth'login'<br/>開啟 AuthModal]
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:使用者點擊登入按鈕;
+:呼叫 handleOpenAuth('login')\n開啟 AuthModal;
+:顯示登入表單\nEmail + Password 欄位;
+
+repeat
+  :使用者輸入;
+  
+  #FFE5B4:前端驗證;
+  
+  if (驗證結果) then (Email 格式錯誤)
+    :顯示錯誤訊息\n請輸入有效的電子郵件;
+  elseif (驗證結果) then (密碼為空)
+    :顯示錯誤訊息\n密碼不可為空;
+  else (驗證通過)
+    :呼叫 POST /api/auth/login\n傳送 email, password;
     
-    OpenModal --> ShowLoginForm[顯示登入表單<br/>Email + Password 欄位]
+    #FFD700:API 回應;
     
-    ShowLoginForm --> UserInput{使用者輸入}
-    
-    UserInput -->|填寫表單| ClientValidate{前端驗證}
-    
-    ClientValidate -->|Email 格式錯誤| ShowEmailError[顯示錯誤訊息<br/>請輸入有效的電子郵件]
-    ClientValidate -->|密碼為空| ShowPasswordError[顯示錯誤訊息<br/>密碼不可為空]
-    ClientValidate -->|驗證通過| CallLoginAPI[呼叫 POST /api/auth/login<br/>傳送 email, password]
-    
-    ShowEmailError --> UserInput
-    ShowPasswordError --> UserInput
-    
-    CallLoginAPI --> APIResponse{API 回應}
-    
-    APIResponse -->|401 Unauthorized| ShowAuthError[顯示錯誤訊息<br/>帳號或密碼錯誤]
-    APIResponse -->|500 Server Error| ShowServerError[顯示錯誤訊息<br/>伺服器錯誤，請稍後再試]
-    APIResponse -->|200 Success| ReceiveTokens[接收 access_token<br/>與 refresh_token]
-    
-    ShowAuthError --> UserInput
-    ShowServerError --> UserInput
-    
-    ReceiveTokens --> SaveToStorage[儲存至 localStorage<br/>或 sessionStorage<br/>依記住我選項]
-    SaveToStorage --> UpdateAuthStore[更新 authStore<br/>setAuth + setUser]
-    UpdateAuthStore --> CloseModal[關閉 AuthModal]
-    CloseModal --> Navigate[重新導向至 /dashboard]
-    
-    Navigate --> End([登入完成])
-    
-    style ClientValidate fill:#FFE5B4
-    style APIResponse fill:#FFD700
-    style ReceiveTokens fill:#90EE90
-    style SaveToStorage fill:#87CEEB
-    style Navigate fill:#FFB6C1
+    if (回應狀態) then (401 Unauthorized)
+      :顯示錯誤訊息\n帳號或密碼錯誤;
+    elseif (回應狀態) then (500 Server Error)
+      :顯示錯誤訊息\n伺服器錯誤，請稍後再試;
+    else (200 Success)
+      #90EE90:接收 access_token\n與 refresh_token;
+      #87CEEB:儲存至 localStorage\n或 sessionStorage\n依記住我選項;
+      :更新 authStore\nsetAuth + setUser;
+      :關閉 AuthModal;
+      #FFB6C1:重新導向至 /dashboard;
+      stop
+    endif
+  endif
+repeat while (重試?) is (是)
+
+stop
+@enduml
 ```
 
 ### 2.2 註冊流程
 
-```mermaid
-graph TB
-    Start([使用者點擊註冊按鈕]) --> OpenModal[呼叫 handleOpenAuth'register'<br/>開啟 AuthModal]
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:使用者點擊註冊按鈕;
+:呼叫 handleOpenAuth('register')\n開啟 AuthModal;
+:顯示註冊表單\nUsername + Email + Password + Confirm;
+
+repeat
+  :使用者輸入;
+  
+  #FFE5B4:前端驗證;
+  
+  if (驗證結果) then (使用者名稱為空)
+    :顯示錯誤訊息\n使用者名稱不可為空;
+  elseif (驗證結果) then (Email 格式錯誤)
+    :顯示錯誤訊息\n請輸入有效的電子郵件;
+  elseif (驗證結果) then (密碼長度 < 6)
+    :顯示錯誤訊息\n密碼至少需 6 個字元;
+  elseif (驗證結果) then (密碼不一致)
+    :顯示錯誤訊息\n密碼與確認密碼不一致;
+  else (驗證通過)
+    :呼叫 POST /api/auth/register\n傳送 username, email, password;
     
-    OpenModal --> ShowRegisterForm[顯示註冊表單<br/>Username + Email + Password + Confirm]
+    #FFD700:API 回應;
     
-    ShowRegisterForm --> UserInput{使用者輸入}
-    
-    UserInput -->|填寫表單| ClientValidate{前端驗證}
-    
-    ClientValidate -->|使用者名稱為空| ShowUsernameError[顯示錯誤訊息<br/>使用者名稱不可為空]
-    ClientValidate -->|Email 格式錯誤| ShowEmailError[顯示錯誤訊息<br/>請輸入有效的電子郵件]
-    ClientValidate -->|密碼長度 < 6| ShowPasswordError[顯示錯誤訊息<br/>密碼至少需 6 個字元]
-    ClientValidate -->|密碼不一致| ShowMatchError[顯示錯誤訊息<br/>密碼與確認密碼不一致]
-    ClientValidate -->|驗證通過| CallRegisterAPI[呼叫 POST /api/auth/register<br/>傳送 username, email, password]
-    
-    ShowUsernameError --> UserInput
-    ShowEmailError --> UserInput
-    ShowPasswordError --> UserInput
-    ShowMatchError --> UserInput
-    
-    CallRegisterAPI --> APIResponse{API 回應}
-    
-    APIResponse -->|400 Email已存在| ShowDuplicateError[顯示錯誤訊息<br/>此電子郵件已被使用]
-    APIResponse -->|500 Server Error| ShowServerError[顯示錯誤訊息<br/>伺服器錯誤，請稍後再試]
-    APIResponse -->|201 Created| ReceiveTokens[接收 access_token<br/>與 refresh_token]
-    
-    ShowDuplicateError --> UserInput
-    ShowServerError --> UserInput
-    
-    ReceiveTokens --> SaveToStorage[儲存至 localStorage]
-    SaveToStorage --> UpdateAuthStore[更新 authStore<br/>setAuth + setUser]
-    UpdateAuthStore --> CloseModal[關閉 AuthModal]
-    CloseModal --> Navigate[重新導向至 /dashboard]
-    
-    Navigate --> End([註冊完成])
-    
-    style ClientValidate fill:#FFE5B4
-    style APIResponse fill:#FFD700
-    style ReceiveTokens fill:#90EE90
-    style SaveToStorage fill:#87CEEB
-    style Navigate fill:#FFB6C1
+    if (回應狀態) then (400 Email已存在)
+      :顯示錯誤訊息\n此電子郵件已被使用;
+    elseif (回應狀態) then (500 Server Error)
+      :顯示錯誤訊息\n伺服器錯誤，請稍後再試;
+    else (201 Created)
+      #90EE90:接收 access_token\n與 refresh_token;
+      #87CEEB:儲存至 localStorage;
+      :更新 authStore\nsetAuth + setUser;
+      :關閉 AuthModal;
+      #FFB6C1:重新導向至 /dashboard;
+      stop
+    endif
+  endif
+repeat while (重試?) is (是)
+
+stop
+@enduml
 ```
 
 ### 關鍵說明
@@ -148,51 +166,67 @@ graph TB
 
 ---
 
-## 3. 主頁面流程（未登入版）
+## 3. 主頁面流程(未登入版)
 
-```mermaid
-graph TB
-    Start([訪問 / 路徑]) --> CheckAuth{authStore<br/>isAuthenticated?}
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 / 路徑;
+
+#FFE5B4:authStore\nisAuthenticated?;
+
+if (檢查結果) then (是)
+  :重新導向至\n/dashboard;
+  stop
+else (否)
+  :渲染 Mainpage 元件;
+  :渲染 Header\nLogo + 導覽連結 + 登入/註冊按鈕;
+  #FFB6C1:渲染 Hero 區塊\n主標題 + 副標題 + CTA 按鈕;
+  
+  if (使用者操作) then (點擊 "開始探索")
+    :開啟登入模態框;
+    :進入登入流程\n見圖表 2.1;
+    stop
+  elseif (使用者操作) then (點擊頁首 "登入")
+    :開啟登入模態框;
+    :進入登入流程\n見圖表 2.1;
+    stop
+  elseif (使用者操作) then (點擊頁首 "免費註冊")
+    :開啟註冊模態框;
+    :進入註冊流程\n見圖表 2.2;
+    stop
+  else (向下捲動)
+    #DDA0DD:渲染 Features 區塊\n3個核心功能卡片;
     
-    CheckAuth -->|是| RedirectDashboard[重新導向至<br/>/dashboard]
-    CheckAuth -->|否| RenderMainpage[渲染 Mainpage 元件]
-    
-    RenderMainpage --> RenderHeader[渲染 Header<br/>Logo + 導覽連結 + 登入/註冊按鈕]
-    RenderHeader --> RenderHero[渲染 Hero 區塊<br/>主標題 + 副標題 + CTA 按鈕]
-    
-    RenderHero --> UserAction{使用者操作}
-    
-    UserAction -->|點擊 "開始探索"| OpenLoginModal[開啟登入模態框]
-    UserAction -->|點擊頁首 "登入"| OpenLoginModal
-    UserAction -->|點擊頁首 "免費註冊"| OpenRegisterModal[開啟註冊模態框]
-    UserAction -->|向下捲動| RenderFeatures[渲染 Features 區塊<br/>3個核心功能卡片]
-    
-    RenderFeatures --> ContinueScroll{繼續捲動?}
-    
-    ContinueScroll -->|是| RenderTestimonials[渲染 Testimonials 區塊<br/>使用者評價卡片]
-    ContinueScroll -->|否| StayFeatures[停留在 Features]
-    
-    RenderTestimonials --> FinalScroll{繼續捲動?}
-    
-    FinalScroll -->|是| RenderNewsletter[渲染 Newsletter 區塊<br/>電子報訂閱表單]
-    FinalScroll -->|否| StayTestimonials[停留在 Testimonials]
-    
-    RenderNewsletter --> NewsletterAction{使用者操作}
-    
-    NewsletterAction -->|輸入 Email + 訂閱| ValidateEmail{Email 驗證}
-    ValidateEmail -->|格式錯誤| ShowError[顯示錯誤訊息]
-    ValidateEmail -->|正確| SubmitNewsletter[提交訂閱請求<br/>顯示成功訊息]
-    
-    NewsletterAction -->|捲動至底部| RenderFooter[渲染 Footer<br/>品牌資訊 + 連結 + 社群圖示]
-    
-    OpenLoginModal --> AuthFlow[進入登入流程<br/>見圖表 2.1]
-    OpenRegisterModal --> AuthFlow2[進入註冊流程<br/>見圖表 2.2]
-    
-    style CheckAuth fill:#FFE5B4
-    style RenderHero fill:#FFB6C1
-    style RenderFeatures fill:#DDA0DD
-    style RenderTestimonials fill:#87CEEB
-    style RenderNewsletter fill:#F0E68C
+    if (繼續捲動?) then (是)
+      #87CEEB:渲染 Testimonials 區塊\n使用者評價卡片;
+      
+      if (繼續捲動?) then (是)
+        #F0E68C:渲染 Newsletter 區塊\n電子報訂閱表單;
+        
+        if (使用者操作) then (輸入 Email + 訂閱)
+          if (Email 驗證) then (格式錯誤)
+            :顯示錯誤訊息;
+          else (正確)
+            :提交訂閱請求\n顯示成功訊息;
+          endif
+        else (捲動至底部)
+          :渲染 Footer\n品牌資訊 + 連結 + 社群圖示;
+        endif
+      else (否)
+        :停留在 Testimonials;
+      endif
+    else (否)
+      :停留在 Features;
+    endif
+  endif
+endif
+
+stop
+@enduml
 ```
 
 ### 關鍵說明
@@ -209,41 +243,60 @@ graph TB
 
 > **實際結構**：Dashboard 僅有 **2 個 Tab**，不是 4 個
 
-```mermaid
-graph TB
-    Start([訪問 /dashboard]) --> CheckAuth{ProtectedRoute<br/>檢查認證}
-    
-    CheckAuth -->|未登入| RedirectHome[重新導向至 /]
-    CheckAuth -->|已登入| RenderDashboard[渲染 Dashboard 元件]
-    
-    RenderDashboard --> RenderHeader[渲染 Header 元件]
-    RenderHeader --> InitTabs[初始化 Tabs<br/>activeTab = 'basic']
-    
-    InitTabs --> ShowTabs[顯示 2 個 Tab 按鈕]
-    
-    ShowTabs --> Tab1[Tab 1: 總覽<br/>id='basic']
-    ShowTabs --> Tab2[Tab 2: 留言<br/>id='comment']
-    
-    Tab1 --> DefaultActive[預設啟用<br/>顯示 DashboardBasic 元件]
-    
-    DefaultActive --> UserClickTab{使用者點擊 Tab}
-    
-    UserClickTab -->|點擊 "總覽"| ShowBasic[渲染 DashboardBasic<br/>顯示個人統計資料]
-    UserClickTab -->|點擊 "留言"| ShowComment[渲染 DashboardComment<br/>顯示使用者留言記錄]
-    
-    ShowBasic --> InteractBasic{互動操作}
-    InteractBasic -->|點擊社團卡片| NavigateClub[導向 /clubs/:id]
-    InteractBasic -->|點擊討論| NavigateDiscussion[導向 /discussions/:id]
-    
-    ShowComment --> InteractComment{互動操作}
-    InteractComment -->|編輯留言| NavigateEdit[導向 /comments/:id/edit]
-    InteractComment -->|刪除留言| ConfirmDelete[顯示確認對話框<br/>呼叫刪除 API]
-    
-    style CheckAuth fill:#FFE5B4
-    style Tab1 fill:#FFB6C1
-    style Tab2 fill:#DDA0DD
-    style ShowBasic fill:#90EE90
-    style ShowComment fill:#87CEEB
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 /dashboard;
+
+#FFE5B4:ProtectedRoute\n檢查認證;
+
+if (檢查結果) then (未登入)
+  :重新導向至 /;
+  stop
+else (已登入)
+  :渲染 Dashboard 元件;
+  :渲染 Header 元件;
+  :初始化 Tabs\nactiveTab = 'basic';
+  :顯示 2 個 Tab 按鈕;
+  
+  note right
+    Tab 1: 總覽 (id='basic')
+    Tab 2: 留言 (id='comment')
+  end note
+  
+  :預設啟用\n顯示 DashboardBasic 元件;
+  
+  repeat
+    if (使用者點擊 Tab) then (點擊 "總覽")
+      #90EE90:渲染 DashboardBasic\n顯示個人統計資料;
+      
+      if (互動操作) then (點擊社團卡片)
+        :導向 /clubs/:id;
+        stop
+      elseif (互動操作) then (點擊討論)
+        :導向 /discussions/:id;
+        stop
+      endif
+      
+    elseif (使用者點擊 Tab) then (點擊 "留言")
+      #87CEEB:渲染 DashboardComment\n顯示使用者留言記錄;
+      
+      if (互動操作) then (編輯留言)
+        :導向 /comments/:id/edit;
+        stop
+      elseif (互動操作) then (刪除留言)
+        :顯示確認對話框\n呼叫刪除 API;
+      endif
+      
+    endif
+  repeat while (繼續使用?) is (是)
+endif
+
+stop
+@enduml
 ```
 
 ### 實際 Tab 結構（來自 Dashboard/index.tsx）
@@ -267,120 +320,177 @@ const tabs = [
 
 ### 5.1 探索社團（Club Directory）
 
-```mermaid
-graph TB
-    Start([訪問 /clubs]) --> RenderHeader[渲染 Header 元件]
-    RenderHeader --> LoadClubs[載入社團列表<br/>GET /api/clubs]
-    
-    LoadClubs --> APIResponse{API 回應}
-    
-    APIResponse -->|Loading| ShowSkeleton[顯示骨架載入畫面]
-    APIResponse -->|Error| ShowError[顯示錯誤訊息<br/>重試按鈕]
-    APIResponse -->|Success| RenderClubGrid[渲染社團網格<br/>ClubCard 元件]
-    
-    RenderClubGrid --> ShowFilters[顯示篩選選項<br/>分類、標籤、搜尋]
-    
-    ShowFilters --> UserAction{使用者操作}
-    
-    UserAction -->|搜尋社團| FilterClubs[即時篩選社團列表]
-    UserAction -->|選擇分類| FilterByCategory[按分類篩選]
-    UserAction -->|點擊社團卡片| NavigateDetail[導向 /clubs/:id]
-    UserAction -->|點擊 "建立社團"| CheckAuth{已登入?}
-    
-    CheckAuth -->|是| NavigateCreate[導向 /clubs/create]
-    CheckAuth -->|否| ShowLoginPrompt[提示需要登入<br/>開啟登入模態框]
-    
-    FilterClubs --> UpdateGrid[更新社團網格顯示]
-    FilterByCategory --> UpdateGrid
-    
-    style APIResponse fill:#FFE5B4
-    style RenderClubGrid fill:#90EE90
-    style NavigateDetail fill:#FFB6C1
-    style CheckAuth fill:#FFD700
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 /clubs;
+:渲染 Header 元件;
+:載入社團列表\nGET /api/clubs;
+
+#FFE5B4:API 回應;
+
+if (回應狀態) then (Loading)
+  :顯示骨架載入畫面;
+  stop
+elseif (回應狀態) then (Error)
+  :顯示錯誤訊息\n重試按鈕;
+  stop
+else (Success)
+  #90EE90:渲染社團網格\nClubCard 元件;
+  :顯示篩選選項\n分類、標籤、搜尋;
+  
+  repeat
+    if (使用者操作) then (搜尋社團)
+      :即時篩選社團列表;
+      :更新社團網格顯示;
+    elseif (使用者操作) then (選擇分類)
+      :按分類篩選;
+      :更新社團網格顯示;
+    elseif (使用者操作) then (點擊社團卡片)
+      #FFB6C1:導向 /clubs/:id;
+      stop
+    else (點擊 "建立社團")
+      #FFD700:已登入?;
+      if (檢查結果) then (是)
+        :導向 /clubs/create;
+        stop
+      else (否)
+        :提示需要登入\n開啟登入模態框;
+      endif
+    endif
+  repeat while (繼續操作?) is (是)
+endif
+
+stop
+@enduml
 ```
 
 ### 5.2 社團詳情頁（Club Detail）
 
-```mermaid
-graph TB
-    Start([訪問 /clubs/:id]) --> RenderHeader[渲染 Header 元件]
-    RenderHeader --> LoadClubDetail[載入社團詳情<br/>GET /api/clubs/:id]
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 /clubs/:id;
+:渲染 Header 元件;
+:載入社團詳情\nGET /api/clubs/:id;
+
+#FFE5B4:API 回應;
+
+if (回應狀態) then (Loading)
+  :顯示骨架載入畫面;
+  stop
+elseif (回應狀態) then (404)
+  :顯示 404 錯誤\n社團不存在;
+  stop
+else (Success)
+  :渲染社團詳情;
+  :顯示社團資訊\n名稱、描述、標籤;
+  :顯示成員列表\n創辦人、管理員、成員;
+  :顯示討論列表\n最新討論;
+  
+  #FFD700:檢查成員身份;
+  
+  if (成員狀態) then (未登入)
+    :顯示訪客操作\n查看資訊;
     
-    LoadClubDetail --> APIResponse{API 回應}
+    if (點擊討論?) then (是)
+      #FFB6C1:導向 /discussions/:id;
+      stop
+    endif
     
-    APIResponse -->|Loading| ShowSkeleton[顯示骨架載入畫面]
-    APIResponse -->|404| ShowNotFound[顯示 404 錯誤<br/>社團不存在]
-    APIResponse -->|Success| RenderDetail[渲染社團詳情]
+  elseif (成員狀態) then (非成員)
+    :顯示 "加入社團" 按鈕;
     
-    RenderDetail --> ShowInfo[顯示社團資訊<br/>名稱、描述、標籤]
-    ShowInfo --> ShowMembers[顯示成員列表<br/>創辦人、管理員、成員]
-    ShowMembers --> ShowDiscussions[顯示討論列表<br/>最新討論]
+    if (點擊加入?) then (是)
+      :發送加入申請\nPOST /api/clubs/:id/join;
+      :更新為 "待審核" 狀態;
+    endif
     
-    ShowDiscussions --> CheckMembership{檢查成員身份}
+  elseif (成員狀態) then (待審核)
+    :顯示 "待審核" 狀態;
     
-    CheckMembership -->|未登入| ShowGuestActions[顯示訪客操作<br/>查看資訊]
-    CheckMembership -->|非成員| ShowJoinButton[顯示 "加入社團" 按鈕]
-    CheckMembership -->|待審核| ShowPendingStatus[顯示 "待審核" 狀態]
-    CheckMembership -->|已加入| ShowMemberActions[顯示成員操作<br/>發起討論、查看社團討論]
-    CheckMembership -->|創辦人/管理員| ShowAdminActions[顯示管理操作<br/>社團管理按鈕]
+  elseif (成員狀態) then (已加入)
+    :顯示成員操作\n發起討論、查看社團討論;
     
-    ShowJoinButton --> UserClickJoin{點擊加入}
-    UserClickJoin -->|是| SendJoinRequest[發送加入申請<br/>POST /api/clubs/:id/join]
-    SendJoinRequest --> UpdateStatus[更新為 "待審核" 狀態]
+    if (點擊討論?) then (是)
+      #FFB6C1:導向 /discussions/:id;
+      stop
+    endif
     
-    ShowAdminActions --> UserClickManage{點擊管理}
-    UserClickManage -->|是| NavigateManagement[導向 /clubs/:id/management]
+  else (創辦人/管理員)
+    #FFB6C1:顯示管理操作\n社團管理按鈕;
     
-    ShowDiscussions --> UserClickDiscussion{點擊討論}
-    UserClickDiscussion -->|是| NavigateDiscussionDetail[導向 /discussions/:id]
-    
-    style APIResponse fill:#FFE5B4
-    style CheckMembership fill:#FFD700
-    style ShowAdminActions fill:#FFB6C1
-    style NavigateManagement fill:#DDA0DD
+    if (點擊管理?) then (是)
+      #DDA0DD:導向 /clubs/:id/management;
+      stop
+    elseif (點擊討論?) then (是)
+      #FFB6C1:導向 /discussions/:id;
+      stop
+    endif
+  endif
+endif
+
+stop
+@enduml
 ```
 
 ### 5.3 建立社團（Club Create）
 
-```mermaid
-graph TB
-    Start([訪問 /clubs/create]) --> CheckAuth{ProtectedRoute<br/>檢查認證}
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 /clubs/create;
+
+#FFE5B4:ProtectedRoute\n檢查認證;
+
+if (檢查結果) then (未登入)
+  :重新導向至 /;
+  stop
+else (已登入)
+  :渲染建立社團表單;
+  :顯示表單欄位\n名稱、描述、分類、標籤、封面;
+  
+  repeat
+    :使用者輸入;
     
-    CheckAuth -->|未登入| RedirectHome[重新導向至 /]
-    CheckAuth -->|已登入| RenderForm[渲染建立社團表單]
+    #FFD700:前端驗證;
     
-    RenderForm --> ShowFields[顯示表單欄位<br/>名稱、描述、分類、標籤、封面]
-    
-    ShowFields --> UserInput{使用者輸入}
-    
-    UserInput -->|填寫表單| ClientValidate{前端驗證}
-    
-    ClientValidate -->|社團名稱為空| ShowNameError[顯示錯誤訊息]
-    ClientValidate -->|描述為空| ShowDescError[顯示錯誤訊息]
-    ClientValidate -->|未選擇分類| ShowCategoryError[顯示錯誤訊息]
-    ClientValidate -->|驗證通過| SubmitForm[提交表單<br/>POST /api/clubs]
-    
-    ShowNameError --> UserInput
-    ShowDescError --> UserInput
-    ShowCategoryError --> UserInput
-    
-    SubmitForm --> APIResponse{API 回應}
-    
-    APIResponse -->|400 Bad Request| ShowValidationError[顯示驗證錯誤訊息]
-    APIResponse -->|500 Server Error| ShowServerError[顯示伺服器錯誤]
-    APIResponse -->|201 Created| ReceiveClubData[接收新社團資料<br/>包含 club_id]
-    
-    ShowValidationError --> UserInput
-    ShowServerError --> UserInput
-    
-    ReceiveClubData --> ShowSuccess[顯示成功訊息]
-    ShowSuccess --> NavigateToClub[導向 /clubs/:id<br/>新建立的社團頁面]
-    
-    style CheckAuth fill:#FFE5B4
-    style ClientValidate fill:#FFD700
-    style APIResponse fill:#FFD700
-    style ReceiveClubData fill:#90EE90
-    style NavigateToClub fill:#FFB6C1
+    if (驗證結果) then (社團名稱為空)
+      :顯示錯誤訊息;
+    elseif (驗證結果) then (描述為空)
+      :顯示錯誤訊息;
+    elseif (驗證結果) then (未選擇分類)
+      :顯示錯誤訊息;
+    else (驗證通過)
+      :提交表單\nPOST /api/clubs;
+      
+      #FFD700:API 回應;
+      
+      if (回應狀態) then (400 Bad Request)
+        :顯示驗證錯誤訊息;
+      elseif (回應狀態) then (500 Server Error)
+        :顯示伺服器錯誤;
+      else (201 Created)
+        #90EE90:接收新社團資料\n包含 club_id;
+        :顯示成功訊息;
+        #FFB6C1:導向 /clubs/:id\n新建立的社團頁面;
+        stop
+      endif
+    endif
+  repeat while (重試?) is (是)
+endif
+
+stop
+@enduml
 ```
 
 ---
@@ -389,123 +499,175 @@ graph TB
 
 ### 6.1 討論列表（Discussions）
 
-```mermaid
-graph TB
-    Start([訪問 /discussions]) --> RenderHeader[渲染 Header 元件]
-    RenderHeader --> LoadDiscussions[載入討論列表<br/>GET /api/discussions]
-    
-    LoadDiscussions --> APIResponse{API 回應}
-    
-    APIResponse -->|Loading| ShowSkeleton[顯示骨架載入畫面]
-    APIResponse -->|Error| ShowError[顯示錯誤訊息]
-    APIResponse -->|Success| RenderList[渲染討論列表]
-    
-    RenderList --> ShowFilters[顯示篩選選項<br/>社團、標籤、搜尋]
-    
-    ShowFilters --> UserAction{使用者操作}
-    
-    UserAction -->|搜尋討論| FilterDiscussions[即時篩選討論]
-    UserAction -->|選擇社團| FilterByClub[按社團篩選]
-    UserAction -->|點擊討論| NavigateDetail[導向 /discussions/:id]
-    UserAction -->|點擊 "發起討論"| CheckAuth{已登入?}
-    
-    CheckAuth -->|是| NavigateNew[導向 /discussions/new]
-    CheckAuth -->|否| ShowLoginPrompt[提示需要登入]
-    
-    FilterDiscussions --> UpdateList[更新討論列表]
-    FilterByClub --> UpdateList
-    
-    style APIResponse fill:#FFE5B4
-    style RenderList fill:#90EE90
-    style CheckAuth fill:#FFD700
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 /discussions;
+:渲染 Header 元件;
+:載入討論列表\nGET /api/discussions;
+
+#FFE5B4:API 回應;
+
+if (回應狀態) then (Loading)
+  :顯示骨架載入畫面;
+  stop
+elseif (回應狀態) then (Error)
+  :顯示錯誤訊息;
+  stop
+else (Success)
+  #90EE90:渲染討論列表;
+  :顯示篩選選項\n社團、標籤、搜尋;
+  
+  repeat
+    if (使用者操作) then (搜尋討論)
+      :即時篩選討論;
+      :更新討論列表;
+    elseif (使用者操作) then (選擇社團)
+      :按社團篩選;
+      :更新討論列表;
+    elseif (使用者操作) then (點擊討論)
+      #FFB6C1:導向 /discussions/:id;
+      stop
+    else (點擊 "發起討論")
+      #FFD700:已登入?;
+      if (檢查結果) then (是)
+        :導向 /discussions/new;
+        stop
+      else (否)
+        :提示需要登入;
+      endif
+    endif
+  repeat while (繼續操作?) is (是)
+endif
+
+stop
+@enduml
 ```
 
 ### 6.2 討論詳情（Discussion Detail）
 
-```mermaid
-graph TB
-    Start([訪問 /discussions/:id]) --> RenderHeader[渲染 Header 元件]
-    RenderHeader --> LoadDetail[載入討論詳情<br/>GET /api/discussions/:id]
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 /discussions/:id;
+:渲染 Header 元件;
+:載入討論詳情\nGET /api/discussions/:id;
+
+#FFE5B4:API 回應;
+
+if (回應狀態) then (Loading)
+  :顯示骨架載入畫面;
+  stop
+elseif (回應狀態) then (404)
+  :顯示 404 錯誤;
+  stop
+else (Success)
+  :渲染討論詳情;
+  :顯示討論標題與內容;
+  :顯示作者資訊與時間;
+  :顯示標籤;
+  :載入留言列表\nGET /api/discussions/:id/comments;
+  
+  #FFE5B4:留言 API 回應;
+  
+  if (回應狀態) then (Loading)
+    :顯示留言骨架;
+  else (Success)
+    :渲染留言列表;
+  endif
+  
+  #FFD700:已登入?;
+  
+  if (檢查結果) then (是)
+    :顯示留言表單;
     
-    LoadDetail --> APIResponse{API 回應}
+    repeat
+      :使用者輸入留言;
+      
+      #FFD700:驗證留言;
+      
+      if (驗證結果) then (內容為空)
+        :顯示錯誤訊息;
+      else (內容有效)
+        :提交留言\nPOST /api/comments;
+        
+        #FFD700:API 回應;
+        
+        if (回應狀態) then (Success)
+          :重新載入留言列表;
+        else (Error)
+          :顯示錯誤訊息;
+        endif
+      endif
+    repeat while (重試?) is (是)
     
-    APIResponse -->|Loading| ShowSkeleton[顯示骨架載入畫面]
-    APIResponse -->|404| ShowNotFound[顯示 404 錯誤]
-    APIResponse -->|Success| RenderDetail[渲染討論詳情]
-    
-    RenderDetail --> ShowTitle[顯示討論標題與內容]
-    ShowTitle --> ShowAuthor[顯示作者資訊與時間]
-    ShowAuthor --> ShowTags[顯示標籤]
-    ShowTags --> LoadComments[載入留言列表<br/>GET /api/discussions/:id/comments]
-    
-    LoadComments --> CommentsResponse{留言 API 回應}
-    
-    CommentsResponse -->|Loading| ShowCommentSkeleton[顯示留言骨架]
-    CommentsResponse -->|Success| RenderComments[渲染留言列表]
-    
-    RenderComments --> CheckAuth{已登入?}
-    
-    CheckAuth -->|是| ShowCommentForm[顯示留言表單]
-    CheckAuth -->|否| ShowLoginPrompt[提示需要登入才能留言]
-    
-    ShowCommentForm --> UserComment{使用者操作}
-    
-    UserComment -->|輸入留言| ValidateComment{驗證留言}
-    ValidateComment -->|內容為空| ShowEmptyError[顯示錯誤訊息]
-    ValidateComment -->|內容有效| SubmitComment[提交留言<br/>POST /api/comments]
-    
-    ShowEmptyError --> UserComment
-    
-    SubmitComment --> CommentAPIResponse{API 回應}
-    
-    CommentAPIResponse -->|Success| RefreshComments[重新載入留言列表]
-    CommentAPIResponse -->|Error| ShowCommentError[顯示錯誤訊息]
-    
-    RefreshComments --> RenderComments
-    
-    style APIResponse fill:#FFE5B4
-    style CheckAuth fill:#FFD700
-    style ValidateComment fill:#FFD700
-    style CommentAPIResponse fill:#FFD700
+  else (否)
+    :提示需要登入才能留言;
+  endif
+endif
+
+stop
+@enduml
 ```
 
 ### 6.3 發起討論（Discussion New）
 
-```mermaid
-graph TB
-    Start([訪問 /discussions/new]) --> CheckAuth{ProtectedRoute<br/>檢查認證}
+```plantuml
+@startuml
+skinparam roundcorner 10
+skinparam shadowing false
+
+start
+:訪問 /discussions/new;
+
+#FFE5B4:ProtectedRoute\n檢查認證;
+
+if (檢查結果) then (未登入)
+  :重新導向至 /;
+  stop
+else (已登入)
+  :渲染發起討論表單;
+  :顯示表單欄位\n標題、內容、社團、標籤;
+  
+  repeat
+    :使用者輸入;
     
-    CheckAuth -->|未登入| RedirectHome[重新導向至 /]
-    CheckAuth -->|已登入| RenderForm[渲染發起討論表單]
+    #FFD700:前端驗證;
     
-    RenderForm --> ShowFields[顯示表單欄位<br/>標題、內容、社團、標籤]
-    
-    ShowFields --> UserInput{使用者輸入}
-    
-    UserInput -->|填寫表單| ClientValidate{前端驗證}
-    
-    ClientValidate -->|標題為空| ShowTitleError[顯示錯誤訊息]
-    ClientValidate -->|內容為空| ShowContentError[顯示錯誤訊息]
-    ClientValidate -->|未選擇社團| ShowClubError[顯示錯誤訊息]
-    ClientValidate -->|驗證通過| SubmitForm[提交表單<br/>POST /api/discussions]
-    
-    ShowTitleError --> UserInput
-    ShowContentError --> UserInput
-    ShowClubError --> UserInput
-    
-    SubmitForm --> APIResponse{API 回應}
-    
-    APIResponse -->|400 Bad Request| ShowValidationError[顯示驗證錯誤]
-    APIResponse -->|500 Server Error| ShowServerError[顯示伺服器錯誤]
-    APIResponse -->|201 Created| ReceiveData[接收討論資料<br/>包含 discussion_id]
-    
-    ShowValidationError --> UserInput
-    ShowServerError --> UserInput
-    
-    ReceiveData --> ShowSuccess[顯示成功訊息]
-    ShowSuccess --> NavigateToDiscussion[導向 /discussions/:id<br/>新建立的討論頁面]
-    
-    style CheckAuth fill:#FFE5B4
+    if (驗證結果) then (標題為空)
+      :顯示錯誤訊息;
+    elseif (驗證結果) then (內容為空)
+      :顯示錯誤訊息;
+    elseif (驗證結果) then (未選擇社團)
+      :顯示錯誤訊息;
+    else (驗證通過)
+      :提交表單\nPOST /api/discussions;
+      
+      #FFD700:API 回應;
+      
+      if (回應狀態) then (400 Bad Request)
+        :顯示驗證錯誤;
+      elseif (回應狀態) then (500 Server Error)
+        :顯示伺服器錯誤;
+      else (201 Created)
+        #90EE90:接收討論資料\n包含 discussion_id;
+        :顯示成功訊息;
+        #FFB6C1:導向 /discussions/:id\n新建立的討論頁面;
+        stop
+      endif
+    endif
+  repeat while (重試?) is (是)
+endif
+
+stop
+@enduml
+```
     style ClientValidate fill:#FFD700
     style APIResponse fill:#FFD700
     style ReceiveData fill:#90EE90
@@ -707,16 +869,27 @@ graph TB
     
     RenderMemberList --> ShowRoles[顯示成員角色<br/>創辦人、管理員、成員]
     
-    ShowRoles --> UserAction{使用者操作}
+    ShowRoles --> CheckUserRole{檢查當前使用者角色}
     
-    UserAction -->|搜尋成員| FilterMembers[即時篩選成員列表]
-    UserAction -->|點擊成員| ShowMemberMenu[顯示操作選單]
+    CheckUserRole -->|創辦人| ShowOwnerActions[顯示完整操作選單]
+    CheckUserRole -->|管理員| ShowAdminActions[顯示受限操作選單]
     
-    ShowMemberMenu --> MenuAction{選擇操作}
+    ShowOwnerActions --> OwnerUserAction{使用者操作}
+    ShowAdminActions --> AdminUserAction{使用者操作}
     
-    MenuAction -->|設為管理員| ConfirmPromote[顯示確認對話框]
-    MenuAction -->|移除管理員| ConfirmDemote[顯示確認對話框]
-    MenuAction -->|移除成員| ConfirmRemove[顯示確認對話框]
+    OwnerUserAction -->|搜尋成員| FilterMembers[即時篩選成員列表]
+    OwnerUserAction -->|點擊成員| ShowOwnerMenu[顯示操作選單<br/>設為管理員/移除管理員/移除成員]
+    
+    AdminUserAction -->|搜尋成員| FilterMembers
+    AdminUserAction -->|點擊一般成員| ShowAdminMenu[顯示操作選單<br/>僅移除成員]
+    
+    ShowOwnerMenu --> OwnerMenuAction{選擇操作}
+    
+    OwnerMenuAction -->|設為管理員| ConfirmPromote[顯示確認對話框]
+    OwnerMenuAction -->|移除管理員| ConfirmDemote[顯示確認對話框]
+    OwnerMenuAction -->|移除成員| ConfirmRemove[顯示確認對話框]
+    
+    ShowAdminMenu --> ConfirmRemove
     
     ConfirmPromote --> CallPromoteAPI[呼叫 POST /api/clubs/:id/members/:userId/promote]
     ConfirmDemote --> CallDemoteAPI[呼叫 POST /api/clubs/:id/members/:userId/demote]
@@ -727,9 +900,17 @@ graph TB
     CallRemoveAPI --> RefreshList
     
     style APIResponse fill:#FFE5B4
-    style ConfirmPromote fill:#FFD700
+    style CheckUserRole fill:#FFD700
+    style ConfirmPromote fill:#90EE90
     style ConfirmRemove fill:#FEE2E2
 ```
+
+### 關鍵說明
+- **權限區分**：
+  - **創辦人**：可設為管理員、移除管理員、移除成員（完整權限）
+  - **管理員**：僅可移除一般成員（受限權限,無法操作其他管理員）
+- **操作限制**：管理員無法對其他管理員或創辦人進行任何操作
+- **確認機制**：所有操作前都會顯示確認對話框
 
 ### 8.4 加入申請 Tab（JoinRequestList）
 

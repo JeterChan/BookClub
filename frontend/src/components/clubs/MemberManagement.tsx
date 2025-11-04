@@ -16,8 +16,15 @@ export const MemberManagement = () => {
   const { detailClub } = useBookClubStore();
   const { user: currentUser } = useAuthStore();
   
-  // � Mock 模式：如果是 club id=1，強制設定為 owner
-  const currentUserRole = detailClub?.membership_status || (id === '1' ? 'owner' : undefined);
+  // 🔥 Mock 模式：如果是 club id=1 或 id=3，強制設定當前用戶為 owner 或 admin
+  let currentUserRole = detailClub?.membership_status;
+  
+  // 如果沒有從 detailClub 獲取到角色，使用 mock 邏輯
+  if (!currentUserRole && id) {
+    // club id=1 設為 owner, id=3 設為 admin
+    currentUserRole = id === '1' ? 'owner' : id === '3' ? 'admin' : undefined;
+  }
+  
   const navigate = useNavigate();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -32,14 +39,25 @@ export const MemberManagement = () => {
 
   // 調試信息
   console.log('🔍 MemberManagement Debug:', {
+    clubId: id,
     currentUserRole,
-    detailClub: detailClub ? { id: detailClub.id, name: detailClub.name } : null,
+    detailClub: detailClub ? { id: detailClub.id, name: detailClub.name, membership_status: detailClub.membership_status } : null,
     currentUser: currentUser ? { id: currentUser.id, name: currentUser.display_name } : null,
-    mockMode: id === '1'
+    mockMode: id === '1' || id === '3'
   });
 
   // 假資料
   const mockMembers: ClubMember[] = [
+    // 創建者
+    {
+      user: {
+        id: 1000,
+        display_name: '王創辦',
+        avatar_url: 'https://ui-avatars.com/api/?name=王創辦&background=6366F1&color=fff'
+      } as User,
+      role: 'owner' as MemberRole,
+    },
+    // 普通成員
     {
       user: {
         id: 999,
@@ -56,6 +74,7 @@ export const MemberManagement = () => {
       } as User,
       role: 'member' as MemberRole,
     },
+    // 管理員
     {
       user: {
         id: 997,
@@ -189,7 +208,7 @@ export const MemberManagement = () => {
           error: '操作失敗，請稍後再試'
         }
       );
-      
+
       setShowExitModal(false);
       // 退出後導航到社團列表
       navigate('/clubs');
@@ -199,16 +218,24 @@ export const MemberManagement = () => {
   };
 
   const canDelete = (member: ClubMember) => {
-    // 只有社團創辦者（Owner）可以刪除成員
-    if (currentUserRole !== 'owner') {
-      return false;
-    }
     // 不能刪除自己
     if (currentUser && member.user.id === currentUser.id) {
       return false;
     }
-    // Owner 可以刪除任何其他成員
-    return true;
+    
+    // 創辦者可以刪除任何其他成員（管理員和普通成員）
+    if (currentUserRole === 'owner') {
+      // 不能刪除創辦者（雖然不太可能有多個創辦者）
+      return member.role !== 'owner';
+    }
+    
+    // 管理員只能刪除普通成員
+    if (currentUserRole === 'admin') {
+      return member.role === 'member';
+    }
+    
+    // 普通成員無法刪除任何人
+    return false;
   };
 
   if (allMembers.length === 0) {
@@ -241,7 +268,8 @@ export const MemberManagement = () => {
         {allMembers.map((member) => {
           const currentRole = getMemberRole(member);
           const isOwner = member.role === 'owner';
-          const canChangeRole = currentUserRole === 'owner' && !isOwner;
+          // 只有創辦者可以修改角色,且不能修改創辦者本人的角色
+          const canChangeRole = currentUserRole === 'owner' && !isOwner && member.user.id !== currentUser?.id;
 
           return (
             <div key={member.user.id} className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
