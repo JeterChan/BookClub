@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { profileService } from '../services/profileService';
 import type { UserProfile } from '../services/profileService';
+import type { TokenResponse } from '../types/auth';
 
 // Define state properties
 interface AuthState {
@@ -42,8 +43,8 @@ const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthAction
       set(state => ({ ...state, user: userProfile, isInitializing: false }));
     } catch (error) {
       console.error('Failed to fetch profile after login:', error);
-      // Even if profile fetch fails, keep user authenticated but with partial data
-      set(state => ({ ...state, user: tokens.user, isInitializing: false }));
+      // If profile fetch fails, keep authenticated but without user data
+      set(state => ({ ...state, user: null, isInitializing: false }));
     }
   },
 

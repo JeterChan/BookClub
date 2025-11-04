@@ -35,7 +35,7 @@ export const MyClubsList = ({ clubs }: MyClubsListProps) => {
           <p className="text-4xl mb-2">📚</p>
           <p>尚未加入任何讀書會</p>
           <Link 
-            to="/clubs/explore" 
+            to="/clubs" 
             className="inline-block mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline"
           >
             探索讀書會 →

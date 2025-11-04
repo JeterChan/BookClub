@@ -8,7 +8,10 @@ import toast, { Toaster } from 'react-hot-toast';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
+import { Modal } from '../components/ui/Modal';
 import { PasswordStrengthIndicator } from '../components/forms/PasswordStrengthIndicator';
+import { TermsOfServiceContent } from '../components/legal/TermsOfServiceContent';
+import { PrivacyPolicyContent } from '../components/legal/PrivacyPolicyContent';
 import { authService } from '../services/authService';
 import type { RegisterFormData } from '../types/auth';
 import type { ApiError } from '../types/error';
@@ -34,6 +37,8 @@ export default function Register() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const {
     register,
@@ -141,13 +146,27 @@ export default function Register() {
             <div className="pt-2">
               <Checkbox {...register('agreedToTerms')}>
                 我同意{' '}
-                <a href="/terms" target="_blank" className="text-blue-600 hover:underline">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowTermsModal(true);
+                  }}
+                  className="text-blue-600 hover:underline"
+                >
                   服務條款
-                </a>
+                </button>
                 {' '}與{' '}
-                <a href="/privacy" target="_blank" className="text-blue-600 hover:underline">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPrivacyModal(true);
+                  }}
+                  className="text-blue-600 hover:underline"
+                >
                   隱私政策
-                </a>
+                </button>
               </Checkbox>
               {errors.agreedToTerms && (
                 <p className="mt-1 text-sm text-red-600">{errors.agreedToTerms.message}</p>
@@ -173,6 +192,25 @@ export default function Register() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <Modal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title="服務條款"
+        size="xl"
+      >
+        <TermsOfServiceContent />
+      </Modal>
+
+      <Modal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+        title="隱私政策"
+        size="xl"
+      >
+        <PrivacyPolicyContent />
+      </Modal>
     </div>
   );
 }
