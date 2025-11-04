@@ -448,6 +448,50 @@ Vite 會自動：
 - 壓縮與最小化
 - 現代瀏覽器優化
 
+### Q: `vercel.json` 中的 `env` 區塊是什麼？
+
+**A**: `vercel.json` 的 `env` 區塊用於引用 Vercel Secrets，語法是：
+
+```json
+"env": {
+  "VITE_API_BASE_URL": "@secret_name"
+}
+```
+
+`@secret_name` 引用的是在 Vercel Dashboard 創建的 Secret。
+
+**但不推薦這種方式**，因為：
+- 需要額外創建 Secret
+- 設定較複雜
+- 直接在 Dashboard 設定環境變數更直觀
+
+**推薦做法**：
+1. 移除 `vercel.json` 的 `env` 區塊
+2. 直接在 Vercel Dashboard → Settings → Environment Variables 設定
+3. 這樣更靈活，可以針對不同環境（Production / Preview / Development）設定不同值
+
+### Q: `vercel.json` 是必要的嗎？
+
+**A**: 對於 SPA（單頁應用）是**必要的**，但可以很簡單：
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+這確保所有路由（如 `/clubs/123`）都返回 `index.html`，讓 React Router 處理前端路由。
+
+**不需要的欄位**（Vercel 會自動偵測）：
+- `buildCommand`
+- `outputDirectory`  
+- `framework`
+
 ---
 
 ## 🆘 需要幫助？
