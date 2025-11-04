@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Club } from '../../services/dashboardService';
 import { Card } from '../ui/Card';
 import { formatRelativeTime } from '../../utils/dateFormatter';
+import { getImageUrl } from '../../utils/imageUrl';
 
 interface MyClubsListProps {
   clubs: Club[];
@@ -58,7 +59,7 @@ export const MyClubsList = ({ clubs }: MyClubsListProps) => {
                 </div>
                 {club.coverImage && (
                   <img 
-                    src={club.coverImage} 
+                    src={getImageUrl(club.coverImage) || ''} 
                     alt={club.name}
                     className="w-12 h-12 rounded object-cover ml-4"
                   />

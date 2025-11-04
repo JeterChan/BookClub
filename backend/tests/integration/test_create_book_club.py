@@ -25,7 +25,7 @@ def test_create_public_book_club_success(
     
     # Act: 發送建立讀書會請求
     response = authenticated_client.post(
-        "/api/clubs",
+        "/api/v1/clubs",
         json={
             "name": "Python 進階讀書會",
             "description": "探討 Python 進階主題",
@@ -76,7 +76,7 @@ def test_create_private_book_club_success(
     
     # Act
     response = authenticated_client.post(
-        "/api/clubs",
+        "/api/v1/clubs",
         json={
             "name": "私密讀書會",
             "description": "只限邀請加入",
@@ -106,7 +106,7 @@ def test_create_book_club_as_owner(
     
     # Act
     response = authenticated_client.post(
-        "/api/clubs",
+        "/api/v1/clubs",
         json={
             "name": "測試讀書會",
             "description": "測試",
@@ -146,7 +146,7 @@ def test_create_book_club_tag_association(
     
     # Act
     response = authenticated_client.post(
-        "/api/clubs",
+        "/api/v1/clubs",
         json={
             "name": "多標籤讀書會",
             "description": "測試多個標籤",
@@ -169,7 +169,7 @@ def test_create_book_club_unauthenticated(client: TestClient):
     """測試未認證用戶無法建立讀書會 (403)"""
     # Act: 未提供認證 token
     response = client.post(
-        "/api/clubs",
+        "/api/v1/clubs",
         json={
             "name": "測試",
             "description": "測試",
@@ -188,7 +188,7 @@ def test_create_book_club_missing_required_fields(
     """測試缺少必填欄位的錯誤回應 (422)"""
     # Act: 缺少 name
     response = authenticated_client.post(
-        "/api/clubs",
+        "/api/v1/clubs",
         json={
             "description": "測試",
             "visibility": "public",
@@ -206,7 +206,7 @@ def test_create_book_club_invalid_tag_ids(
     """測試使用無效標籤 ID"""
     # Act: 使用不存在的標籤 ID
     response = authenticated_client.post(
-        "/api/clubs",
+        "/api/v1/clubs",
         json={
             "name": "測試讀書會",
             "description": "測試",
@@ -232,7 +232,7 @@ def test_get_available_tags(client: TestClient, session: Session):
     session.commit()
     
     # Act: 不需認證即可取得標籤
-    response = client.get("/api/clubs/tags")
+    response = client.get("/api/v1/clubs/tags")
     
     # Assert
     assert response.status_code == 200

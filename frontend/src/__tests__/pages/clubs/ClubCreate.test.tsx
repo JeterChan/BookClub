@@ -58,8 +58,6 @@ describe('ClubCreate', () => {
     expect(screen.getByRole('heading', { name: '建立讀書會' })).toBeInTheDocument();
     expect(screen.getByLabelText(/讀書會名稱/)).toBeInTheDocument();
     expect(screen.getByLabelText(/讀書會描述/)).toBeInTheDocument();
-    expect(screen.getByText('公開（任何人都可以看到和加入）')).toBeInTheDocument();
-    expect(screen.getByText('私密（僅限受邀者）')).toBeInTheDocument();
   });
 
   it('should fetch available tags on mount', () => {
@@ -145,10 +143,6 @@ describe('ClubCreate', () => {
     await user.type(screen.getByLabelText(/讀書會名稱/), 'Test Book Club');
     await user.type(screen.getByLabelText(/讀書會描述/), 'Test description');
     
-    // Select public
-    const publicRadio = screen.getByLabelText(/公開/);
-    await user.click(publicRadio);
-
     // Select tags
     await user.click(screen.getByText('文學'));
     await user.click(screen.getByText('科技'));

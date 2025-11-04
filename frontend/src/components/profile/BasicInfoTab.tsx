@@ -36,6 +36,7 @@ export const BasicInfoTab = ({ profile, onUpdate }: BasicInfoTabProps) => {
     register,
     handleSubmit,
     watch,
+    reset, // Get reset function
     formState: { errors, isDirty },
   } = useForm<BasicInfoFormData>({
     resolver: zodResolver(basicInfoSchema),
@@ -53,6 +54,7 @@ export const BasicInfoTab = ({ profile, onUpdate }: BasicInfoTabProps) => {
       setLoading(true);
       const updated = await profileService.updateProfile(data);
       onUpdate(updated);
+      reset({ display_name: updated.display_name, bio: updated.bio || '' }); // Reset form with new data
       toast.success('基本資料更新成功');
     } catch {
       toast.error('更新失敗，請稍後再試');

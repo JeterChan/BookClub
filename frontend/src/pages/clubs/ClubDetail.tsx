@@ -2,8 +2,10 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBookClubStore } from '../../store/bookClubStore';
+import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { SkeletonCard } from '../../components/common/SkeletonCard';
+import { getImageUrl } from '../../utils/imageUrl';
 import toast from 'react-hot-toast';
 
 /**
@@ -38,10 +40,21 @@ const ClubDetail = () => {
     }
   }, [error, clearError]);
 
+  const { isAuthenticated } = useAuthStore();
+
   const handleJoinClick = async () => {
+    if (!isAuthenticated) {
+      toast.error('請先登入帳號');
+      navigate('/login');
+      return;
+    }
     if (!clubId) return;
-    await joinClub(parseInt(clubId));
-    toast.success('成功加入讀書會！');
+    try {
+      await joinClub(parseInt(clubId));
+      toast.success('成功加入讀書會！');
+    } catch (e) {
+      // Error is handled by the useEffect
+    }
   };
 
   const handleLeaveClick = async () => {
@@ -65,12 +78,53 @@ const ClubDetail = () => {
     // Owner or Admin Check
     if (membershipStatus === 'owner' || membershipStatus === 'admin') {
       return (
-        <Button 
-          onClick={() => navigate(`/clubs/${clubId}/settings`)}
-          className="whitespace-nownowrap bg-indigo-600 hover:bg-indigo-700 text-white"
-        >
-          管理
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => navigate(`/clubs/${clubId}/events`)}
+            className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            活動
+          </Button>
+          <Button 
+            onClick={() => navigate(`/clubs/${clubId}/discussions`)}
+            className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
+          >
+            討論區
+          </Button>
+          <Button 
+            onClick={() => navigate(`/clubs/${clubId}/settings`)}
+            className="whitespace-nownowrap bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            管理
+          </Button>
+        </div>
+      );
+    }
+
+    // Member Check
+    if (membershipStatus === 'member') {
+      return (
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => navigate(`/clubs/${clubId}/events`)}
+            className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            活動
+          </Button>
+          <Button 
+            onClick={() => navigate(`/clubs/${clubId}/discussions`)}
+            className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
+          >
+            討論區
+          </Button>
+          <Button 
+            onClick={handleLeaveClick}
+            variant="outline"
+            className="whitespace-nowrap"
+          >
+            退出讀書會
+          </Button>
+        </div>
       );
     }
 
@@ -80,19 +134,6 @@ const ClubDetail = () => {
       return (
         <Button disabled className="whitespace-nowrap">
           <span className="animate-pulse">載入中...</span>
-        </Button>
-      );
-    }
-
-    // 已經是成員
-    if (membershipStatus === 'member') {
-      return (
-        <Button 
-          onClick={handleLeaveClick}
-          variant="outline"
-          className="whitespace-nowrap"
-        >
-          退出讀書會
         </Button>
       );
     }
@@ -180,12 +221,13 @@ const ClubDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 封面圖片區域 */}
-      <div className="w-full h-64 md:h-80 bg-gray-200 overflow-hidden">
+      <div className="w-full h-64 md:h-96 bg-gray-200 overflow-hidden">
         {detailClub.cover_image_url ? (
           <img
-            src={detailClub.cover_image_url}
+            src={getImageUrl(detailClub.cover_image_url) || ''}
             alt={detailClub.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500">
@@ -291,12 +333,12 @@ const ClubDetail = () => {
 
         {/* 返回按鈕 */}
         <div className="mt-6 text-center">
-          <button
+          <Button
             onClick={() => navigate('/clubs')}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline"
+            variant="outline"
           >
             ← 返回探索頁面
-          </button>
+          </Button>
         </div>
       </div>
     </div>

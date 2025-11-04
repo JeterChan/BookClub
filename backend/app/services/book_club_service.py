@@ -1,6 +1,9 @@
 from typing import List, Optional
 from sqlmodel import Session, select
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
+import os
+import uuid
+from pathlib import Path
 
 from app.models.book_club import BookClub, BookClubCreate, BookClubVisibility
 from app.models.book_club_member import BookClubMember, MemberRole, MembershipStatus
@@ -9,6 +12,25 @@ from app.models.user import User
 from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
 from app.schemas.book_club import BookClubReadWithDetails, BookClubUpdate
 from app.models.club_tag import ClubTagRead
+
+# 上傳目錄設定
+UPLOAD_DIR = Path("uploads/club_covers")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+def save_upload_file(upload_file: UploadFile) -> str:
+    """儲存上傳的檔案並返回 URL 路徑"""
+    # 生成唯一檔名
+    file_extension = os.path.splitext(upload_file.filename or "")[1]
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = UPLOAD_DIR / unique_filename
+    
+    # 寫入檔案
+    with open(file_path, "wb") as buffer:
+        content = upload_file.file.read()
+        buffer.write(content)
+    
+    # 返回相對路徑（用於存入資料庫）
+    return f"/uploads/club_covers/{unique_filename}"
 
 def update_book_club(
     session: Session, 
@@ -34,7 +56,8 @@ def update_book_club(
 def create_book_club(
     session: Session,
     current_user: User,
-    book_club_data: BookClubCreate
+    book_club_data: BookClubCreate,
+    cover_image: Optional[UploadFile] = None
 ) -> BookClubReadWithDetails:
     # 1. 驗證所有 tag_ids 是否存在
     tags = session.exec(
@@ -47,19 +70,24 @@ def create_book_club(
             detail="一個或多個標籤 ID 無效"
         )
     
-    # 2. 建立 BookClub 實例
+    # 2. 處理封面圖片上傳
+    cover_image_url = None
+    if cover_image:
+        cover_image_url = save_upload_file(cover_image)
+    
+    # 3. 建立 BookClub 實例
     book_club = BookClub(
         name=book_club_data.name,
         description=book_club_data.description,
         visibility=book_club_data.visibility,
-        cover_image_url=book_club_data.cover_image_url,
+        cover_image_url=cover_image_url,
         owner_id=current_user.id
     )
     
     session.add(book_club)
     session.flush()  # 取得 book_club.id
     
-    # 3. 關聯標籤至讀書會
+    # 4. 關聯標籤至讀書會
     for tag in tags:
         tag_link = BookClubTagLink(
             book_club_id=book_club.id,
@@ -67,7 +95,7 @@ def create_book_club(
         )
         session.add(tag_link)
     
-    # 4. 自動建立 BookClubMember 記錄 (role=OWNER)
+    # 5. 自動建立 BookClubMember 記錄 (role=OWNER)
     member = BookClubMember(
         user_id=current_user.id,
         book_club_id=book_club.id,
@@ -78,7 +106,7 @@ def create_book_club(
     session.commit()
     session.refresh(book_club)
     
-    # 5. 構建回應資料
+    # 6. 構建回應資料
     from app.models.user import UserRead
     
     return BookClubReadWithDetails(
@@ -111,11 +139,16 @@ def list_book_clubs(
     page: int = 1,
     page_size: int = 20,
     keyword: Optional[str] = None,
-    tag_ids: Optional[List[int]] = None
+    tag_ids: Optional[List[int]] = None,
+    user_id: Optional[int] = None
 ) -> tuple[List[BookClubReadWithDetails], dict]:
     from sqlmodel import func, col
     
     query = select(BookClub).where(BookClub.visibility == "public")
+    
+    # 如果指定了 user_id，只返回該用戶加入的讀書會
+    if user_id is not None:
+        query = query.join(BookClubMember).where(BookClubMember.user_id == user_id)
     
     if keyword:
         search_pattern = f"%{keyword}%"

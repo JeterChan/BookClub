@@ -17,21 +17,25 @@
 
 ### **Epic 2: 讀書會管理頁面**
 6. **讀書會探索** (`/clubs`): 卡片網格展示所有公開讀書會，支援搜尋與篩選
-7. **讀書會詳細** (`/clubs/:clubId`): 讀書會完整資訊、Tab 導航 (概覽/討論/成員/資源)
+7. **讀書會詳細** (`/clubs/:clubId`): 讀書會完整資訊、Tab 導航 (概覽/活動/討論/成員/資源)
 8. **建立讀書會** (`/clubs/create`): 多步驟表單建立新讀書會
 9. **讀書會設定** (`/clubs/:clubId/settings`): 管理員專用，編輯讀書會資訊與成員管理
+10. **活動列表** (`/clubs/:clubId/events`): 顯示該讀書會所有活動，區分即將舉行與已結束
+11. **活動詳細** (`/clubs/:clubId/events/:eventId`): 活動完整資訊、參與者名單、報名按鈕
+12. **建立活動** (`/clubs/:clubId/events/create`): 建立新活動的表單頁面
+13. **編輯活動** (`/clubs/:clubId/events/:eventId/edit`): 編輯活動資訊（發起人專用）
 
 ### **Epic 3: 學習協作頁面**
-10. **討論區列表** (`/clubs/:clubId/discussions`): 顯示該讀書會所有討論主題
-11. **討論串詳細** (`/clubs/:clubId/discussions/:topicId`): 單一討論主題的完整對話串
-12. **建立討論** (`/clubs/:clubId/discussions/new`): 發表新討論主題
-13. **資源檔案庫** (`/clubs/:clubId/resources`): 檔案上傳、下載與協作筆記
-14. **閱讀進度** (`/clubs/:clubId/progress`): 視覺化進度追蹤與成員進度概覽
+14. **討論區列表** (`/clubs/:clubId/discussions`): 顯示該讀書會所有討論主題
+15. **討論串詳細** (`/clubs/:clubId/discussions/:topicId`): 單一討論主題的完整對話串
+16. **建立討論** (`/clubs/:clubId/discussions/new`): 發表新討論主題
+17. **資源檔案庫** (`/clubs/:clubId/resources`): 檔案上傳、下載與協作筆記
+18. **閱讀進度** (`/clubs/:clubId/progress`): 視覺化進度追蹤與成員進度概覽
 
 ### **Epic 4 & 共用頁面**
-15. **通知中心** (`/notifications`): 統一的通知列表與管理
-16. **全站搜尋** (`/search`): 搜尋讀書會、討論、用戶
-17. **用戶公開檔案** (`/users/:userId`): 其他用戶的公開資訊頁面
+19. **通知中心** (`/notifications`): 統一的通知列表與管理
+20. **全站搜尋** (`/search`): 搜尋讀書會、討論、用戶
+21. **用戶公開檔案** (`/users/:userId`): 其他用戶的公開資訊頁面
 
 ## 響應式設計原則
 - **手機版** (320-767px): 

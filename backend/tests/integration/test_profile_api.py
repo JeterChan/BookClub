@@ -11,7 +11,7 @@ VALID_PNG_BYTES = base64.b64decode(b'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAw
 
 def test_get_my_profile(authenticated_client: TestClient, auth_headers: dict):
     """測試成功獲取個人檔案"""
-    response = authenticated_client.get("/api/users/me/profile", headers=auth_headers)
+    response = authenticated_client.get("/api/v1/users/me/profile", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert "id" in data
@@ -22,7 +22,7 @@ def test_get_my_profile(authenticated_client: TestClient, auth_headers: dict):
 def test_update_my_profile(authenticated_client: TestClient, auth_headers: dict):
     """測試成功更新個人檔案"""
     update_data = {"display_name": "Integration Test Name", "bio": "Bio from test."}
-    response = authenticated_client.put("/api/users/me/profile", headers=auth_headers, json=update_data)
+    response = authenticated_client.put("/api/v1/users/me/profile", headers=auth_headers, json=update_data)
     assert response.status_code == 200
     data = response.json()
     assert data["display_name"] == update_data["display_name"]
@@ -33,7 +33,7 @@ def test_upload_avatar_api(authenticated_client: TestClient, auth_headers: dict)
     # Create a dummy file for upload
     files = {"file": ("test_avatar.png", VALID_PNG_BYTES, "image/png")}
     
-    response = authenticated_client.post("/api/users/me/avatar", headers=auth_headers, files=files)
+    response = authenticated_client.post("/api/v1/users/me/avatar", headers=auth_headers, files=files)
     assert response.status_code == 200
     data = response.json()
     assert "avatar_url" in data
@@ -47,5 +47,5 @@ def test_upload_avatar_api(authenticated_client: TestClient, auth_headers: dict)
 
 def test_get_profile_unauthenticated_fails(client: TestClient):
     """測試未認證用戶無法獲取檔案"""
-    response = client.get("/api/users/me/profile")
+    response = client.get("/api/v1/users/me/profile")
     assert response.status_code == 403 # Forbidden

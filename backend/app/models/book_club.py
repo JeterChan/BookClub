@@ -9,6 +9,7 @@ from .user import User
 
 if TYPE_CHECKING:
     from .club_tag import ClubTag, ClubTagRead
+    from .event import Event
 
 # 必須在運行時導入 BookClubTagLink 作為 link_model
 from .club_tag import BookClubTagLink
@@ -31,8 +32,9 @@ class BookClub(SQLModel, table=True):
     # Relationships
     owner: "User" = Relationship(back_populates="owned_clubs")
     members: List["BookClubMember"] = Relationship(back_populates="book_club")
-    threads: List["DiscussionThread"] = Relationship(back_populates="book_club")
+    threads: List["DiscussionTopic"] = Relationship(back_populates="book_club")
     tags: List["ClubTag"] = Relationship(back_populates="book_clubs", link_model=BookClubTagLink)
+    events: List["Event"] = Relationship(back_populates="book_club")
 
 
 # ===== API Schemas (基本 CRUD) =====

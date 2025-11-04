@@ -8,7 +8,7 @@ from app.models.user import User
 def test_registration_sends_verification_email(mock_send_email, client: TestClient, session: Session):
     """測試註冊新用戶時，系統會發送驗證郵件"""
     response = client.post(
-        "/api/auth/register",
+        "/api/v1/auth/register",
         json={"email": "test@example.com", "password": "Test1234", "display_name": "Test User"}
     )
     assert response.status_code == 201
@@ -28,13 +28,13 @@ def test_unverified_user_cannot_login(client: TestClient, session: Session):
     """測試未驗證的用戶無法登入"""
     # 先註冊一個用戶，但不驗證
     client.post(
-        "/api/auth/register",
+        "/api/v1/auth/register",
         json={"email": "unverified@example.com", "password": "Test1234", "display_name": "Unverified"}
     )
     
     # 嘗試登入
     response = client.post(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         json={"email": "unverified@example.com", "password": "Test1234"}
     )
     
@@ -47,7 +47,7 @@ def test_verify_email_and_login(mock_send_email, client: TestClient, session: Se
     """測試完整的 email 驗證流程，並成功登入"""
     # 1. 註冊
     client.post(
-        "/api/auth/register",
+        "/api/v1/auth/register",
         json={"email": "verify_me@example.com", "password": "Test1234", "display_name": "To Be Verified"}
     )
     
@@ -58,7 +58,7 @@ def test_verify_email_and_login(mock_send_email, client: TestClient, session: Se
     assert token is not None
 
     # 3. 進行驗證
-    response = client.get(f"/api/auth/verify-email?token={token}")
+    response = client.get(f"/api/v1/auth/verify-email?token={token}")
     assert response.status_code == 200
     assert "Email 驗證成功" in response.json()["message"]
 
@@ -69,7 +69,7 @@ def test_verify_email_and_login(mock_send_email, client: TestClient, session: Se
 
     # 4. 嘗試登入
     response = client.post(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         json={"email": "verify_me@example.com", "password": "Test1234"}
     )
     assert response.status_code == 200

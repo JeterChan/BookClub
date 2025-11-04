@@ -1,27 +1,31 @@
-// frontend/src/store/bookClubStore.ts
 import { create } from 'zustand';
-import { 
+import {
   createBookClub as createBookClubService,
-  getAvailableTags, 
-  listBookClubs, 
+  getAvailableTags,
+  listBookClubs,
   getBookClubById,
   joinClub as joinClubService,
   leaveClub as leaveClubService,
-  requestToJoinClub as requestToJoinClubService
+  requestToJoinClub as requestToJoinClubService,
+  getDiscussions,
+  createDiscussion,
+  getDiscussion,
+  createComment,
 } from '../services/bookClubService';
-import type { 
-  BookClubCreateRequest, 
-  BookClubRead, 
-  ClubTag, 
-  BookClubListItem, 
-  PaginationMeta 
+import type {
+  BookClubCreateRequest,
+  BookClubRead,
+  ClubTag,
+  BookClubListItem,
+  PaginationMeta,
 } from '../types/bookClub';
+import type { DiscussionTopic } from '../types/discussion';
 import type { ApiError } from '../types/error';
 
 interface BookClubState {
   clubs: BookClubListItem[];
   availableTags: ClubTag[];
-  detailClub: BookClubRead | null; // Consolidated state
+  detailClub: BookClubRead | null;
   pagination: PaginationMeta | null;
   searchKeyword: string;
   selectedTagIds: number[];
@@ -29,7 +33,9 @@ interface BookClubState {
   loading: boolean;
   error: string | null;
   createSuccess: boolean;
-  
+  discussions: DiscussionTopic[];
+  currentTopic: DiscussionTopic | null;
+
   // Actions
   createBookClub: (data: BookClubCreateRequest) => Promise<void>;
   fetchAvailableTags: () => Promise<void>;
@@ -42,13 +48,17 @@ interface BookClubState {
   requestToJoinClub: (clubId: number) => Promise<void>;
   resetCreateSuccess: () => void;
   clearError: () => void;
-  setDetailClub: (club: BookClubRead | null) => void; // Renamed from setCurrentClub
+  setDetailClub: (club: BookClubRead | null) => void;
+  fetchDiscussions: (clubId: number) => Promise<void>;
+  addDiscussion: (clubId: number, data: { title: string; content: string }) => Promise<void>;
+  fetchDiscussion: (clubId: number, topicId: number) => Promise<void>;
+  addComment: (clubId: number, topicId: number, data: { content: string }) => Promise<void>;
 }
 
 export const useBookClubStore = create<BookClubState>((set, get) => ({
   clubs: [],
   availableTags: [],
-  detailClub: null, // Consolidated state
+  detailClub: null,
   pagination: null,
   searchKeyword: '',
   selectedTagIds: [],
@@ -56,7 +66,9 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
   loading: false,
   error: null,
   createSuccess: false,
-  
+  discussions: [],
+  currentTopic: null,
+
   createBookClub: async (data: BookClubCreateRequest) => {
     set({ loading: true, error: null, createSuccess: false });
     try {
@@ -77,9 +89,9 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
 
       set((state) => ({
         loading: false,
-        detailClub: club, // Set detailClub with the full object
+        detailClub: club,
         createSuccess: true,
-        clubs: [newClubListItem, ...state.clubs], // Prepend new club to the list
+        clubs: [newClubListItem, ...state.clubs],
       }));
     } catch (error) {
       const apiError = error as ApiError;
@@ -91,7 +103,7 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       throw error;
     }
   },
-  
+
   fetchAvailableTags: async () => {
     set({ loading: true, error: null });
     try {
@@ -110,42 +122,41 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       throw error;
     }
   },
-  
+
   fetchClubs: async (page = 1, pageSize = 20) => {
     set({ loading: true, error: null });
     try {
       const { searchKeyword, selectedTagIds } = get();
-      const result = await listBookClubs({ 
-        page, 
-        pageSize, 
-        keyword: searchKeyword || undefined, 
-        tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined 
+      const result = await listBookClubs({
+        page,
+        pageSize,
+        keyword: searchKeyword || undefined,
+        tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
       });
-      set({ 
-        clubs: result.items, 
-        pagination: result.pagination, 
-        currentPage: page, 
-        loading: false 
+      set({
+        clubs: result.items,
+        pagination: result.pagination,
+        currentPage: page,
+        loading: false,
       });
-    }
-    catch (error) {
+    } catch (error) {
       const apiError = error as ApiError;
       const errorMessage = apiError.response?.data?.detail || '載入讀書會失敗';
-      set({ 
-        error: errorMessage, 
-        loading: false 
+      set({
+        error: errorMessage,
+        loading: false,
       });
     }
   },
-  
+
   setSearchKeyword: (keyword: string) => {
     set({ searchKeyword: keyword });
   },
-  
+
   setSelectedTagIds: (tagIds: number[]) => {
     set({ selectedTagIds: tagIds });
   },
-  
+
   fetchClubDetail: async (clubId: number) => {
     set({ loading: true, error: null });
     try {
@@ -154,9 +165,9 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
     } catch (error) {
       const apiError = error as ApiError;
       const errorMessage = apiError.response?.data?.detail || '載入讀書會詳情失敗';
-      set({ 
-        error: errorMessage, 
-        loading: false 
+      set({
+        error: errorMessage,
+        loading: false,
       });
     }
   },
@@ -166,14 +177,13 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
     try {
       await joinClubService(clubId);
       set((state) => {
-        const updatedDetailClub = state.detailClub && state.detailClub.id === clubId
-          ? { ...state.detailClub, membership_status: 'member' as const, member_count: state.detailClub.member_count + 1 }
-          : state.detailClub;
+        const updatedDetailClub =
+          state.detailClub && state.detailClub.id === clubId
+            ? { ...state.detailClub, membership_status: 'member' as const, member_count: state.detailClub.member_count + 1 }
+            : state.detailClub;
 
-        const updatedClubs = state.clubs.map(club => 
-          club.id === clubId 
-            ? { ...club, member_count: club.member_count + 1 } 
-            : club
+        const updatedClubs = state.clubs.map((club) =>
+          club.id === clubId ? { ...club, member_count: club.member_count + 1 } : club
         );
 
         return {
@@ -195,14 +205,13 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
     try {
       await leaveClubService(clubId);
       set((state) => {
-        const updatedDetailClub = state.detailClub && state.detailClub.id === clubId
-          ? { ...state.detailClub, membership_status: 'not_member' as const, member_count: state.detailClub.member_count - 1 }
-          : state.detailClub;
+        const updatedDetailClub =
+          state.detailClub && state.detailClub.id === clubId
+            ? { ...state.detailClub, membership_status: 'not_member' as const, member_count: state.detailClub.member_count - 1 }
+            : state.detailClub;
 
-        const updatedClubs = state.clubs.map(club => 
-          club.id === clubId 
-            ? { ...club, member_count: Math.max(0, club.member_count - 1) } 
-            : club
+        const updatedClubs = state.clubs.map((club) =>
+          club.id === clubId ? { ...club, member_count: Math.max(0, club.member_count - 1) } : club
         );
 
         return {
@@ -242,9 +251,46 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       throw error;
     }
   },
-  
+
   resetCreateSuccess: () => set({ createSuccess: false }),
   clearError: () => set({ error: null }),
-  setDetailClub: (club) => set({ detailClub: club }), // Renamed from setCurrentClub
-}));
+  setDetailClub: (club) => set({ detailClub: club }),
 
+  fetchDiscussions: async (clubId) => {
+    set({ loading: true, error: null });
+    try {
+      const discussions = await getDiscussions(clubId);
+      set({ discussions, loading: false });
+    } catch (error) {
+      set({ error: 'Failed to fetch discussions', loading: false });
+    }
+  },
+  addDiscussion: async (clubId, data) => {
+    set({ loading: true, error: null });
+    try {
+      const newTopic = await createDiscussion(clubId, data);
+      set((state) => ({ discussions: [...state.discussions, newTopic], loading: false }));
+    } catch (error) {
+      set({ error: 'Failed to add discussion', loading: false });
+    }
+  },
+  fetchDiscussion: async (clubId, topicId) => {
+    set({ loading: true, error: null });
+    try {
+      const topic = await getDiscussion(clubId, topicId);
+      set({ currentTopic: topic, loading: false });
+    } catch (error) {
+      set({ error: 'Failed to fetch discussion', loading: false });
+    }
+  },
+  addComment: async (clubId, topicId, data) => {
+    set({ loading: true, error: null });
+    try {
+      await createComment(clubId, topicId, data);
+      const topic = await getDiscussion(clubId, topicId);
+      set({ currentTopic: topic, loading: false });
+    } catch (error) {
+      set({ error: 'Failed to add comment', loading: false });
+    }
+  },
+}));

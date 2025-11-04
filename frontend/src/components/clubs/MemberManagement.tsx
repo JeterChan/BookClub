@@ -2,6 +2,7 @@
 import { useClubManagementStore } from '../../store/clubManagementStore';
 import { useBookClubStore } from '../../store/bookClubStore';
 import { Button } from '../ui/Button';
+import { getImageUrl } from '../../utils/imageUrl';
 import toast from 'react-hot-toast';
 import type { ClubMember, MemberRole } from '../../types/clubManagement';
 import { TransferOwnership } from './TransferOwnership';
@@ -57,21 +58,41 @@ export const MemberManagement = () => {
       {members.map((member) => (
         <div key={member.user.id} className="flex items-center justify-between p-4 border rounded-lg">
           <div className="flex items-center space-x-4">
-            <img src={member.user.avatar_url || '/default-avatar.png'} alt={member.user.display_name} className="w-10 h-10 rounded-full" />
+            <div className="relative">
+              {member.user.avatar_url ? (
+                <img 
+                  src={getImageUrl(member.user.avatar_url) || ''}
+                  alt={member.user.display_name} 
+                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                  onError={(e) => {
+                    // 如果圖片載入失敗，顯示首字母
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `<div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-lg">${member.user.display_name.charAt(0).toUpperCase()}</div>`;
+                    }
+                  }}
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-lg">
+                  {member.user.display_name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
             <div>
-              <p className="font-medium">{member.user.display_name}</p>
-              <p className="text-sm text-gray-500">{member.role}</p>
+              <p className="font-medium text-gray-900">{member.user.display_name}</p>
+              <p className="text-sm text-gray-500 capitalize">{member.role === 'owner' ? '擁有者' : member.role === 'admin' ? '管理員' : '成員'}</p>
             </div>
           </div>
           {canManage(member) && (
             <div className="flex space-x-2">
               {currentUserRole === 'owner' && member.role === 'member' && (
-                <Button onClick={() => handleRoleChange(member.user.id, 'admin')} disabled={loading} size="sm" variant="outline">設為管理員</Button>
+                <Button onClick={() => handleRoleChange(member.user.id, 'admin')} disabled={loading} variant="outline" className="text-sm px-3 py-1">設為管理員</Button>
               )}
               {currentUserRole === 'owner' && member.role === 'admin' && (
-                <Button onClick={() => handleRoleChange(member.user.id, 'member')} disabled={loading} size="sm" variant="outline">設為成員</Button>
+                <Button onClick={() => handleRoleChange(member.user.id, 'member')} disabled={loading} variant="outline" className="text-sm px-3 py-1">設為成員</Button>
               )}
-              <Button onClick={() => handleRemove(member.user.id)} disabled={loading} size="sm" variant="destructive">移除</Button>
+              <Button onClick={() => handleRemove(member.user.id)} disabled={loading} variant="destructive" className="text-sm px-3 py-1">移除</Button>
             </div>
           )}
         </div>

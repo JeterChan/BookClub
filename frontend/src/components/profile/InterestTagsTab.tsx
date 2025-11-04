@@ -171,27 +171,31 @@ export const InterestTagsTab = ({ profile, onUpdate }: InterestTagsTabProps) => 
       {/* Custom Tags */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">自定義標籤</h3>
-        <div className="flex gap-2">
-          <Input
-            value={customTagName}
-            onChange={(e) => setCustomTagName(e.target.value)}
-            placeholder="輸入自定義標籤（最多50字元）"
-            maxLength={50}
-            disabled={creating || profile.interest_tags.length >= 20}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleCreateCustomTag();
-              }
-            }}
-          />
-          <Button
-            onClick={handleCreateCustomTag}
-            disabled={creating || !customTagName.trim() || profile.interest_tags.length >= 20}
-            loading={creating}
-          >
-            新增
-          </Button>
+        <div className="flex items-stretch gap-2">
+          <div className="flex-grow">
+            <Input
+              value={customTagName}
+              onChange={(e) => setCustomTagName(e.target.value)}
+              placeholder="輸入自定義標籤（最多50字元）"
+              maxLength={50}
+              disabled={creating || profile.interest_tags.length >= 20}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCreateCustomTag();
+                }
+              }}
+            />
+          </div>
+          <div className="flex-shrink-0">
+            <Button
+              onClick={handleCreateCustomTag}
+              disabled={creating || !customTagName.trim() || profile.interest_tags.length >= 20}
+              loading={creating}
+            >
+              新增
+            </Button>
+          </div>
         </div>
         
         {/* Display custom tags */}

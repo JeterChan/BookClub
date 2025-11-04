@@ -44,8 +44,8 @@ def authenticated_client_fixture(
     def get_session_override() -> Session:
         return session
 
-    def get_current_user_override() -> dict:
-        return {"sub": test_user_for_auth.email}
+    def get_current_user_override() -> User:
+        return test_user_for_auth
 
     app.dependency_overrides[get_session] = get_session_override
     app.dependency_overrides[get_current_user] = get_current_user_override
@@ -60,6 +60,7 @@ def test_user_for_auth_fixture(session: Session) -> User:
     user = User(email="auth-user@example.com", display_name="Auth User", password_hash="not-a-real-hash")
     session.add(user)
     session.commit()
+    session.refresh(user)
     return user
 
 

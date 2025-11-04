@@ -5,6 +5,10 @@ from typing import Optional
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlmodel import Session, select
+from app.db.session import get_session
+from app.models.user import User
+from app.models.book_club_member import BookClubMember
 
 # JWT 設定
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-for-development-only")
@@ -46,8 +50,9 @@ security_scheme = HTTPBearer()
 optional_security_scheme = HTTPBearer(auto_error=False)
 
 def get_current_user(
+    db: Session = Depends(get_session),
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme)
-) -> dict:
+) -> User:
     print("---LOG: Entering get_current_user dependency---")
     token = credentials.credentials
     payload = decode_access_token(token)
@@ -67,11 +72,17 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    return payload
+    user = db.exec(select(User).where(User.email == email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 
 def get_optional_current_user(
+    db: Session = Depends(get_session),
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security_scheme)
-) -> Optional[dict]:
+) -> Optional[User]:
     if not credentials:
         return None
         
@@ -81,4 +92,35 @@ def get_optional_current_user(
     if not payload or not payload.get("sub"):
         return None
         
-    return payload
+    email = payload.get("sub")
+    user = db.exec(select(User).where(User.email == email)).first()
+    return user
+
+
+
+
+
+
+
+def get_club_member(club_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_session)):
+    user_id = current_user.id
+
+
+
+    print(f"Checking membership for user_id: {user_id} in club_id: {club_id}")
+
+
+
+    member = db.exec(select(BookClubMember).where(BookClubMember.book_club_id == club_id, BookClubMember.user_id == user_id)).first()
+
+
+
+    if not member:
+
+
+
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this club")
+
+
+
+    return member

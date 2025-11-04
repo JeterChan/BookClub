@@ -27,6 +27,8 @@ export default function Login() {
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [emailForResend, setEmailForResend] = useState('');
 
+  const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
+
   const {
     register,
     handleSubmit,
@@ -40,35 +42,56 @@ export default function Login() {
     }
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsSubmitting(true);
-    setEmailNotVerified(false);
-    try {
-      const response = await authService.login({
-        email: data.email,
-        password: data.password
-      });
-      login(response, data.rememberMe || false);
-      toast.success('登入成功！正在跳轉...');
-      navigate('/dashboard');
-    } catch (err) {
-      const apiError = err as ApiError;
-      const detail = apiError.response?.data?.detail;
-      if (detail === "User not found") {
-        toast.error('使用者帳號不存在');
-      } else if (detail === "Incorrect password") {
-        toast.error('密碼錯誤');
-      } else if (detail === "請先完成 Email 驗證") {
-        setEmailNotVerified(true);
-        setEmailForResend(getValues('email'));
-        toast.error(detail, { id: 'verify-email-toast' });
-      } else {
-        toast.error(detail || '登入失敗，請稍後再試。');
+    const onSubmit = async (data: LoginFormData) => {
+      setIsSubmitting(true);
+
+      setEmailNotVerified(false);
+
+      setPasswordError(undefined);
+
+      try {
+
+        const response = await authService.login({
+
+          email: data.email,
+
+          password: data.password
+
+        });
+
+        login(response, data.rememberMe || false);
+
+        toast.success('登入成功！正在跳轉...');
+
+        navigate('/dashboard');
+
+      } catch (err) {
+
+        console.log(err);
+
+        const apiError = err as ApiError;
+
+        const detail = apiError.response?.data?.detail;
+
+        if (detail === "User not found") {
+
+          toast.error('使用者帳號不存在');
+
+        } else if (detail === "Incorrect email or password") {
+
+          setPasswordError('帳號或密碼錯誤');
+
+        } else if (detail === "請先完成 Email 驗證") {
+
+          setEmailNotVerified(true);
+
+          setEmailForResend(getValues('email'));
+        } 
+      } finally {
+        setIsSubmitting(false);
       }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
+    };
 
   const handleResendVerification = async () => {
     if (!emailForResend) return;
@@ -120,14 +143,14 @@ export default function Login() {
                 label="密碼"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="請輸入密碼"
-                error={errors.password?.message}
+                error={errors.password?.message || passwordError}
                 {...register('password')}
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 top-7 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-0 top-0 flex h-full items-center pr-3 text-gray-500 hover:text-gray-700"
                 aria-label={showPassword ? '隱藏密碼' : '顯示密碼'}
               >
                 {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}

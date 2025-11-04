@@ -1,3 +1,5 @@
+import { getAvatarUrl } from '../../services/profileService';
+
 interface AvatarProps {
   src?: string | null;
   alt: string;
@@ -26,14 +28,16 @@ export const Avatar = ({ src, alt, size = 'md' }: AvatarProps) => {
   };
 
   const initials = getInitials(alt);
+  const avatarUrl = src ? getAvatarUrl(src) : null;
 
   return (
     <div className={`${sizeClasses[size]} rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold`}>
-      {src ? (
+      {avatarUrl ? (
         <img 
-          src={src} 
+          src={avatarUrl} 
           alt={alt} 
           className="w-full h-full object-cover"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       ) : (
         <span>{initials}</span>

@@ -658,3 +658,497 @@ GET /api/users?page_size=20&sort_by=created_at
 **維護者**: Architect Winston  
 **版本**: 1.0  
 **下次審查**: Epic 2 開始前
+
+---
+
+## 🎯 Epic 2: 活動管理 API 規格
+
+### 活動資料結構
+
+#### EventCreate (建立活動請求)
+
+```json
+{
+  "clubId": 1,
+  "title": "《原子習慣》第一章討論會",
+  "description": "我們將討論習慣的核心原理，以及如何建立良好的習慣系統。請大家事先閱讀第1-3章。",
+  "eventDatetime": "2025-11-15T19:00:00Z",
+  "meetingUrl": "https://meet.google.com/abc-defg-hij",
+  "maxParticipants": 20,
+  "status": "draft"
+}
+```
+
+**欄位說明**:
+- `clubId` (integer, required): 所屬讀書會 ID
+- `title` (string, required): 活動名稱，1-100 字元
+- `description` (string, required): 活動描述，1-2000 字元
+- `eventDatetime` (string, required): 活動時間 (ISO 8601, UTC)，必須為未來時間
+- `meetingUrl` (string, required): 線上會議連結，必須為有效 URL
+- `maxParticipants` (integer, optional): 參與人數上限，null = 無限制
+- `status` (string, optional): 活動狀態，預設 "draft"
+
+**Status 枚舉**: `"draft"` | `"published"` | `"completed"` | `"cancelled"`
+
+#### EventRead (活動回應)
+
+```json
+{
+  "id": 1,
+  "clubId": 1,
+  "title": "《原子習慣》第一章討論會",
+  "description": "我們將討論習慣的核心原理...",
+  "eventDatetime": "2025-11-15T19:00:00Z",
+  "meetingUrl": "https://meet.google.com/abc-defg-hij",
+  "maxParticipants": 20,
+  "currentParticipants": 8,
+  "status": "published",
+  "organizer": {
+    "id": 5,
+    "displayName": "張小明",
+    "avatarUrl": "https://example.com/avatar.jpg"
+  },
+  "isOrganizer": false,
+  "isParticipating": true,
+  "canRegister": true,
+  "createdAt": "2025-11-01T10:00:00Z",
+  "updatedAt": "2025-11-01T10:00:00Z"
+}
+```
+
+**計算欄位**:
+- `currentParticipants` (integer): 當前報名人數 (status='registered')
+- `isOrganizer` (boolean): 當前用戶是否為發起人
+- `isParticipating` (boolean): 當前用戶是否已報名
+- `canRegister` (boolean): 當前是否可報名（考慮人數限制、活動狀態等）
+
+#### EventUpdate (更新活動請求)
+
+```json
+{
+  "title": "《原子習慣》第一章討論會（更新）",
+  "description": "更新後的描述...",
+  "eventDatetime": "2025-11-15T20:00:00Z",
+  "meetingUrl": "https://zoom.us/j/123456789",
+  "maxParticipants": 25,
+  "status": "published"
+}
+```
+
+**規則**:
+- 所有欄位皆為 optional
+- 只能更新未開始且未取消的活動
+- 狀態轉換規則：
+  - `draft` → `published` ✅
+  - `published` → `cancelled` ✅
+  - `published` → `draft` ❌
+  - `completed` → 任何狀態 ❌
+
+#### EventParticipantRead (參與者資訊)
+
+```json
+{
+  "eventId": 1,
+  "userId": 10,
+  "user": {
+    "id": 10,
+    "displayName": "李小華",
+    "avatarUrl": "https://example.com/avatar2.jpg"
+  },
+  "status": "registered",
+  "registeredAt": "2025-11-02T08:30:00Z"
+}
+```
+
+#### EventListResponse (活動列表回應)
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "title": "《原子習慣》討論會",
+      "eventDatetime": "2025-11-15T19:00:00Z",
+      "currentParticipants": 8,
+      "maxParticipants": 20,
+      "status": "published",
+      "organizer": {
+        "id": 5,
+        "displayName": "張小明"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalItems": 15,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### API 端點規格
+
+#### 1. 建立活動
+
+```
+POST /api/clubs/{club_id}/events
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be a member of the club
+
+**Request Body**: EventCreate (JSON)
+
+**Success Response** (201 Created):
+```json
+{
+  "message": "Event created successfully",
+  "data": EventRead
+}
+```
+
+**Error Responses**:
+- `400 Bad Request`: 時間為過去、URL 格式錯誤
+- `401 Unauthorized`: 未登入
+- `403 Forbidden`: 非讀書會成員
+- `404 Not Found`: 讀書會不存在
+- `422 Unprocessable Entity`: 驗證失敗
+
+---
+
+#### 2. 取得活動列表
+
+```
+GET /api/clubs/{club_id}/events
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be a member of the club
+
+**Query Parameters**:
+- `status` (string, optional): 篩選狀態 (`published`, `completed`, `cancelled`)
+- `page` (integer, optional): 頁碼，預設 1
+- `page_size` (integer, optional): 每頁筆數，預設 20，最大 100
+- `sort_by` (string, optional): 排序欄位，預設 `event_datetime`
+- `order` (string, optional): 排序方向 (`asc`, `desc`)，預設 `asc`
+
+**Success Response** (200 OK):
+```json
+EventListResponse
+```
+
+**預設行為**:
+- 只顯示 `status = 'published'` 的活動（除非用 status 參數篩選）
+- 按活動時間升序排列（最近的活動在前）
+- 自動區分「即將舉行」（未來時間）和「已結束」（過去時間但 status 仍為 published）
+
+---
+
+#### 3. 取得單一活動詳情
+
+```
+GET /api/clubs/{club_id}/events/{event_id}
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be a member of the club
+
+**Success Response** (200 OK):
+```json
+EventRead
+```
+
+**Error Responses**:
+- `401 Unauthorized`: 未登入
+- `403 Forbidden`: 非讀書會成員
+- `404 Not Found`: 活動或讀書會不存在
+
+---
+
+#### 4. 更新活動
+
+```
+PATCH /api/clubs/{club_id}/events/{event_id}
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be the organizer
+
+**Request Body**: EventUpdate (JSON, partial)
+
+**Success Response** (200 OK):
+```json
+{
+  "message": "Event updated successfully",
+  "data": EventRead
+}
+```
+
+**Business Rules**:
+- 只有發起人可以更新
+- 只能更新未開始且未取消的活動
+- 更新後通知所有已報名者
+
+**Error Responses**:
+- `400 Bad Request`: 活動已開始或已取消
+- `401 Unauthorized`: 未登入
+- `403 Forbidden`: 非活動發起人
+- `404 Not Found`: 活動不存在
+
+---
+
+#### 5. 取消活動
+
+```
+POST /api/clubs/{club_id}/events/{event_id}/cancel
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be the organizer
+
+**Success Response** (200 OK):
+```json
+{
+  "message": "Event cancelled successfully",
+  "data": EventRead
+}
+```
+
+**Business Rules**:
+- 只有發起人可以取消
+- 取消後通知所有已報名者
+- 取消後不可恢復
+
+---
+
+#### 6. 報名參加活動
+
+```
+POST /api/clubs/{club_id}/events/{event_id}/register
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be a member of the club
+
+**Success Response** (200 OK):
+```json
+{
+  "message": "Successfully registered for the event",
+  "data": EventParticipantRead
+}
+```
+
+**Business Rules**:
+- 必須是讀書會成員
+- 活動狀態必須為 `published`
+- 不能重複報名
+- 檢查人數限制
+
+**Error Responses**:
+- `400 Bad Request`: 活動已額滿、活動已結束、已報名過
+- `401 Unauthorized`: 未登入
+- `403 Forbidden`: 非讀書會成員
+- `404 Not Found`: 活動不存在
+
+---
+
+#### 7. 取消報名
+
+```
+DELETE /api/clubs/{club_id}/events/{event_id}/register
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be registered for the event
+
+**Success Response** (200 OK):
+```json
+{
+  "message": "Successfully unregistered from the event"
+}
+```
+
+**Business Rules**:
+- 必須已報名
+- 活動開始前才能取消
+- 取消後 `status` 更新為 `cancelled`（軟刪除，保留記錄）
+
+**Error Responses**:
+- `400 Bad Request`: 活動已開始、未報名
+- `401 Unauthorized`: 未登入
+- `404 Not Found`: 活動或報名記錄不存在
+
+---
+
+#### 8. 取得活動參與者列表
+
+```
+GET /api/clubs/{club_id}/events/{event_id}/participants
+```
+
+**Authentication**: Required (Bearer Token)  
+**Authorization**: Must be a member of the club
+
+**Query Parameters**:
+- `status` (string, optional): 篩選狀態 (`registered`, `cancelled`)，預設 `registered`
+
+**Success Response** (200 OK):
+```json
+{
+  "items": [EventParticipantRead],
+  "totalCount": 8
+}
+```
+
+---
+
+### 通知觸發規則
+
+以下情況會自動發送通知：
+
+| 事件 | 接收者 | 通知類型 |
+|------|--------|---------|
+| 活動發布 | 讀書會所有成員 | `EVENT_CREATED` |
+| 活動更新 | 所有已報名者 | `EVENT_UPDATED` |
+| 活動取消 | 所有已報名者 | `EVENT_CANCELLED` |
+| 活動開始前 1 小時 | 所有已報名者 | `EVENT_REMINDER` |
+| 有人報名 | 活動發起人 | `NEW_PARTICIPANT` |
+
+**通知內容範例**:
+```json
+{
+  "type": "EVENT_REMINDER",
+  "content": {
+    "eventId": 1,
+    "eventTitle": "《原子習慣》討論會",
+    "eventDatetime": "2025-11-15T19:00:00Z",
+    "meetingUrl": "https://meet.google.com/abc-defg-hij",
+    "message": "活動即將在 1 小時後開始"
+  },
+  "isRead": false,
+  "createdAt": "2025-11-15T18:00:00Z"
+}
+```
+
+---
+
+### 定時任務
+
+需要實作以下定時任務：
+
+#### 1. 活動提醒任務
+- **執行頻率**: 每 15 分鐘
+- **邏輯**: 查詢 1 小時後開始的活動，發送提醒給已報名者
+- **去重**: 使用 Redis 或資料庫標記已發送提醒的活動
+
+#### 2. 活動狀態更新任務
+- **執行頻率**: 每 1 小時
+- **邏輯**: 將已過期的 `published` 活動更新為 `completed`
+
+```python
+# 偽代碼
+def update_completed_events():
+    events = Event.query.filter(
+        Event.status == "published",
+        Event.event_datetime < datetime.utcnow()
+    ).all()
+    
+    for event in events:
+        event.status = "completed"
+        db.commit()
+```
+
+---
+
+### Backend Model 定義參考
+
+```python
+from sqlmodel import SQLModel, Field, Relationship
+from datetime import datetime
+from typing import Optional, List
+from enum import Enum
+
+class EventStatus(str, Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class ParticipantStatus(str, Enum):
+    REGISTERED = "registered"
+    CANCELLED = "cancelled"
+
+class Event(SQLModel, table=True):
+    """活動資料表"""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    club_id: int = Field(foreign_key="bookclub.id", index=True)
+    title: str = Field(max_length=100)
+    description: str = Field(max_length=2000)
+    event_datetime: datetime = Field(index=True)
+    meeting_url: str = Field(max_length=255)
+    organizer_id: int = Field(foreign_key="user.id")
+    max_participants: Optional[int] = None
+    status: EventStatus = Field(default=EventStatus.DRAFT, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    book_club: "BookClub" = Relationship(back_populates="events")
+    organizer: "User" = Relationship(back_populates="organized_events")
+    participants: List["EventParticipant"] = Relationship(back_populates="event")
+
+class EventParticipant(SQLModel, table=True):
+    """活動參與者關聯表"""
+    event_id: int = Field(foreign_key="event.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    status: ParticipantStatus = Field(default=ParticipantStatus.REGISTERED)
+    registered_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    event: Event = Relationship(back_populates="participants")
+    user: "User" = Relationship(back_populates="event_participations")
+
+# Pydantic Schemas with camelCase alias
+class EventCreate(SQLModel):
+    club_id: int = Field(alias="clubId")
+    title: str = Field(min_length=1, max_length=100)
+    description: str = Field(min_length=1, max_length=2000)
+    event_datetime: datetime = Field(alias="eventDatetime")
+    meeting_url: str = Field(alias="meetingUrl")
+    max_participants: Optional[int] = Field(default=None, alias="maxParticipants")
+    status: EventStatus = Field(default=EventStatus.DRAFT)
+    
+    class Config:
+        populate_by_name = True
+
+class EventRead(SQLModel):
+    id: int
+    club_id: int = Field(alias="clubId")
+    title: str
+    description: str
+    event_datetime: datetime = Field(alias="eventDatetime")
+    meeting_url: str = Field(alias="meetingUrl")
+    max_participants: Optional[int] = Field(alias="maxParticipants")
+    current_participants: int = Field(alias="currentParticipants")
+    status: EventStatus
+    organizer: "UserProfileRead"
+    is_organizer: bool = Field(alias="isOrganizer")
+    is_participating: bool = Field(alias="isParticipating")
+    can_register: bool = Field(alias="canRegister")
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+    
+    class Config:
+        populate_by_name = True
+```
+
+---
+
+**新增日期**: 2025-11-01  
+**維護者**: PM John, Architect Winston  
+**版本**: 1.1  
+**Epic**: Epic 2.6 - 讀書會活動管理
+

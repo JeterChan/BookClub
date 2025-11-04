@@ -3,8 +3,9 @@ from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from .interest_tag import InterestTag, InterestTagRead
     from .book_club import BookClub, BookClubMember
-    from .discussion import DiscussionThread, DiscussionPost
+    from .discussion import DiscussionTopic, DiscussionComment
     from .notification import Notification
+    from .event import Event, EventParticipant
 
 # 必須在運行時導入 UserInterestTag 作為 link_model
 from .interest_tag import UserInterestTag
@@ -42,10 +43,12 @@ class User(UserBase, table=True):
     # Relationships
     owned_clubs: List["BookClub"] = Relationship(back_populates="owner")
     memberships: List["BookClubMember"] = Relationship(back_populates="user")
-    threads: List["DiscussionThread"] = Relationship(back_populates="author")
-    posts: List["DiscussionPost"] = Relationship(back_populates="author")
+    threads: List["DiscussionTopic"] = Relationship(back_populates="author")
+    posts: List["DiscussionComment"] = Relationship(back_populates="owner")
     notifications: List["Notification"] = Relationship(back_populates="recipient")
     interest_tags: List["InterestTag"] = Relationship(back_populates="users", link_model=UserInterestTag)
+    organized_events: List["Event"] = Relationship(back_populates="organizer")
+    event_participations: List["EventParticipant"] = Relationship(back_populates="user")
 
 
 class UserProfileUpdate(SQLModel):

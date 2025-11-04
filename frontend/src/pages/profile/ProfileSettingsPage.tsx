@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { profileService, UserProfile, UpdateProfileData } from '../../services/profileService';
+import { profileService, type UpdateProfileData, getAvatarUrl } from '../../services/profileService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import toast from 'react-hot-toast';
 
 const ProfileSettingsPage = () => {
@@ -12,7 +13,13 @@ const ProfileSettingsPage = () => {
   const [initialData, setInitialData] = useState<UpdateProfileData>({ display_name: '', bio: '' });
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialData);
+  console.log("isDirty calculated as:", isDirty);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -23,6 +30,7 @@ const ProfileSettingsPage = () => {
         setFormData(initial);
         setInitialData(initial);
       } catch (error) {
+        console.error('Failed to fetch profile:', error);
         toast.error('無法載入個人資料，請稍後再試。');
       } finally {
         setLoading(false);
@@ -31,10 +39,6 @@ const ProfileSettingsPage = () => {
 
     fetchProfile();
   }, []);
-
-  useEffect(() => {
-    setIsDirty(JSON.stringify(formData) !== JSON.stringify(initialData));
-  }, [formData, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,16 +51,72 @@ const ProfileSettingsPage = () => {
     setIsSaving(true);
     try {
       const updatedProfile = await profileService.updateProfile(formData);
-      // The service returns the full profile, so we can update the store directly
       setUser(updatedProfile);
       const newInitialData = { display_name: updatedProfile.display_name, bio: updatedProfile.bio || '' };
       setInitialData(newInitialData);
       setFormData(newInitialData);
       toast.success('個人資料已成功更新！');
+      setTimeout(() => {
+        console.log("State after update:", { 
+          formData: newInitialData, 
+          initialData: newInitialData 
+        });
+      }, 0);
     } catch (error) {
+      console.error('Failed to update profile:', error);
       toast.error('更新失敗，請稍後再試。');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('只接受 JPG 或 PNG 格式的圖片。');
+      return;
+    }
+    const maxSizeInMB = 2;
+    if (file.size > maxSizeInMB * 1024 * 1024) {
+      toast.error(`檔案大小不能超過 ${maxSizeInMB}MB。`);
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const response = await profileService.uploadAvatar(file);
+      if (user) {
+        setUser({ ...user, avatar_url: response.avatar_url });
+      }
+      toast.success('大頭貼已成功更新！');
+    } catch (_error) {
+      toast.error('大頭貼上傳失敗，請稍後再試。');
+    } finally {
+      setIsUploading(false);
+      if(fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setIsRemoveModalOpen(false);
+    setIsRemoving(true);
+    try {
+      const updatedProfile = await profileService.removeAvatar();
+      setUser(updatedProfile);
+      toast.success('大頭貼已移除');
+    } catch (_error) {
+      toast.error('移除失敗，請稍後再試');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -98,6 +158,49 @@ const ProfileSettingsPage = () => {
           </Button>
         </div>
       </form>
+
+      <div className="mt-8 pt-8 border-t">
+        <h2 className="text-xl font-semibold mb-4">個人大頭貼</h2>
+        <div className="flex items-center gap-6">
+          <img 
+            src={getAvatarUrl(user?.avatar_url)}
+            alt="User Avatar" 
+            className="w-24 h-24 rounded-full object-cover bg-gray-200"
+            onError={(e) => { e.currentTarget.src = '/default-avatar.png'; }}
+          />
+          <div className="flex flex-col gap-3">
+            <input 
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/png, image/jpeg"
+              data-testid="avatar-upload-input"
+            />
+            <Button type="button" onClick={handleUploadClick} disabled={isUploading || isRemoving}>
+              {isUploading ? '上傳中...' : '上傳新照片'}
+            </Button>
+            {user?.avatar_url && (
+              <Button 
+                type="button" 
+                variant="destructive" 
+                disabled={isUploading || isRemoving}
+                onClick={() => setIsRemoveModalOpen(true)}
+              >
+                {isRemoving ? '移除中...' : '移除照片'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <ConfirmationModal 
+        isOpen={isRemoveModalOpen}
+        onClose={() => setIsRemoveModalOpen(false)}
+        onConfirm={handleRemoveAvatar}
+        title="確認移除大頭貼"
+        message="您確定要移除您的大頭貼嗎？此操作無法復原。"
+      />
     </div>
   );
 };

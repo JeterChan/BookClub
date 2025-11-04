@@ -1,6 +1,6 @@
 # backend/app/api/endpoints/book_clubs.py
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, Query, HTTPException
+from fastapi import APIRouter, Depends, status, Query, HTTPException, UploadFile, File, Form
 from sqlmodel import Session
 
 from app.db.session import get_session
@@ -14,6 +14,7 @@ from app.services.user_service import UserService
 from app.services.club_management_service import ClubManagementService
 from app.core.permissions import club_owner_or_admin_required, club_owner_required
 import logging
+import json
 
 router = APIRouter()
 
@@ -55,19 +56,34 @@ def delete_book_club(
 def create_book_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
-    current_user_payload: dict = Depends(get_current_user),
-    book_club_data: BookClubCreate
+    current_user: User = Depends(get_current_user),
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    visibility: str = Form(...),
+    tag_ids: str = Form(...),
+    cover_image: Optional[UploadFile] = File(None)
 ) -> BookClubReadWithDetails:
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # 解析 tag_ids
+    try:
+        tag_ids_list = json.loads(tag_ids)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="tag_ids 格式錯誤")
+    
+    # 建立 BookClubCreate 物件
+    book_club_data = BookClubCreate(
+        name=name,
+        description=description,
+        visibility=visibility,
+        tag_ids=tag_ids_list
+    )
+    
     return book_club_service.create_book_club(
         session=session,
         current_user=current_user,
-        book_club_data=book_club_data
+        book_club_data=book_club_data,
+        cover_image=cover_image
     )
+
 
 
 @router.get("/tags", response_model=List[ClubTagRead])
@@ -85,7 +101,9 @@ def list_book_clubs(
     page: int = Query(1, ge=1, description="頁碼（從 1 開始）"),
     page_size: int = Query(20, ge=1, le=100, description="每頁項目數"),
     keyword: Optional[str] = Query(None, description="搜尋關鍵字（搜尋名稱和簡介）"),
-    tag_ids: Optional[str] = Query(None, description="標籤 ID 列表（逗號分隔，例如: 1,3,5）")
+    tag_ids: Optional[str] = Query(None, description="標籤 ID 列表（逗號分隔，例如: 1,3,5）"),
+    my_clubs: bool = Query(False, description="是否只顯示我的讀書會"),
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ) -> PaginatedBookClubList:
     tag_ids_list = None
     if tag_ids:
@@ -94,12 +112,17 @@ def list_book_clubs(
         except ValueError:
             tag_ids_list = None
     
+    # 如果請求我的讀書會但未登入，返回錯誤
+    if my_clubs and not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="請先登入")
+    
     clubs, pagination = book_club_service.list_book_clubs(
         session=session,
         page=page,
         page_size=page_size,
         keyword=keyword,
-        tag_ids=tag_ids_list
+        tag_ids=tag_ids_list,
+        user_id=current_user.id if my_clubs and current_user else None
     )
     
     return PaginatedBookClubList(
@@ -112,15 +135,9 @@ def list_book_clubs(
 def get_book_club_detail(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: Optional[dict] = Depends(get_optional_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ) -> BookClubReadWithDetails:
-    current_user = None
-    if current_user_payload:
-        email = current_user_payload.get("sub")
-        current_user = user_service.get_by_email(email)
-
     return book_club_service.get_book_club_by_id(session, club_id, current_user)
 
 
@@ -133,22 +150,15 @@ logger = logging.getLogger(__name__)
 def join_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    logger.info(f"Attempting to join club {club_id} for user {current_user_payload.get('sub')}")
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        logger.warning(f"User with email {email} not found in DB for join club action.")
-        raise HTTPException(status_code=404, detail="User not found")
-    
+    logger.info(f"Attempting to join club {club_id} for user {current_user.email}")
     try:
         book_club_service.join_book_club(session, club_id, current_user.id)
-        logger.info(f"User {email} successfully joined club {club_id}")
+        logger.info(f"User {current_user.email} successfully joined club {club_id}")
     except HTTPException as e:
-        logger.error(f"Error during join_book_club service call for user {email} and club {club_id}: {e.detail}")
+        logger.error(f"Error during join_book_club service call for user {current_user.email} and club {club_id}: {e.detail}")
         raise e
     return
 
@@ -158,14 +168,9 @@ def join_club(
 def leave_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
     book_club_service.leave_book_club(session, club_id, current_user.id)
     return
 
@@ -174,13 +179,8 @@ def leave_club(
 def request_to_join_club(
     *,
     session: Session = Depends(get_session),
-    user_service: UserService = Depends(get_user_service),
     club_id: int,
-    current_user_payload: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    email = current_user_payload.get("sub")
-    current_user = user_service.get_by_email(email)
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
     book_club_service.request_to_join_book_club(session, club_id, current_user.id)
     return

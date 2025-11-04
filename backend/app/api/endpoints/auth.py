@@ -1,11 +1,19 @@
 # backend/app/api/endpoints/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from sqlmodel import Session
 from datetime import timedelta
 from app.models.user import UserCreate, RegistrationResponse, UserLogin, Token, TokenWithUser, UserRead
 from app.schemas.email_verification import EmailVerificationRequest, EmailVerificationResponse
+from app.models.password_reset import (
+    ForgotPasswordRequest, 
+    ForgotPasswordResponse, 
+    ResetPasswordRequest, 
+    ResetPasswordResponse,
+    VerifyResetTokenResponse
+)
 from app.services.user_service import UserService
 from app.services.email_service import EmailService
+from app.services.password_reset_service import PasswordResetService
 from app.db.session import get_session
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER
 
@@ -117,3 +125,75 @@ def login(
     )
     
     return TokenWithUser(access_token=access_token, token_type="bearer", user=UserRead.from_orm(user))
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse, status_code=status.HTTP_200_OK)
+async def forgot_password(
+    request_data: ForgotPasswordRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user_service: UserService = Depends(get_user_service),
+    session: Session = Depends(get_session)
+):
+    """
+    處理忘記密碼請求，發送重置郵件
+    
+    為了安全考量，即使 email 不存在也返回成功訊息
+    """
+    user = user_service.get_by_email(request_data.email)
+    
+    if user:
+        # 取得客戶端 IP 位址
+        ip_address = request.client.host if request.client else None
+        
+        try:
+            token = PasswordResetService.create_reset_token(session, user, ip_address)
+            background_tasks.add_task(EmailService.send_password_reset_email, user, token)
+        except HTTPException as e:
+            # 直接重新拋出 HTTPException (包括 429 rate limit)
+            raise e
+        except ValueError as e:
+            # 處理其他驗證錯誤
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    return ForgotPasswordResponse(
+        message="如果該 email 已註冊，您將會收到密碼重置連結。"
+    )
+
+
+@router.get("/verify-reset-token", response_model=VerifyResetTokenResponse, status_code=status.HTTP_200_OK)
+def verify_reset_token(
+    token: str,
+    session: Session = Depends(get_session)
+):
+    """
+    驗證密碼重置 token 是否有效
+    """
+    result = PasswordResetService.verify_reset_token(session, token)
+    
+    if not result["valid"]:
+        return VerifyResetTokenResponse(valid=False, email=None)
+    
+    return VerifyResetTokenResponse(valid=True, email=result["email"])
+
+
+@router.post("/reset-password", response_model=ResetPasswordResponse, status_code=status.HTTP_200_OK)
+def reset_password(
+    reset_data: ResetPasswordRequest,
+    session: Session = Depends(get_session)
+):
+    """
+    使用 token 重置密碼
+    """
+    try:
+        PasswordResetService.reset_password(
+            session, 
+            reset_data.token, 
+            reset_data.new_password
+        )
+        return ResetPasswordResponse(message="密碼重置成功，請使用新密碼登入。")
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )

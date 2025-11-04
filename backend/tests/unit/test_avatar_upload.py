@@ -38,8 +38,8 @@ def test_upload_avatar_success(session: Session, test_user_for_upload: User, tmp
     file = create_mock_upload_file("avatar.png", VALID_PNG_BYTES, "image/png")
 
     # Mock the os.makedirs and shutil.copyfileobj to avoid actual file IO in unit test
-    # We will test the actual file writing in integration tests
-    UserService.upload_avatar(session, test_user_for_upload, file)
+    user_service = UserService(session)
+    user_service.upload_avatar(test_user_for_upload, file)
 
     assert test_user_for_upload.avatar_url is not None
     assert test_user_for_upload.avatar_url.startswith("/uploads/avatars/")
@@ -54,26 +54,30 @@ def test_upload_avatar_too_large_raises_error(session: Session, test_user_for_up
     """測試上傳過大檔案時引發錯誤"""
     large_content = b"a" * (3 * 1024 * 1024) # 3MB
     file = create_mock_upload_file("large.jpg", large_content, "image/jpeg")
+    user_service = UserService(session)
     with pytest.raises(ValueError, match="檔案大小不可超過 2MB"):
-        UserService.upload_avatar(session, test_user_for_upload, file)
+        user_service.upload_avatar(test_user_for_upload, file)
 
 def test_upload_avatar_invalid_type_raises_error(session: Session, test_user_for_upload: User):
     """測試上傳無效檔案類型時引發錯誤"""
     file = create_mock_upload_file("document.pdf", b"pdf content", "application/pdf")
+    user_service = UserService(session)
     with pytest.raises(ValueError, match="不支援的檔案類型"):
-        UserService.upload_avatar(session, test_user_for_upload, file)
+        user_service.upload_avatar(test_user_for_upload, file)
 
 def test_upload_avatar_corrupted_image_raises_error(session: Session, test_user_for_upload: User):
     """測試上傳損毀圖片時引發錯誤"""
     file = create_mock_upload_file("corrupted.png", b"not a real png", "image/png")
+    user_service = UserService(session)
     with pytest.raises(ValueError, match="無效的圖片檔案"):
-        UserService.upload_avatar(session, test_user_for_upload, file)
+        user_service.upload_avatar(test_user_for_upload, file)
 
 def test_upload_new_avatar_deletes_old_one(session: Session, test_user_for_upload: User):
     """測試上傳新頭像時會刪除舊的頭像檔案"""
     # 1. Upload first avatar
     first_file = create_mock_upload_file("first.png", VALID_PNG_BYTES, "image/png")
-    UserService.upload_avatar(session, test_user_for_upload, first_file)
+    user_service = UserService(session)
+    user_service.upload_avatar(test_user_for_upload, first_file)
     old_avatar_path = test_user_for_upload.avatar_url.lstrip("/")
     assert os.path.exists(old_avatar_path)
 
@@ -82,7 +86,7 @@ def test_upload_new_avatar_deletes_old_one(session: Session, test_user_for_uploa
 
     # 2. Upload second avatar
     second_file = create_mock_upload_file("second.png", VALID_PNG_BYTES, "image/png")
-    UserService.upload_avatar(session, test_user_for_upload, second_file)
+    user_service.upload_avatar(test_user_for_upload, second_file)
     new_avatar_path = test_user_for_upload.avatar_url.lstrip("/")
 
     # 3. Assert old file is deleted and new one exists

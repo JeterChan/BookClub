@@ -19,6 +19,25 @@ export interface UserProfile {
   created_at: string;
 }
 
+/**
+ * Get full avatar URL from backend
+ * Converts relative path to absolute URL using API base
+ */
+export const getAvatarUrl = (avatarPath?: string): string => {
+  if (!avatarPath) {
+    return '/default-avatar.png';
+  }
+  
+  // If already a full URL, return as is
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+    return avatarPath;
+  }
+  
+  // Convert relative path to full backend URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  return `${API_BASE_URL}${avatarPath}`;
+};
+
 export interface UpdateProfileData {
   display_name?: string;
   bio?: string;
@@ -75,13 +94,13 @@ export const profileService = {
     }
 
     // 呼叫 API
-    const response = await apiClient.get<UserProfile>('/api/users/me/profile');
+    const response = await apiClient.get<UserProfile>('/api/v1/users/me/profile');
     return response.data;
   },
 
   /**
    * Update user profile
-   * PUT /api/users/me/profile
+   * PUT /api/v1/users/me/profile
    */
   updateProfile: async (data: UpdateProfileData): Promise<UserProfile> => {
     if (USE_MOCK_DATA) {
@@ -91,23 +110,23 @@ export const profileService = {
       return { ...mockProfile };
     }
 
-    const response = await apiClient.put<UserProfile>('/api/users/me/profile', data);
+    const response = await apiClient.put<UserProfile>('/api/v1/users/me/profile', data);
     return response.data;
   },
 
   linkGoogleAccount: async (idToken: string): Promise<UserProfile> => {
-    const response = await apiClient.post<UserProfile>('/api/users/me/link-google', { id_token: idToken });
+    const response = await apiClient.post<UserProfile>('/api/v1/users/me/link-google', { id_token: idToken });
     return response.data;
   },
 
   unlinkGoogleAccount: async (): Promise<UserProfile> => {
-    const response = await apiClient.delete<UserProfile>('/api/users/me/unlink-google');
+    const response = await apiClient.delete<UserProfile>('/api/v1/users/me/unlink-google');
     return response.data;
   },
 
   /**
    * Upload avatar
-   * POST /api/users/me/avatar
+   * POST /api/v1/users/me/avatar
    */
   uploadAvatar: async (file: File): Promise<AvatarUploadResponse> => {
     if (USE_MOCK_DATA) {
@@ -125,7 +144,7 @@ export const profileService = {
     formData.append('file', file);
 
     const response = await apiClient.post<AvatarUploadResponse>(
-      '/api/users/me/avatar',
+      '/api/v1/users/me/avatar',
       formData,
       {
         headers: {
@@ -138,21 +157,22 @@ export const profileService = {
 
   /**
    * Remove avatar
-   * DELETE /api/users/me/avatar
+   * DELETE /api/v1/users/me/avatar
    */
-  removeAvatar: async (): Promise<void> => {
+  removeAvatar: async (): Promise<UserProfile> => {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 300));
       mockProfile.avatar_url = undefined;
-      return;
+      return { ...mockProfile };
     }
 
-    await apiClient.delete('/api/users/me/avatar');
+    const response = await apiClient.delete<UserProfile>('/api/v1/users/me/avatar');
+    return response.data;
   },
 
   /**
    * Get all interest tags
-   * GET /api/interest-tags
+   * GET /api/v1/interest-tags
    */
   getInterestTags: async (predefinedOnly: boolean = false): Promise<InterestTag[]> => {
     if (USE_MOCK_DATA) {
@@ -160,7 +180,7 @@ export const profileService = {
       return predefinedOnly ? mockPredefinedTags : [...mockPredefinedTags];
     }
 
-    const response = await apiClient.get<InterestTag[]>('/api/interest-tags', {
+    const response = await apiClient.get<InterestTag[]>('/api/v1/interest-tags', {
       params: { predefined_only: predefinedOnly },
     });
     return response.data;
@@ -168,7 +188,7 @@ export const profileService = {
 
   /**
    * Create custom interest tag
-   * POST /api/interest-tags
+   * POST /api/v1/interest-tags
    */
   createInterestTag: async (name: string): Promise<InterestTag> => {
     if (USE_MOCK_DATA) {
@@ -181,13 +201,13 @@ export const profileService = {
       return newTag;
     }
 
-    const response = await apiClient.post<InterestTag>('/api/interest-tags', { name });
+    const response = await apiClient.post<InterestTag>('/api/v1/interest-tags', { name });
     return response.data;
   },
 
   /**
    * Add interest tag to user
-   * POST /api/users/me/interest-tags
+   * POST /api/v1/users/me/interest-tags
    */
   addUserInterestTag: async (tagId: number): Promise<InterestTag[]> => {
     if (USE_MOCK_DATA) {
@@ -199,7 +219,7 @@ export const profileService = {
       return [...mockProfile.interest_tags];
     }
 
-    const response = await apiClient.post<InterestTag[]>('/api/users/me/interest-tags', {
+    const response = await apiClient.post<InterestTag[]>('/api/v1/users/me/interest-tags', {
       tag_id: tagId,
     });
     return response.data;
@@ -207,7 +227,7 @@ export const profileService = {
 
   /**
    * Remove interest tag from user
-   * DELETE /api/users/me/interest-tags/{tag_id}
+   * DELETE /api/v1/users/me/interest-tags/{tag_id}
    */
   removeUserInterestTag: async (tagId: number): Promise<void> => {
     if (USE_MOCK_DATA) {
@@ -216,6 +236,10 @@ export const profileService = {
       return;
     }
 
-    await apiClient.delete(`/api/users/me/interest-tags/${tagId}`);
+    await apiClient.delete(`/api/v1/users/me/interest-tags/${tagId}`);
+  },
+
+  deactivateAccount: async (): Promise<void> => {
+    await apiClient.delete('/api/v1/users/me');
   },
 };

@@ -1,0 +1,45 @@
+schema: 1
+story: '4.3'
+story_title: 'User Profile Settings - Avatar'
+gate: WAIVED
+status_reason: 'Automated tests were explicitly removed by user instruction due to a blocking issue in the test environment. Proceeding with manual testing sign-off.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-10-29T22:15:00Z'
+
+top_issues:
+  - id: 1
+    severity: high
+    description: 'No automated tests exist for this feature, creating significant regression risk.'
+    recommendation: 'Prioritize creating a stable test setup and backfill tests for this component.'
+
+waiver: { active: true }
+
+quality_score: 40
+
+evidence:
+  tests_reviewed: 0
+  risks_identified: 1
+  trace:
+    ac_covered: []
+    ac_gaps: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Frontend validation is present. Backend validation is assumed but not verified.'
+  performance:
+    status: PASS
+    notes: 'No significant performance impact noted.'
+  reliability:
+    status: PASS
+    notes: 'Error handling and user feedback are implemented.'
+  maintainability:
+    status: CONCERNS
+    notes: 'The component is becoming overly complex. Refactoring into custom hooks is highly recommended.'
+
+recommendations:
+  future:
+    - action: 'Refactor ProfileSettingsPage into smaller, more focused custom hooks (e.g., useAvatarManagement).'
+      refs: ['frontend/src/pages/profile/ProfileSettingsPage.tsx']
+    - action: 'Create a stable testing strategy for components with async operations and toast notifications.'
+      refs: ['frontend/src/pages/profile/ProfileSettingsPage.tsx']
