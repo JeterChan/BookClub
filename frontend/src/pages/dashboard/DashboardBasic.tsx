@@ -20,7 +20,28 @@ export default function DashboardBasic() {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(55, 65, 81, 0.3);
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+          border-radius: 10px;
+          border: 2px solid rgba(55, 65, 81, 0.3);
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+        }
+      `}</style>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main Content */}
       <div className="lg:col-span-2 space-y-6">
         {/* Stats Cards */}
@@ -42,21 +63,55 @@ export default function DashboardBasic() {
           ))}
         </div>
 
-        {/* Activity Chart */}
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">本週活動趨勢</h3>
-          <div className="h-64 flex items-end justify-between space-x-2">
-            {[20, 35, 45, 60, 50, 70, 55].map((height, index) => (
-              <div key={index} className="flex-1 flex flex-col items-center space-y-2">
-                <div
-                  className="w-full bg-gradient-to-t from-brand-primary to-brand-primary/50 rounded-t-lg transition-all hover:from-brand-primary/90 hover:to-brand-primary/40"
-                  style={{ height: `${height}%` }}
-                />
-                <span className="text-xs text-gray-500">
-                  {['週一', '週二', '週三', '週四', '週五', '週六', '週日'][index]}
-                </span>
-              </div>
-            ))}
+        {/* Book Club Progress */}
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-white mb-4">讀書會進度</h3>
+          
+          {/* Scrollable Container */}
+          <div 
+            className="custom-scrollbar overflow-y-auto pr-2"
+            style={{
+              maxHeight: 'calc(3 * 88px)', // 每個項目約88px高度，顯示3個
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#3b82f6 #374151'
+            }}
+          >
+            <div className="space-y-4">
+              {[
+                { name: 'Fantasy Readers', date: 'Due: 7/30', progress: 75 },
+                { name: 'Member Buddies - Draft sharing', date: 'Due: 4/02', progress: 85 },
+                { name: 'Clubhouse Q&A - Moderator prep', date: 'Due: 8/10', progress: 50 },
+                { name: '經典文學讀書會', date: 'Due: 8/15', progress: 60 },
+                { name: '科幻小說探索', date: 'Due: 8/20', progress: 40 },
+                { name: '推理小說研究社', date: 'Due: 8/25', progress: 90 }
+              ].map((club, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  {/* Book Icon */}
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-600 rounded flex-shrink-0 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                    </svg>
+                  </div>
+                  
+                  {/* Progress Info */}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="text-sm font-medium text-white">{club.name}</h4>
+                      <span className="text-xs text-gray-400">{club.progress}%</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-2">{club.date}</p>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-cyan-400 to-blue-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${club.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -145,5 +200,6 @@ export default function DashboardBasic() {
         </div>
       </div>
     </div>
+    </>
   );
 }

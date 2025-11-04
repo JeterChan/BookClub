@@ -101,7 +101,7 @@ export default function Hero({ onOpenAuth }: HeroProps) {
                   </button>
 
                   <button
-                    onClick={() => navigate('/clubs?view=my')}
+                    onClick={() => navigate('/account?tab=club')}
                     className="flex flex-col items-center gap-2 p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-[#04c0f4] hover:bg-[#04c0f4]/5 transition-all group"
                   >
                     <div className="w-12 h-12 rounded-full bg-[#04c0f4]/10 group-hover:bg-[#04c0f4]/20 flex items-center justify-center transition-colors">

@@ -1,13 +1,24 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Setting from './Setting';
 import Notify from './Notify';
 import Club from './Club';
 import Comment from './Comment';
+import Header from '../../components/Header';
 
 type AccountTab = 'setting' | 'notify' | 'club' | 'comment';
 
 export default function Account() {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<AccountTab>('setting');
+
+  // 從 URL 參數讀取標籤
+  useEffect(() => {
+    const tab = searchParams.get('tab') as AccountTab;
+    if (tab && ['setting', 'notify', 'club', 'comment'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const tabs = [
     { id: 'setting' as const, label: '個人設定', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
@@ -19,16 +30,7 @@ export default function Account() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-2xl font-bold text-gray-900">帳號管理</h1>
-            <a href="/dashboard" className="text-brand-primary hover:text-brand-primary/80 text-sm font-medium">
-              返回儀表板
-            </a>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -40,16 +42,16 @@ export default function Account() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                       activeTab === tab.id
-                        ? 'bg-brand-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-gray-100 text-gray-900 shadow-md font-semibold border-l-4 border-brand-primary'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-brand-primary font-medium'
                     }`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
                     </svg>
-                    <span className="font-medium">{tab.label}</span>
+                    <span>{tab.label}</span>
                   </button>
                 ))}
               </nav>

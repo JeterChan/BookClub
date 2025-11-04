@@ -1,7 +1,7 @@
-﻿import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+﻿import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Header from '../../components/Header';
 
 const createDiscussionSchema = z.object({
   title: z.string().min(5, '標題至少需要 5 個字').max(100, '標題不能超過 100 個字'),
@@ -44,15 +44,10 @@ export default function NewDiscussion() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <Header />
+      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
-        <button className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          返回討論區
-        </button>
-
         {/* Form */}
         <div className="bg-white rounded-lg shadow-sm p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">發起新討論</h1>
@@ -65,7 +60,7 @@ export default function NewDiscussion() {
               </label>
               <select
                 {...register('club')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#04c0f4] focus:border-transparent"
               >
                 <option value="">請選擇社團</option>
                 {clubs.map((club) => (
@@ -88,7 +83,7 @@ export default function NewDiscussion() {
                 type="text"
                 {...register('title')}
                 placeholder="例如：紅樓夢第一回讀後感"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#04c0f4] focus:border-transparent"
               />
               {errors.title && (
                 <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
@@ -108,7 +103,7 @@ export default function NewDiscussion() {
               <textarea
                 {...register('content')}
                 placeholder="分享你的想法、觀點或提出問題..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#04c0f4] focus:border-transparent resize-none"
                 rows={10}
               />
               {errors.content && (
@@ -139,7 +134,7 @@ export default function NewDiscussion() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-[#04c0f4] text-white rounded-lg hover:bg-[#03a8d8] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? '發佈中...' : '發起討論'}
               </button>

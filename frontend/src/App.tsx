@@ -10,15 +10,18 @@ import Account from './pages/account';
 import ClubDirectory from './pages/club';
 import ClubDetail from './pages/club/Detail';
 import ClubCreate from './pages/club/Create';
+import ClubManagement from './pages/club/Management';
+import ClubDiscussions from './pages/club/ClubDiscussions';
 import Discussions from './pages/discussions';
 import DiscussionDetail from './pages/discussions/Detail';
 import DiscussionNew from './pages/discussions/New';
+import CommentEdit from './pages/CommentEdit';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
   
@@ -86,9 +89,28 @@ function App() {
           }
         />
         
+        {/* Comment Routes */}
+        <Route
+          path="/comments/:id/edit"
+          element={
+            <ProtectedRoute>
+              <CommentEdit />
+            </ProtectedRoute>
+          }
+        />
+        
         {/* Club Routes */}
         <Route path="/clubs" element={<ClubDirectory />} />
         <Route path="/clubs/:id" element={<ClubDetail />} />
+        <Route path="/club/:id/discussions" element={<ClubDiscussions />} />
+        <Route
+          path="/clubs/:id/management"
+          element={
+            <ProtectedRoute>
+              <ClubManagement />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/clubs/create"
           element={

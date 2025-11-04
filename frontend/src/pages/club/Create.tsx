@@ -1,7 +1,9 @@
 ﻿import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Header from '../../components/Header';
 
 const createClubSchema = z.object({
   name: z.string().min(2, '社團名稱至少需要 2 個字').max(50, '社團名稱不能超過 50 個字'),
@@ -13,6 +15,7 @@ const createClubSchema = z.object({
 type CreateClubForm = z.infer<typeof createClubSchema>;
 
 export default function CreateClub() {
+  const navigate = useNavigate();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formData, setFormData] = useState<CreateClubForm | null>(null);
 
@@ -67,6 +70,9 @@ export default function CreateClub() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <Header />
+      
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">創建新社團</h1>
@@ -190,7 +196,7 @@ export default function CreateClub() {
             <div className="flex justify-end gap-3 pt-4 border-t">
               <button
                 type="button"
-                onClick={() => window.history.back()}
+                onClick={() => navigate(-1)}
                 className="px-6 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium border border-gray-300"
               >
                 取消

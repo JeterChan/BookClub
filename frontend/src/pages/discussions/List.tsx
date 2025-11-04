@@ -1,6 +1,9 @@
 ﻿import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Header from '../../components/Header';
 
 export default function DiscussionsList() {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<'all' | 'my' | 'popular'>('all');
 
   const discussions = [
@@ -58,11 +61,17 @@ export default function DiscussionsList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <Header />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {/* Page Title and Action Button */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">討論區</h1>
-          <button className="px-6 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors font-medium">
+          <h2 className="text-3xl font-bold text-gray-900">討論區</h2>
+          <button 
+            onClick={() => navigate('/discussions/new')}
+            className="px-6 py-2 bg-[#04c0f4] text-white rounded-lg hover:bg-[#03a8d8] transition-colors font-medium"
+          >
             發起討論
           </button>
         </div>
@@ -75,8 +84,8 @@ export default function DiscussionsList() {
               onClick={() => setActiveFilter(filter.id)}
               className={`px-4 py-2 rounded-lg transition-colors font-medium ${
                 activeFilter === filter.id
-                  ? 'bg-brand-primary text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-[#04c0f4] text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
             >
               {filter.name}
@@ -89,9 +98,8 @@ export default function DiscussionsList() {
           {discussions.map((discussion) => (
             <div
               key={discussion.id}
-              className={`bg-white rounded-lg p-6 hover:shadow-md transition-shadow ${
-                discussion.isPinned ? 'border-2 border-brand-primary' : 'shadow-sm'
-              }`}
+              onClick={() => navigate(`/discussions/${discussion.id}`)}
+              className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
               <div className="flex items-start gap-4">
                 {/* Author Avatar */}
@@ -103,7 +111,7 @@ export default function DiscussionsList() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     {discussion.isPinned && (
-                      <span className="px-2 py-1 bg-brand-primary text-white text-xs font-medium rounded">
+                      <span className="px-2 py-1 bg-[#04c0f4] text-white text-xs font-medium rounded">
                         置頂
                       </span>
                     )}

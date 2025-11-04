@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import AddTagModal from './AddTagModal';
 
 interface PreferenceModalProps {
   onClose: () => void;
@@ -15,9 +16,30 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
     theme: 'light',
   });
 
+  // 用戶選擇的標籤
+  const [selectedTags, setSelectedTags] = useState<string[]>([
+    'Fantasy',
+    'Productivity',
+    'Memoir',
+    'Product Design',
+    'Historical',
+    'Club Q&A',
+  ]);
+
+  const [isAddTagModalOpen, setIsAddTagModalOpen] = useState(false);
+
+  const removeTag = (tagToRemove: string) => {
+    setSelectedTags(prev => prev.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleAddTags = (newTags: string[]) => {
+    setSelectedTags(prev => [...prev, ...newTags]);
+  };
+
   const handleSave = async () => {
     try {
       console.log('Save preferences:', preferences);
+      console.log('Selected tags:', selectedTags);
       // TODO: API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       onClose();
@@ -28,7 +50,7 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 max-h-[80vh] overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">偏好設定</h2>
           <button
@@ -58,7 +80,7 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
                     onChange={(e) => setPreferences({ ...preferences, emailNotifications: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:shadow-md"></div>
                 </label>
               </div>
 
@@ -74,7 +96,7 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
                     onChange={(e) => setPreferences({ ...preferences, pushNotifications: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:shadow-md"></div>
                 </label>
               </div>
 
@@ -90,7 +112,7 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
                     onChange={(e) => setPreferences({ ...preferences, clubUpdates: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:shadow-md"></div>
                 </label>
               </div>
 
@@ -106,7 +128,7 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
                     onChange={(e) => setPreferences({ ...preferences, commentReplies: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:shadow-md"></div>
                 </label>
               </div>
 
@@ -122,7 +144,7 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
                     onChange={(e) => setPreferences({ ...preferences, weeklyDigest: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:shadow-md"></div>
                 </label>
               </div>
             </div>
@@ -160,22 +182,75 @@ export default function PreferenceModal({ onClose }: PreferenceModalProps) {
             </div>
           </div>
 
+          {/* Preference Tags (移到底部) */}
+          <div className="border-2 border-brand-primary rounded-xl p-5 bg-gradient-to-br from-blue-50 to-cyan-50">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">偏好標籤</h3>
+              <button 
+                onClick={() => setIsAddTagModalOpen(true)}
+                className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center transition-colors shadow-md"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              已選擇的偏好標籤，點擊標籤右側的 × 可以移除
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {selectedTags.length === 0 ? (
+                <p className="text-gray-400 text-sm">尚未選擇任何標籤，點擊右上角 + 按鈕新增</p>
+              ) : (
+                selectedTags.map((tag) => (
+                  <div
+                    key={tag}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-500 text-white shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-medium">{tag}</span>
+                    <button
+                      onClick={() => removeTag(tag)}
+                      className="w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           <div className="flex space-x-3 pt-4">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               取消
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:from-gray-400 disabled:to-gray-400"
             >
-              儲存設定
+              ✓ 儲存設定
             </button>
           </div>
         </div>
       </div>
+
+      {/* Add Tag Modal */}
+      {isAddTagModalOpen && (
+        <AddTagModal
+          onClose={() => setIsAddTagModalOpen(false)}
+          onAdd={handleAddTags}
+          selectedTags={selectedTags}
+        />
+      )}
     </div>
   );
 }
