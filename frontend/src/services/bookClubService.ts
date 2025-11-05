@@ -90,6 +90,21 @@ export const requestToJoinClub = async (clubId: number): Promise<void> => {
   await api.post(`/api/v1/clubs/${clubId}/request-join`);
 };
 
+/**
+ * 更新讀書會封面
+ */
+export const updateClubCover = async (clubId: number, coverImage: File): Promise<BookClubRead> => {
+  const formData = new FormData();
+  formData.append('cover_image', coverImage);
+
+  const response = await api.post<BookClubRead>(`/api/v1/clubs/${clubId}/cover`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 // Discussions
 
 export const getDiscussions = async (clubId: number): Promise<DiscussionTopic[]> => {

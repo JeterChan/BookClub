@@ -6,16 +6,30 @@ import { getImageUrl } from '../../utils/imageUrl';
 import type { BookClubListItem } from '../../types/bookClub';
 import toast from 'react-hot-toast';
 
+type RoleFilter = 'all' | 'owner' | 'admin' | 'member';
+
 export default function MyClubs() {
   const navigate = useNavigate();
   const [clubs, setClubs] = useState<BookClubListItem[]>([]);
+  const [filteredClubs, setFilteredClubs] = useState<BookClubListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
   useEffect(() => {
     loadMyClubs();
   }, [page]);
+
+  useEffect(() => {
+    // 根據角色篩選讀書會
+    if (roleFilter === 'all') {
+      setFilteredClubs(clubs);
+    } else {
+      const filtered = clubs.filter(club => club.membership_status === roleFilter);
+      setFilteredClubs(filtered);
+    }
+  }, [clubs, roleFilter]);
 
   const loadMyClubs = async () => {
     try {
@@ -32,6 +46,30 @@ export default function MyClubs() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getRoleBadge = (membershipStatus?: string | null) => {
+    if (!membershipStatus) return null;
+    
+    const badgeConfig = {
+      owner: { label: '創建者', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
+      admin: { label: '管理員', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
+      member: { label: '成員', bgColor: 'bg-green-100', textColor: 'text-green-700' },
+    };
+
+    const config = badgeConfig[membershipStatus as keyof typeof badgeConfig];
+    if (!config) return null;
+
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.textColor}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  const getRoleCount = (role: RoleFilter) => {
+    if (role === 'all') return clubs.length;
+    return clubs.filter(club => club.membership_status === role).length;
   };
 
   if (loading) {
@@ -67,23 +105,85 @@ export default function MyClubs() {
           </p>
         </div>
 
+        {/* 角色篩選按鈕 */}
+        {clubs.length > 0 && (
+          <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setRoleFilter('all')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  roleFilter === 'all'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                全部 ({getRoleCount('all')})
+              </button>
+              <button
+                onClick={() => setRoleFilter('owner')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  roleFilter === 'owner'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                }`}
+              >
+                創建者 ({getRoleCount('owner')})
+              </button>
+              <button
+                onClick={() => setRoleFilter('admin')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  roleFilter === 'admin'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
+              >
+                管理員 ({getRoleCount('admin')})
+              </button>
+              <button
+                onClick={() => setRoleFilter('member')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  roleFilter === 'member'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+              >
+                成員 ({getRoleCount('member')})
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 讀書會列表 */}
-        {clubs.length === 0 ? (
+        {filteredClubs.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="text-gray-400 text-6xl mb-4">📚</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              尚未加入任何讀書會
-            </h3>
-            <p className="text-gray-600 mb-6">
-              探索讀書會，找到志同道合的閱讀夥伴
-            </p>
-            <Button onClick={() => navigate('/clubs')}>
-              探索讀書會
-            </Button>
+            {clubs.length === 0 ? (
+              <>
+                <div className="text-gray-400 text-6xl mb-4">📚</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  尚未加入任何讀書會
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  探索讀書會，找到志同道合的閱讀夥伴
+                </p>
+                <Button onClick={() => navigate('/clubs')}>
+                  探索讀書會
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="text-gray-400 text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  沒有符合條件的讀書會
+                </h3>
+                <p className="text-gray-600">
+                  試試選擇其他篩選條件
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubs.map((club) => (
+            {filteredClubs.map((club) => (
               <div
                 key={club.id}
                 className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
@@ -97,9 +197,12 @@ export default function MyClubs() {
                   />
                 )}
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {club.name}
-                  </h3>
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-xl font-semibold text-gray-900 flex-1">
+                      {club.name}
+                    </h3>
+                    {getRoleBadge(club.membership_status)}
+                  </div>
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {club.description || '暫無描述'}
                   </p>

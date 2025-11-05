@@ -186,10 +186,12 @@ def create_book_club(
         owner=UserRead(
             id=current_user.id,
             email=current_user.email,
-            display_name=current_user.display_name
+            display_name=current_user.display_name,
+            avatar_url=current_user.avatar_url
         ),
         tags=[ClubTagRead(id=tag.id, name=tag.name, is_predefined=tag.is_predefined) for tag in tags],
-        member_count=1
+        member_count=1,
+        membership_status=MembershipStatus.OWNER  # 設定創建者的 membership_status
     )
 
 def get_available_tags(session: Session) -> List[ClubTagRead]:
@@ -205,7 +207,8 @@ def list_book_clubs(
     page_size: int = 20,
     keyword: Optional[str] = None,
     tag_ids: Optional[List[int]] = None,
-    user_id: Optional[int] = None
+    user_id: Optional[int] = None,
+    current_user: Optional[User] = None
 ) -> tuple[List[BookClubReadWithDetails], dict]:
     from sqlmodel import func, col
     
@@ -253,6 +256,31 @@ def list_book_clubs(
             )
         ).one()
         
+        # 計算當前使用者的 membership_status
+        membership_status = None
+        if current_user:
+            member_record = session.exec(
+                select(BookClubMember).where(
+                    BookClubMember.book_club_id == club.id,
+                    BookClubMember.user_id == current_user.id
+                )
+            ).first()
+            
+            if member_record:
+                # 將 MemberRole 映射到 MembershipStatus
+                membership_status = MembershipStatus(member_record.role.value)
+            else:
+                # 檢查是否有待處理的加入請求
+                pending_request = session.exec(
+                    select(ClubJoinRequest).where(
+                        ClubJoinRequest.book_club_id == club.id,
+                        ClubJoinRequest.user_id == current_user.id,
+                        ClubJoinRequest.status == JoinRequestStatus.PENDING
+                    )
+                ).first()
+                if pending_request:
+                    membership_status = MembershipStatus.PENDING_REQUEST
+        
         from app.models.user import UserRead
         
         result.append(BookClubReadWithDetails(
@@ -271,7 +299,8 @@ def list_book_clubs(
                 avatar_url=owner.avatar_url
             ) if owner else None,
             tags=[ClubTagRead(id=tag.id, name=tag.name, is_predefined=tag.is_predefined) for tag in tags],
-            member_count=member_count
+            member_count=member_count,
+            membership_status=membership_status
         ))
     
     total_pages = (total_items + page_size - 1) // page_size
@@ -327,7 +356,8 @@ def get_book_club_by_id(
         ).first()
         if member_record:
             membership_status = MembershipStatus(member_record.role.value)
-        elif book_club.visibility == BookClubVisibility.PRIVATE:
+        else:
+            # 檢查是否有待處理的加入請求（所有讀書會都需要審核）
             request_record = session.exec(
                 select(ClubJoinRequest).where(
                     ClubJoinRequest.book_club_id == club_id,
@@ -360,17 +390,15 @@ def get_book_club_by_id(
         membership_status=membership_status
     )
 
-def join_book_club(session: Session, club_id: int, user_id: int) -> None:
+def join_book_club(session: Session, club_id: int, user_id: int) -> ClubJoinRequest:
+    """
+    創建加入讀書會的請求（所有讀書會都需要審核）
+    """
     print(f"---LOG: Entering join_book_club service for club_id: {club_id}, user_id: {user_id}")
     book_club = session.get(BookClub, club_id)
     if not book_club:
         print(f"---LOG: Club with id {club_id} not found")
         raise HTTPException(status_code=404, detail="讀書會不存在")
-
-    print(f"---LOG: Checking club visibility. Visibility is {book_club.visibility}")
-    if book_club.visibility != BookClubVisibility.PUBLIC:
-        print(f"---LOG: Club is not public, raising 400")
-        raise HTTPException(status_code=400, detail="此為私密讀書會，無法直接加入")
 
     print(f"---LOG: Checking if user is already a member")
     member_record = session.exec(
@@ -380,11 +408,25 @@ def join_book_club(session: Session, club_id: int, user_id: int) -> None:
         print(f"---LOG: User is already a member, raising 409")
         raise HTTPException(status_code=409, detail="您已經是此讀書會的成員")
 
-    print(f"---LOG: All checks passed. Adding user to club.")
-    new_member = BookClubMember(user_id=user_id, book_club_id=club_id, role=MemberRole.MEMBER)
-    session.add(new_member)
+    # Check for existing pending request
+    existing_request = session.exec(
+        select(ClubJoinRequest).where(
+            ClubJoinRequest.book_club_id == club_id,
+            ClubJoinRequest.user_id == user_id,
+            ClubJoinRequest.status == JoinRequestStatus.PENDING
+        )
+    ).first()
+    if existing_request:
+        print(f"---LOG: User already has pending request, raising 409")
+        raise HTTPException(status_code=409, detail="您已送出過加入請求")
+
+    print(f"---LOG: All checks passed. Creating join request.")
+    new_request = ClubJoinRequest(user_id=user_id, book_club_id=club_id, status=JoinRequestStatus.PENDING)
+    session.add(new_request)
     session.commit()
-    print(f"---LOG: User successfully added to club.")
+    session.refresh(new_request)
+    print(f"---LOG: Join request successfully created.")
+    return new_request
 
 def leave_book_club(session: Session, club_id: int, user_id: int) -> None:
     member_record = session.exec(
@@ -401,32 +443,8 @@ def leave_book_club(session: Session, club_id: int, user_id: int) -> None:
     session.commit()
 
 def request_to_join_book_club(session: Session, club_id: int, user_id: int) -> ClubJoinRequest:
-    book_club = session.get(BookClub, club_id)
-    if not book_club:
-        raise HTTPException(status_code=404, detail="讀書會不存在")
-
-    if book_club.visibility != BookClubVisibility.PRIVATE:
-        raise HTTPException(status_code=400, detail="此為公開讀書會，可直接加入")
-
-    member_record = session.exec(
-        select(BookClubMember).where(
-            BookClubMember.book_club_id == club_id, BookClubMember.user_id == user_id)
-    ).first()
-    if member_record:
-        raise HTTPException(status_code=409, detail="您已經是此讀書會的成員")
-
-    existing_request = session.exec(
-        select(ClubJoinRequest).where(
-            ClubJoinRequest.book_club_id == club_id,
-            ClubJoinRequest.user_id == user_id,
-            ClubJoinRequest.status == JoinRequestStatus.PENDING
-        )
-    ).first()
-    if existing_request:
-        raise HTTPException(status_code=409, detail="您已送出過加入請求")
-
-    new_request = ClubJoinRequest(user_id=user_id, book_club_id=club_id, status=JoinRequestStatus.PENDING)
-    session.add(new_request)
-    session.commit()
-    session.refresh(new_request)
-    return new_request
+    """
+    創建加入讀書會的請求（所有讀書會都需要審核）
+    與 join_book_club 功能相同
+    """
+    return join_book_club(session, club_id, user_id)

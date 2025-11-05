@@ -150,7 +150,8 @@ def list_book_clubs(
         page_size=page_size,
         keyword=keyword,
         tag_ids=tag_ids_list,
-        user_id=current_user.id if my_clubs and current_user else None
+        user_id=current_user.id if my_clubs and current_user else None,
+        current_user=current_user
     )
     
     return PaginatedBookClubList(
@@ -174,17 +175,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@router.post("/{club_id}/join", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{club_id}/join", status_code=status.HTTP_201_CREATED)
 def join_club(
     *,
     session: Session = Depends(get_session),
     club_id: int,
     current_user: User = Depends(get_current_user)
 ):
+    """
+    創建加入讀書會的請求（所有讀書會都需要管理員審核）
+    """
     logger.info(f"Attempting to join club {club_id} for user {current_user.email}")
     try:
         book_club_service.join_book_club(session, club_id, current_user.id)
-        logger.info(f"User {current_user.email} successfully joined club {club_id}")
+        logger.info(f"User {current_user.email} successfully created join request for club {club_id}")
     except HTTPException as e:
         logger.error(f"Error during join_book_club service call for user {current_user.email} and club {club_id}: {e.detail}")
         raise e

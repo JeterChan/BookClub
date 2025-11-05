@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 const ClubDetail = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
+  
   const { 
     detailClub, 
     loading, 
@@ -22,7 +23,6 @@ const ClubDetail = () => {
     fetchClubDetail,
     joinClub,
     leaveClub,
-    requestToJoinClub,
     clearError,
   } = useBookClubStore();
 
@@ -51,7 +51,9 @@ const ClubDetail = () => {
     if (!clubId) return;
     try {
       await joinClub(parseInt(clubId));
-      toast.success('成功加入讀書會！');
+      toast.success('已發送加入請求，等待管理員審核');
+      // Refresh club details to update membership_status
+      await fetchClubDetail(parseInt(clubId));
     } catch (e) {
       // Error is handled by the useEffect
     }
@@ -63,17 +65,14 @@ const ClubDetail = () => {
     toast.success('已退出讀書會');
   };
 
-  const handleRequestJoinClick = async () => {
-    if (!clubId) return;
-    await requestToJoinClub(parseInt(clubId));
-    toast.success('已發送加入請求');
-  };
-
   // ... (The rest of the component remains the same)
   const renderMembershipButton = () => {
     if (!detailClub) return null;
 
     const membershipStatus = detailClub.membership_status || 'not_member';
+    
+    // Debug: 在開發環境中顯示 membership_status
+    console.log('Club ID:', clubId, 'Membership Status:', membershipStatus);
 
     // Owner or Admin Check
     if (membershipStatus === 'owner' || membershipStatus === 'admin') {
@@ -128,8 +127,6 @@ const ClubDetail = () => {
       );
     }
 
-    const isPublic = detailClub.visibility === 'public';
-
     if (loading) {
       return (
         <Button disabled className="whitespace-nowrap">
@@ -138,37 +135,25 @@ const ClubDetail = () => {
       );
     }
 
-    // 已請求加入私密讀書會
+    // 已請求加入讀書會（等待審核）
     if (membershipStatus === 'pending_request') {
       return (
         <Button 
           disabled
-          className="whitespace-nowrap bg-gray-400"
+          className="whitespace-nowrap bg-yellow-400 text-gray-800"
         >
-          已請求加入
+          等待審核
         </Button>
       );
     }
 
-    // 未加入，公開讀書會
-    if (isPublic) {
-      return (
-        <Button 
-          onClick={handleJoinClick}
-          className="whitespace-nowrap"
-        >
-          加入讀書會
-        </Button>
-      );
-    }
-
-    // 未加入，私密讀書會
+    // 未加入，顯示加入按鈕（所有讀書會都需要審核）
     return (
       <Button 
-        onClick={handleRequestJoinClick}
+        onClick={handleJoinClick}
         className="whitespace-nowrap"
       >
-        請求加入
+        加入讀書會
       </Button>
     );
   };

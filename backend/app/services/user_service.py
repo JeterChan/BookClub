@@ -13,7 +13,7 @@ from app.core.cloudinary_config import upload_image, delete_image, extract_publi
 
 # Account protection settings
 MAX_FAILED_ATTEMPTS = 5
-LOCK_DURATION_MINUTES = 15
+LOCK_DURATION_MINUTES = 1  # Changed from 15 to 1 minute
 
 class UserService:
     """Service class for user-related business logic"""
@@ -47,18 +47,23 @@ class UserService:
         if not user:
             return None
         
+        # Check if account is currently locked
         if user.locked_until and datetime.utcnow() < user.locked_until:
             raise ValueError("Account is locked due to multiple failed login attempts")
         
-        user.locked_until = None
-        user.failed_login_attempts = 0
-        self.session.add(user)
-        self.session.commit()
+        # If lock period has expired, reset the lock (but NOT failed_login_attempts yet)
+        if user.locked_until and datetime.utcnow() >= user.locked_until:
+            user.locked_until = None
+            user.failed_login_attempts = 0
+            self.session.add(user)
+            self.session.commit()
         
         if not user.password_hash:
             return None
         
+        # Verify password
         if not verify_password(password, user.password_hash):
+            # Increment failed attempts counter
             user.failed_login_attempts += 1
             if user.failed_login_attempts >= MAX_FAILED_ATTEMPTS:
                 user.locked_until = datetime.utcnow() + timedelta(minutes=LOCK_DURATION_MINUTES)
@@ -66,10 +71,13 @@ class UserService:
             self.session.commit()
             return None
         
+        # Check email verification AFTER password verification
         if not user.email_verified:
             raise ValueError("請先完成 Email 驗證")
 
+        # Password correct - reset failed attempts counter
         user.failed_login_attempts = 0
+        user.locked_until = None
         self.session.add(user)
         self.session.commit()
         self.session.refresh(user)

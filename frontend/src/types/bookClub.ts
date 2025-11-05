@@ -43,6 +43,7 @@ export interface BookClubListItem {
   owner: UserRead;
   tags: ClubTag[];
   member_count: number;
+  membership_status?: 'owner' | 'admin' | 'member' | 'not_member' | 'pending_request' | null;
 }
 
 // For creating a new book club

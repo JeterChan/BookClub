@@ -86,7 +86,20 @@ export default function Login() {
           setEmailNotVerified(true);
 
           setEmailForResend(getValues('email'));
-        } 
+
+        } else if (detail && typeof detail === 'string' && detail.includes("Account is locked")) {
+
+          // Handle account locked error
+          toast.error('您的帳號因多次登入失敗已被鎖定，請等待 1 分鐘後再試。', {
+            duration: 5000,
+            icon: '🔒',
+          });
+
+        } else {
+
+          toast.error('登入失敗，請稍後再試');
+
+        }
       } finally {
         setIsSubmitting(false);
       }
