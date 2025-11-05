@@ -22,20 +22,25 @@ export interface UserProfile {
 /**
  * Get full avatar URL from backend
  * Converts relative path to absolute URL using API base
+ * @param avatarPath - Avatar path or URL
+ * @param bustCache - Add timestamp to bust browser cache (default: false)
  */
-export const getAvatarUrl = (avatarPath?: string): string => {
+export const getAvatarUrl = (avatarPath?: string, bustCache = false): string => {
   if (!avatarPath) {
     return '/default-avatar.png';
   }
   
-  // If already a full URL, return as is
+  // If already a full URL, return as is (with optional cache busting)
   if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
-    return avatarPath;
+    // Remove existing timestamp parameter if present
+    const baseUrl = avatarPath.split('?')[0];
+    return bustCache ? `${baseUrl}?t=${Date.now()}` : avatarPath;
   }
   
   // Convert relative path to full backend URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-  return `${API_BASE_URL}${avatarPath}`;
+  const fullUrl = `${API_BASE_URL}${avatarPath}`;
+  return bustCache ? `${fullUrl}?t=${Date.now()}` : fullUrl;
 };
 
 export interface UpdateProfileData {

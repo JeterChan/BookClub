@@ -69,6 +69,7 @@ export default function Header() {
                   >
                     {user?.avatar_url ? (
                       <img
+                        key={user.avatar_url} // Force re-render when avatar changes
                         src={getAvatarUrl(user.avatar_url)}
                         alt={user.display_name}
                         className="h-8 w-8 rounded-full object-cover"
@@ -172,6 +173,7 @@ export default function Header() {
                   <div className="flex items-center space-x-3 px-3 py-3 border-b border-gray-200">
                     {user?.avatar_url ? (
                       <img
+                        key={user.avatar_url} // Force re-render when avatar changes
                         src={getAvatarUrl(user.avatar_url)}
                         alt={user.display_name}
                         className="h-10 w-10 rounded-full object-cover"
