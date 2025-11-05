@@ -214,29 +214,515 @@ git push origin feature/backend
 
 ### 解決方案選項
 
-#### 選項 1: 使用雲端儲存服務（推薦）
+#### 選項 1: 使用 Cloudinary（推薦，免費額度充足）
 
-**推薦使用 Cloudinary**（免費額度充足）:
+**免費額度**: 25 GB 儲存空間，25 GB 月流量，500,000 次轉換
 
-1. 註冊 [Cloudinary](https://cloudinary.com/)
-2. 獲取 API 憑證（Cloud Name, API Key, API Secret）
-3. 安裝套件:
-   ```bash
-   cd backend
-   pip install cloudinary
-   echo "cloudinary" >> requirements.txt
-   ```
-4. 修改程式碼以使用 Cloudinary 上傳
+**完整實作步驟**:
 
-**其他選項**: AWS S3, Google Cloud Storage, Azure Blob Storage
+##### 1. 註冊 Cloudinary 帳號
 
-#### 選項 2: 暫時禁用圖片上傳
+1. 前往 [Cloudinary 官網](https://cloudinary.com/)
+2. 點擊 **"Sign Up"** 註冊（可使用 Google/GitHub 快速註冊）
+3. 完成註冊後進入 Dashboard
+
+##### 2. 獲取 API 憑證
+
+在 Cloudinary Dashboard 首頁會看到：
+
+```
+Cloud name: your-cloud-name
+API Key: 123456789012345
+API Secret: abcdefghijklmnopqrstuvwxyz123
+```
+
+**請妥善保存這些資訊！**
+
+##### 3. 安裝 Python 套件
+
+```bash
+cd backend
+pip install cloudinary
+echo "cloudinary" >> requirements.txt
+```
+
+##### 4. 設定環境變數
+
+在 **Render Dashboard** → Backend Service → **Environment** 新增：
+
+| Key | Value |
+|-----|-------|
+| `CLOUDINARY_CLOUD_NAME` | 你的 Cloud Name |
+| `CLOUDINARY_API_KEY` | 你的 API Key |
+| `CLOUDINARY_API_SECRET` | 你的 API Secret |
+
+本地開發 (`backend/.env`):
+```env
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz123
+```
+
+##### 5. 修改後端程式碼
+
+**A. 創建 Cloudinary 配置檔** (`backend/app/core/cloudinary_config.py`):
+
+```python
+import cloudinary
+import cloudinary.uploader
+from app.core.config import settings
+
+# 初始化 Cloudinary
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+    secure=True
+)
+
+def upload_image(file_bytes: bytes, folder: str, public_id: str = None) -> str:
+    """
+    上傳圖片到 Cloudinary
+    
+    Args:
+        file_bytes: 圖片的 bytes 資料
+        folder: Cloudinary 資料夾名稱 (如 'avatars', 'club_covers')
+        public_id: 自定義檔案名稱（選填）
+    
+    Returns:
+        圖片的公開 URL
+    """
+    try:
+        result = cloudinary.uploader.upload(
+            file_bytes,
+            folder=f"bookclub/{folder}",
+            public_id=public_id,
+            resource_type="image",
+            # 自動優化圖片
+            quality="auto",
+            fetch_format="auto"
+        )
+        return result['secure_url']
+    except Exception as e:
+        raise Exception(f"Failed to upload image to Cloudinary: {str(e)}")
+
+
+def delete_image(public_id: str) -> bool:
+    """
+    從 Cloudinary 刪除圖片
+    
+    Args:
+        public_id: 完整的 public_id (包含 folder 路徑)
+    
+    Returns:
+        是否刪除成功
+    """
+    try:
+        result = cloudinary.uploader.destroy(public_id)
+        return result.get('result') == 'ok'
+    except Exception as e:
+        print(f"Failed to delete image: {str(e)}")
+        return False
+```
+
+**B. 更新配置檔** (`backend/app/core/config.py`):
+
+```python
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    # ... 現有設定 ...
+    
+    # Cloudinary 設定
+    CLOUDINARY_CLOUD_NAME: str
+    CLOUDINARY_API_KEY: str
+    CLOUDINARY_API_SECRET: str
+    
+    class Config:
+        env_file = ".env"
+```
+
+**C. 修改頭像上傳端點** (`backend/app/api/endpoints/users.py`):
+
+```python
+from app.core.cloudinary_config import upload_image, delete_image
+
+@router.post("/me/avatar", response_model=UserProfileRead)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """上傳使用者頭像到 Cloudinary"""
+    
+    # 驗證檔案類型
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="檔案必須是圖片格式")
+    
+    # 驗證檔案大小 (2MB)
+    content = await file.read()
+    if len(content) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="圖片大小不能超過 2MB")
+    
+    try:
+        # 上傳到 Cloudinary
+        avatar_url = upload_image(
+            file_bytes=content,
+            folder="avatars",
+            public_id=f"user_{current_user.id}"
+        )
+        
+        # 更新資料庫
+        current_user.avatar_url = avatar_url
+        session.add(current_user)
+        session.commit()
+        session.refresh(current_user)
+        
+        return current_user
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"上傳失敗: {str(e)}")
+```
+
+**D. 修改讀書會封面上傳** (類似邏輯):
+
+```python
+@router.post("/{club_id}/cover", response_model=BookClubRead)
+async def upload_club_cover(
+    club_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """上傳讀書會封面到 Cloudinary"""
+    
+    # 驗證權限（必須是擁有者或管理員）
+    # ... 權限檢查邏輯 ...
+    
+    # 驗證檔案
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="檔案必須是圖片格式")
+    
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:  # 5MB
+        raise HTTPException(status_code=400, detail="圖片大小不能超過 5MB")
+    
+    try:
+        # 上傳到 Cloudinary
+        cover_url = upload_image(
+            file_bytes=content,
+            folder="club_covers",
+            public_id=f"club_{club_id}"
+        )
+        
+        # 更新資料庫
+        club.cover_image_url = cover_url
+        session.add(club)
+        session.commit()
+        session.refresh(club)
+        
+        return club
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"上傳失敗: {str(e)}")
+```
+
+##### 6. 測試 Cloudinary 整合
+
+```bash
+# 本地測試
+cd backend
+python -c "
+from app.core.cloudinary_config import upload_image
+with open('test_image.jpg', 'rb') as f:
+    url = upload_image(f.read(), 'test', 'test_upload')
+    print(f'Uploaded: {url}')
+"
+```
+
+##### 7. 部署到 Render
+
+```bash
+git add .
+git commit -m "Add Cloudinary integration"
+git push origin master
+```
+
+Render 會自動重新部署並套用新的環境變數。
+
+---
+
+#### 選項 2: 使用 Google Cloud Storage（適合大規模應用）
+
+**免費額度**: 5 GB 儲存空間，1 GB 月出站流量
+
+**完整實作步驟**:
+
+##### 1. 建立 Google Cloud 專案
+
+1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
+2. 點擊頂部的專案選單 → **"New Project"**
+3. 輸入專案名稱（如 `bookclub-storage`）
+4. 點擊 **"Create"**
+
+##### 2. 啟用 Cloud Storage API
+
+1. 在左側選單選擇 **"APIs & Services"** → **"Library"**
+2. 搜尋 **"Cloud Storage API"**
+3. 點擊並啟用
+
+##### 3. 建立 Storage Bucket
+
+1. 左側選單選擇 **"Cloud Storage"** → **"Buckets"**
+2. 點擊 **"Create Bucket"**
+3. 設定：
+   - **Name**: `bookclub-images-[unique-suffix]`（必須全球唯一）
+   - **Location type**: Region（選擇最近的區域）
+   - **Storage class**: Standard
+   - **Access control**: Fine-grained
+   - **Protection tools**: None（測試用）
+4. 點擊 **"Create"**
+
+##### 4. 建立 Service Account
+
+1. 左側選單 → **"IAM & Admin"** → **"Service Accounts"**
+2. 點擊 **"Create Service Account"**
+3. 填寫：
+   - **Name**: `bookclub-storage-uploader`
+   - **Description**: `Service account for uploading images`
+4. 點擊 **"Create and Continue"**
+5. 授予角色：
+   - 選擇 **"Storage Object Admin"**
+6. 點擊 **"Done"**
+
+##### 5. 建立並下載金鑰
+
+1. 找到剛建立的 Service Account → 點擊 email
+2. 切換到 **"Keys"** 標籤
+3. 點擊 **"Add Key"** → **"Create new key"**
+4. 選擇 **JSON** 格式
+5. 點擊 **"Create"** → 自動下載 JSON 檔案
+
+**⚠️ 重要**: 妥善保管此 JSON 檔案，它包含敏感憑證！
+
+##### 6. 設定 Bucket 公開存取
+
+1. 回到 Bucket 頁面 → 點擊你的 Bucket
+2. 切換到 **"Permissions"** 標籤
+3. 點擊 **"Grant Access"**
+4. 新增成員：
+   - **New principals**: `allUsers`
+   - **Role**: Storage Object Viewer
+5. 點擊 **"Save"**
+
+這樣上傳的圖片才能被公開訪問。
+
+##### 7. 安裝 Python 套件
+
+```bash
+cd backend
+pip install google-cloud-storage
+echo "google-cloud-storage" >> requirements.txt
+```
+
+##### 8. 設定環境變數
+
+**Render 環境變數**（Dashboard → Environment）:
+
+| Key | Value |
+|-----|-------|
+| `GCS_BUCKET_NAME` | 你的 Bucket 名稱 |
+| `GCS_CREDENTIALS_JSON` | 將下載的 JSON 檔案內容**完整複製貼上**（整個 JSON 字串）|
+
+**本地開發** (`backend/.env`):
+```env
+GCS_BUCKET_NAME=bookclub-images-xxxxx
+GCS_CREDENTIALS_PATH=path/to/your/service-account-key.json
+```
+
+##### 9. 修改後端程式碼
+
+**A. 創建 GCS 配置檔** (`backend/app/core/gcs_config.py`):
+
+```python
+import os
+import json
+from google.cloud import storage
+from google.oauth2 import service_account
+from app.core.config import settings
+
+def get_gcs_client():
+    """初始化 Google Cloud Storage 客戶端"""
+    
+    # 生產環境（Render）：從環境變數讀取 JSON 字串
+    if hasattr(settings, 'GCS_CREDENTIALS_JSON') and settings.GCS_CREDENTIALS_JSON:
+        credentials_dict = json.loads(settings.GCS_CREDENTIALS_JSON)
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_dict
+        )
+        return storage.Client(credentials=credentials)
+    
+    # 本地開發：從檔案路徑讀取
+    elif hasattr(settings, 'GCS_CREDENTIALS_PATH') and settings.GCS_CREDENTIALS_PATH:
+        credentials = service_account.Credentials.from_service_account_file(
+            settings.GCS_CREDENTIALS_PATH
+        )
+        return storage.Client(credentials=credentials)
+    
+    else:
+        raise Exception("GCS credentials not configured")
+
+
+def upload_image_to_gcs(file_bytes: bytes, filename: str, folder: str) -> str:
+    """
+    上傳圖片到 Google Cloud Storage
+    
+    Args:
+        file_bytes: 圖片的 bytes 資料
+        filename: 檔案名稱
+        folder: GCS 資料夾路徑 (如 'avatars', 'club_covers')
+    
+    Returns:
+        圖片的公開 URL
+    """
+    try:
+        client = get_gcs_client()
+        bucket = client.bucket(settings.GCS_BUCKET_NAME)
+        
+        # 完整路徑
+        blob_path = f"{folder}/{filename}"
+        blob = bucket.blob(blob_path)
+        
+        # 上傳檔案
+        blob.upload_from_string(
+            file_bytes,
+            content_type='image/jpeg'  # 根據實際檔案類型調整
+        )
+        
+        # 設定為公開可讀
+        blob.make_public()
+        
+        # 返回公開 URL
+        return blob.public_url
+        
+    except Exception as e:
+        raise Exception(f"Failed to upload to GCS: {str(e)}")
+
+
+def delete_image_from_gcs(blob_path: str) -> bool:
+    """
+    從 GCS 刪除圖片
+    
+    Args:
+        blob_path: 完整的 blob 路徑 (如 'avatars/user_123.jpg')
+    
+    Returns:
+        是否刪除成功
+    """
+    try:
+        client = get_gcs_client()
+        bucket = client.bucket(settings.GCS_BUCKET_NAME)
+        blob = bucket.blob(blob_path)
+        blob.delete()
+        return True
+    except Exception as e:
+        print(f"Failed to delete from GCS: {str(e)}")
+        return False
+```
+
+**B. 更新配置檔** (`backend/app/core/config.py`):
+
+```python
+from typing import Optional
+
+class Settings(BaseSettings):
+    # ... 現有設定 ...
+    
+    # Google Cloud Storage 設定
+    GCS_BUCKET_NAME: Optional[str] = None
+    GCS_CREDENTIALS_JSON: Optional[str] = None  # 生產環境
+    GCS_CREDENTIALS_PATH: Optional[str] = None  # 本地開發
+    
+    class Config:
+        env_file = ".env"
+```
+
+**C. 修改上傳端點** (使用 GCS):
+
+```python
+from app.core.gcs_config import upload_image_to_gcs
+import uuid
+
+@router.post("/me/avatar", response_model=UserProfileRead)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """上傳使用者頭像到 Google Cloud Storage"""
+    
+    # 驗證檔案
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="檔案必須是圖片格式")
+    
+    content = await file.read()
+    if len(content) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="圖片大小不能超過 2MB")
+    
+    try:
+        # 生成唯一檔名
+        file_extension = file.filename.split('.')[-1]
+        filename = f"user_{current_user.id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+        
+        # 上傳到 GCS
+        avatar_url = upload_image_to_gcs(
+            file_bytes=content,
+            filename=filename,
+            folder="avatars"
+        )
+        
+        # 更新資料庫
+        current_user.avatar_url = avatar_url
+        session.add(current_user)
+        session.commit()
+        session.refresh(current_user)
+        
+        return current_user
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"上傳失敗: {str(e)}")
+```
+
+##### 10. 測試 GCS 整合
+
+```bash
+# 本地測試
+cd backend
+python -c "
+from app.core.gcs_config import upload_image_to_gcs
+with open('test_image.jpg', 'rb') as f:
+    url = upload_image_to_gcs(f.read(), 'test.jpg', 'test')
+    print(f'Uploaded: {url}')
+"
+```
+
+##### 11. 部署到 Render
+
+```bash
+git add .
+git commit -m "Add Google Cloud Storage integration"
+git push origin master
+```
+
+---
+
+#### 選項 3: 暫時禁用圖片上傳
 
 如果只是測試，可以暫時使用預設圖片或禁用上傳功能。
 
-#### 選項 3: 使用 Render Disk（付費）
+#### 選項 4: 使用 Render Disk（付費）
 
-升級到 Render 付費方案可以使用持久化儲存。
+升級到 Render 付費方案（$7/月起）可以使用持久化儲存。
 
 ---
 
