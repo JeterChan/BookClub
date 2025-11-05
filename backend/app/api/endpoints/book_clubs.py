@@ -41,6 +41,34 @@ def update_book_club(
         current_user=current_user
     )
 
+
+@router.post("/{club_id}/cover", response_model=BookClubReadWithDetails)
+def update_club_cover(
+    *,
+    session: Session = Depends(get_session),
+    club_id: int,
+    cover_image: UploadFile = File(...),
+    current_user: User = Depends(club_owner_or_admin_required)
+) -> BookClubReadWithDetails:
+    """
+    更新讀書會封面圖片
+    
+    Args:
+        club_id: 讀書會 ID
+        cover_image: 封面圖片檔案
+        current_user: 當前使用者（需為擁有者或管理員）
+    
+    Returns:
+        更新後的讀書會詳細資訊
+    """
+    return book_club_service.update_club_cover(
+        session=session,
+        club_id=club_id,
+        cover_image=cover_image,
+        current_user=current_user
+    )
+
+
 @router.delete("/{club_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_book_club(
     *,

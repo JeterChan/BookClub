@@ -9,6 +9,7 @@ python-jose[cryptography]>=3.3.0
 python-multipart
 Pillow
 sendgrid>=6.11.0
+cloudinary
 
 # Testing
 pytest

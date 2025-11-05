@@ -4,13 +4,14 @@ interface AvatarProps {
   src?: string | null;
   alt: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  bustCache?: boolean; // Add cache busting option
 }
 
 /**
  * Avatar - User avatar component with fallback
  * Displays user image or initials
  */
-export const Avatar = ({ src, alt, size = 'md' }: AvatarProps) => {
+export const Avatar = ({ src, alt, size = 'md', bustCache = false }: AvatarProps) => {
   const sizeClasses = {
     sm: 'w-8 h-8 text-sm',
     md: 'w-12 h-12 text-base',
@@ -28,12 +29,13 @@ export const Avatar = ({ src, alt, size = 'md' }: AvatarProps) => {
   };
 
   const initials = getInitials(alt);
-  const avatarUrl = src ? getAvatarUrl(src) : null;
+  const avatarUrl = src ? getAvatarUrl(src, bustCache) : null;
 
   return (
     <div className={`${sizeClasses[size]} rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold`}>
       {avatarUrl ? (
         <img 
+          key={avatarUrl} // Force re-render when URL changes
           src={avatarUrl} 
           alt={alt} 
           className="w-full h-full object-cover"

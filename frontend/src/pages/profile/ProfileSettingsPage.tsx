@@ -93,6 +93,8 @@ const ProfileSettingsPage = () => {
     try {
       const response = await profileService.uploadAvatar(file);
       if (user) {
+        // Update user with new avatar URL from Cloudinary
+        // The URL will have a new version number (v123456789)
         setUser({ ...user, avatar_url: response.avatar_url });
       }
       toast.success('大頭貼已成功更新！');
@@ -163,7 +165,8 @@ const ProfileSettingsPage = () => {
         <h2 className="text-xl font-semibold mb-4">個人大頭貼</h2>
         <div className="flex items-center gap-6">
           <img 
-            src={getAvatarUrl(user?.avatar_url)}
+            key={user?.avatar_url || 'no-avatar'} // Force re-render when URL changes
+            src={getAvatarUrl(user?.avatar_url, true)} // Add cache busting timestamp
             alt="User Avatar" 
             className="w-24 h-24 rounded-full object-cover bg-gray-200"
             onError={(e) => { e.currentTarget.src = '/default-avatar.png'; }}

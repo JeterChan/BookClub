@@ -1,9 +1,6 @@
 from typing import List, Optional
 from sqlmodel import Session, select
 from fastapi import HTTPException, status, UploadFile
-import os
-import uuid
-from pathlib import Path
 
 from app.models.book_club import BookClub, BookClubCreate, BookClubVisibility
 from app.models.book_club_member import BookClubMember, MemberRole, MembershipStatus
@@ -12,25 +9,85 @@ from app.models.user import User
 from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
 from app.schemas.book_club import BookClubReadWithDetails, BookClubUpdate
 from app.models.club_tag import ClubTagRead
+from app.core.cloudinary_config import upload_image, delete_image, extract_public_id_from_url
 
-# 上傳目錄設定
-UPLOAD_DIR = Path("uploads/club_covers")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-def save_upload_file(upload_file: UploadFile) -> str:
-    """儲存上傳的檔案並返回 URL 路徑"""
-    # 生成唯一檔名
-    file_extension = os.path.splitext(upload_file.filename or "")[1]
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = UPLOAD_DIR / unique_filename
+def upload_club_cover_to_cloudinary(upload_file: UploadFile, club_id: int) -> str:
+    """
+    上傳讀書會封面圖片到 Cloudinary
     
-    # 寫入檔案
-    with open(file_path, "wb") as buffer:
-        content = upload_file.file.read()
-        buffer.write(content)
+    Args:
+        upload_file: 上傳的圖片檔案
+        club_id: 讀書會 ID，用於生成 public_id
     
-    # 返回相對路徑（用於存入資料庫）
-    return f"/uploads/club_covers/{unique_filename}"
+    Returns:
+        Cloudinary CDN URL
+        
+    Raises:
+        Exception: 當上傳失敗時拋出異常
+    """
+    # 讀取檔案內容
+    upload_file.file.seek(0)
+    file_content = upload_file.file.read()
+    
+    # 上傳到 Cloudinary
+    try:
+        cover_url = upload_image(
+            file_bytes=file_content,
+            folder="club_covers",
+            public_id=f"club_{club_id}"
+        )
+        return cover_url
+    except Exception as e:
+        raise Exception(f"讀書會封面上傳失敗: {str(e)}")
+
+
+def update_club_cover(
+    session: Session,
+    *,
+    club_id: int,
+    cover_image: UploadFile,
+    current_user: User
+) -> BookClubReadWithDetails:
+    """
+    更新讀書會封面圖片
+    
+    Args:
+        session: 資料庫 session
+        club_id: 讀書會 ID
+        cover_image: 新的封面圖片
+        current_user: 當前使用者
+    
+    Returns:
+        更新後的讀書會詳細資訊
+    """
+    # 取得讀書會
+    book_club = session.get(BookClub, club_id)
+    if not book_club:
+        raise HTTPException(status_code=404, detail="讀書會不存在")
+    
+    # 如果已有封面，先刪除舊的 Cloudinary 圖片
+    if book_club.cover_image_url:
+        old_public_id = extract_public_id_from_url(book_club.cover_image_url)
+        if old_public_id:
+            delete_image(old_public_id)
+    
+    # 上傳新封面
+    try:
+        cover_url = upload_club_cover_to_cloudinary(cover_image, club_id)
+        book_club.cover_image_url = cover_url
+        
+        session.add(book_club)
+        session.commit()
+        session.refresh(book_club)
+        
+        return get_book_club_by_id(session=session, club_id=club_id, current_user=current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"封面更新失敗: {str(e)}"
+        )
+
 
 def update_book_club(
     session: Session, 
@@ -70,22 +127,30 @@ def create_book_club(
             detail="一個或多個標籤 ID 無效"
         )
     
-    # 2. 處理封面圖片上傳
-    cover_image_url = None
-    if cover_image:
-        cover_image_url = save_upload_file(cover_image)
-    
-    # 3. 建立 BookClub 實例
+    # 2. 建立 BookClub 實例（先不設定封面）
     book_club = BookClub(
         name=book_club_data.name,
         description=book_club_data.description,
         visibility=book_club_data.visibility,
-        cover_image_url=cover_image_url,
+        cover_image_url=None,  # 稍後上傳
         owner_id=current_user.id
     )
     
     session.add(book_club)
     session.flush()  # 取得 book_club.id
+    
+    # 3. 處理封面圖片上傳（需要 club_id）
+    if cover_image:
+        try:
+            cover_image_url = upload_club_cover_to_cloudinary(cover_image, book_club.id)
+            book_club.cover_image_url = cover_image_url
+        except Exception as e:
+            # 如果上傳失敗，回滾並拋出錯誤
+            session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"封面圖片上傳失敗: {str(e)}"
+            )
     
     # 4. 關聯標籤至讀書會
     for tag in tags:

@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -90,9 +89,7 @@ if use_wildcard:
     
     app.add_middleware(CORSValidationMiddleware)
 
-# 掛載靜態檔案目錄
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
+# API 路由
 app.include_router(api_router, prefix="/api/v1")
 
 # 解析 Pydantic/SQLModel 中的前向參照 (Pydantic v2)

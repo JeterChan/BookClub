@@ -3,14 +3,13 @@ from sqlmodel import Session, select
 from typing import Optional
 from datetime import datetime, timedelta
 import time
-import shutil
 from fastapi import UploadFile
 from PIL import Image
 
 from app.models.user import User, UserCreate
 from app.models.interest_tag import InterestTag
 from app.core.security import hash_password, verify_password
-import os
+from app.core.cloudinary_config import upload_image, delete_image, extract_public_id_from_url
 
 # Account protection settings
 MAX_FAILED_ATTEMPTS = 5
@@ -103,17 +102,21 @@ class UserService:
         return user
 
     def upload_avatar(self, user: User, file: UploadFile) -> str:
+        """上傳使用者頭像至 Cloudinary"""
+        # 驗證檔案類型
         allowed_types = ["image/jpeg", "image/png"]
         if file.content_type not in allowed_types:
             raise ValueError("不支援的檔案類型,僅限 JPG/PNG")
 
+        # 驗證檔案大小
         file.file.seek(0, 2)
         size = file.file.tell()
         file.file.seek(0)
-        max_size = 2 * 1024 * 1024
+        max_size = 2 * 1024 * 1024  # 2MB
         if size > max_size:
             raise ValueError("檔案大小不可超過 2MB")
 
+        # 驗證圖片格式
         try:
             img = Image.open(file.file)
             img.verify()
@@ -128,25 +131,27 @@ class UserService:
                 raise
             raise ValueError("無效的圖片檔案")
 
-        timestamp = int(time.time() * 1000)
-        extension = "jpg" if file.content_type == "image/jpeg" else "png"
-        filename = f"{user.id}_{timestamp}.{extension}"
-        upload_dir = "uploads/avatars"
-        os.makedirs(upload_dir, exist_ok=True)
-        file_path = os.path.join(upload_dir, filename)
+        # 讀取檔案內容
+        file.file.seek(0)
+        file_content = file.file.read()
 
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
+        # 如果使用者已有頭像，先從 Cloudinary 刪除舊圖片
         if user.avatar_url:
-            old_avatar_path = user.avatar_url.lstrip("/")
-            if os.path.exists(old_avatar_path):
-                try:
-                    os.remove(old_avatar_path)
-                except OSError:
-                    pass
+            old_public_id = extract_public_id_from_url(user.avatar_url)
+            if old_public_id:
+                delete_image(old_public_id)
 
-        avatar_url = f"/{file_path}"
+        # 上傳新圖片到 Cloudinary
+        try:
+            avatar_url = upload_image(
+                file_bytes=file_content,
+                folder="avatars",
+                public_id=f"user_{user.id}"
+            )
+        except Exception as e:
+            raise ValueError(f"圖片上傳失敗: {str(e)}")
+
+        # 更新資料庫
         user.avatar_url = avatar_url
         self.session.add(user)
         self.session.commit()
@@ -154,19 +159,16 @@ class UserService:
         return avatar_url
 
     def remove_avatar(self, user: User) -> User:
-        """Remove user's avatar and delete the file from filesystem"""
+        """移除使用者頭像並從 Cloudinary 刪除圖片"""
         if not user.avatar_url:
             raise ValueError("用戶沒有設定大頭貼")
         
-        # Delete the avatar file from filesystem
-        old_avatar_path = user.avatar_url.lstrip("/")
-        if os.path.exists(old_avatar_path):
-            try:
-                os.remove(old_avatar_path)
-            except OSError:
-                pass  # Ignore if file cannot be deleted
+        # 從 Cloudinary 刪除圖片
+        public_id = extract_public_id_from_url(user.avatar_url)
+        if public_id:
+            delete_image(public_id)
         
-        # Clear avatar_url in database
+        # 清空資料庫中的頭像 URL
         user.avatar_url = None
         self.session.add(user)
         self.session.commit()
