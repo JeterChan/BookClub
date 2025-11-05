@@ -31,7 +31,7 @@ const ClubExplore = () => {
   // 初始載入
   useEffect(() => {
     if (!hasFetched.current) {
-      fetchClubs();
+      fetchClubs(1, 12); // 每頁顯示 12 個讀書會
       fetchAvailableTags();
       hasFetched.current = true;
     }
@@ -39,23 +39,27 @@ const ClubExplore = () => {
 
   // 搜尋/篩選變更時重新載入
   const handleSearch = () => {
-    fetchClubs(1); // 重置到第一頁
+    fetchClubs(1, 12); // 重置到第一頁，每頁 12 個
   };
 
-  const handleTagToggle = (tagId: number) => {
-    const newSelectedTagIds = selectedTagIds.includes(tagId)
-      ? selectedTagIds.filter((id) => id !== tagId)
-      : [...selectedTagIds, tagId];
-    setSelectedTagIds(newSelectedTagIds);
-    
-    // 延遲執行搜尋，等待 state 更新
+  const handleApplyFilter = (tagIds: number[]) => {
+    setSelectedTagIds(tagIds);
+    // 延遲執行以確保狀態更新
     setTimeout(() => {
-      fetchClubs(1);
+      fetchClubs(1, 12); // 重置到第一頁，每頁 12 個
+    }, 0);
+  };
+
+  const handleClearAll = () => {
+    setSelectedTagIds([]);
+    // 延遲執行以確保狀態更新
+    setTimeout(() => {
+      fetchClubs(1, 12); // 清除標籤並重新載入
     }, 0);
   };
 
   const handlePageChange = (page: number) => {
-    fetchClubs(page);
+    fetchClubs(page, 12); // 保持每頁 12 個
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -65,8 +69,8 @@ const ClubExplore = () => {
       <div className="min-h-screen bg-gray-50 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">探索讀書會</h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(12)].map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
@@ -106,7 +110,8 @@ const ClubExplore = () => {
           <TagFilter
             availableTags={availableTags}
             selectedTagIds={selectedTagIds}
-            onTagToggle={handleTagToggle}
+            onApplyFilter={handleApplyFilter}
+            onClearAll={handleClearAll}
           />
         </div>
 
@@ -126,7 +131,7 @@ const ClubExplore = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
               {clubs.map((club) => (
                 <ClubCard key={club.id} club={club} />
               ))}

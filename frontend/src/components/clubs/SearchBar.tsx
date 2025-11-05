@@ -1,5 +1,7 @@
 // frontend/src/components/clubs/SearchBar.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { Button } from '../ui/Button';
 
 interface SearchBarProps {
   value: string;
@@ -9,22 +11,21 @@ interface SearchBarProps {
 
 /**
  * SearchBar - 搜尋列元件
- * 支援 debounce 搜尋（300ms）
+ * 需要使用者點擊搜尋按鈕才會執行搜尋
  */
 export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => {
   const [localValue, setLocalValue] = useState(value);
 
-  // Debounce effect
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localValue !== value) {
-        onChange(localValue);
-        onSearch();
-      }
-    }, 300);
+  const handleSearch = () => {
+    onChange(localValue);
+    onSearch();
+  };
 
-    return () => clearTimeout(timer);
-  }, [localValue, value, onChange, onSearch]);
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   const handleClear = () => {
     setLocalValue('');
@@ -33,8 +34,8 @@ export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => {
   };
 
   return (
-    <div className="relative">
-      <div className="relative">
+    <div className="flex gap-2">
+      <div className="relative flex-1">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <svg
             className="w-5 h-5 text-gray-400"
@@ -54,6 +55,7 @@ export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => {
           type="text"
           value={localValue}
           onChange={(e) => setLocalValue(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="搜尋讀書會名稱或簡介..."
           className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
         />
@@ -78,6 +80,9 @@ export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => {
           </button>
         )}
       </div>
+      <Button onClick={handleSearch} variant="primary">
+        搜尋
+      </Button>
     </div>
   );
 };
