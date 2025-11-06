@@ -52,16 +52,16 @@ export default function MyClubs() {
     if (!membershipStatus) return null;
     
     const badgeConfig = {
-      owner: { label: '創建者', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
-      admin: { label: '管理員', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
-      member: { label: '成員', bgColor: 'bg-green-100', textColor: 'text-green-700' },
+      owner: { label: '成員', bgColor: 'bg-gray-900', textColor: 'text-white' },
+      admin: { label: '創建者', bgColor: 'bg-success-700', textColor: 'text-white' },
+      member: { label: '成員', bgColor: 'bg-gray-600', textColor: 'text-white' },
     };
 
     const config = badgeConfig[membershipStatus as keyof typeof badgeConfig];
     if (!config) return null;
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.textColor}`}>
+      <span className={`px-3 py-1 rounded-md text-xs font-medium ${config.bgColor} ${config.textColor}`}>
         {config.label}
       </span>
     );
@@ -85,35 +85,35 @@ export default function MyClubs() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="max-w-6xl mx-auto px-4">
         {/* 返回按鈕 */}
         <div className="mb-6">
-          <Button
+          <button
             onClick={() => navigate('/dashboard')}
-            variant="outline"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             ← 返回儀表板
-          </Button>
+          </button>
         </div>
 
         {/* 頁面標題 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">我的讀書會</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">我的讀書會</h1>
+          <p className="text-gray-600">
             你加入的所有讀書會（共 {clubs.length} 個）
           </p>
         </div>
 
         {/* 角色篩選按鈕 */}
         {clubs.length > 0 && (
-          <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
-            <div className="flex flex-wrap gap-2">
+          <div className="mb-8">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setRoleFilter('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-5 py-2.5 rounded-full font-medium transition-all ${
                   roleFilter === 'all'
-                    ? 'bg-gray-900 text-white'
+                    ? 'bg-black text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -121,30 +121,30 @@ export default function MyClubs() {
               </button>
               <button
                 onClick={() => setRoleFilter('owner')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-5 py-2.5 rounded-full font-medium transition-all ${
                   roleFilter === 'owner'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                    ? 'bg-black text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 創建者 ({getRoleCount('owner')})
               </button>
               <button
                 onClick={() => setRoleFilter('admin')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-5 py-2.5 rounded-full font-medium transition-all ${
                   roleFilter === 'admin'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    ? 'bg-black text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 管理員 ({getRoleCount('admin')})
               </button>
               <button
                 onClick={() => setRoleFilter('member')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-5 py-2.5 rounded-full font-medium transition-all ${
                   roleFilter === 'member'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    ? 'bg-black text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 成員 ({getRoleCount('member')})
@@ -186,19 +186,19 @@ export default function MyClubs() {
             {filteredClubs.map((club) => (
               <div
                 key={club.id}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
+                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden animate-fade-in"
                 onClick={() => navigate(`/clubs/${club.id}`)}
               >
                 {club.cover_image_url && (
                   <img
                     src={getImageUrl(club.cover_image_url) || ''}
                     alt={club.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-56 object-cover"
                   />
                 )}
                 <div className="p-6">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900 flex-1">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-xl font-bold text-gray-900 flex-1">
                       {club.name}
                     </h3>
                     {getRoleBadge(club.membership_status)}
@@ -206,15 +206,15 @@ export default function MyClubs() {
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {club.description || '暫無描述'}
                   </p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span className="flex items-center">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center text-sm text-gray-500">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                       </svg>
                       {club.member_count || 0} 成員
                     </span>
                     {club.tags && club.tags.length > 0 && (
-                      <span className="text-blue-600">
+                      <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
                         {club.tags[0].name}
                       </span>
                     )}

@@ -1,6 +1,5 @@
 // frontend/src/pages/clubs/ClubExplore.tsx
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useBookClubStore } from '../../store/bookClubStore';
 import { ClubCard } from '../../components/clubs/ClubCard';
 import { SearchBar } from '../../components/clubs/SearchBar';
@@ -14,7 +13,6 @@ import { Button } from '../../components/ui/Button';
  * 展示所有公開的讀書會，支援搜尋和標籤篩選
  */
 const ClubExplore = () => {
-  const navigate = useNavigate();
   const {
     clubs,
     pagination,
@@ -103,23 +101,10 @@ const ClubExplore = () => {
       <div className="max-w-7xl mx-auto">
         {/* 頁面標題 */}
         <div className="mb-8 animate-fade-in">
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-                <span className="text-4xl">🔍</span>
-                探索讀書會
-              </h1>
-            </div>
-            <button
-              onClick={() => navigate('/clubs/create')}
-              className="flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl transition-colors font-medium shadow-sm whitespace-nowrap"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              建立讀書會
-            </button>
-          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+            <span className="text-4xl">🔍</span>
+            探索讀書會
+          </h1>
           <p className="text-gray-600">發現有趣的讀書會，與志同道合的朋友一起閱讀成長</p>
         </div>
 

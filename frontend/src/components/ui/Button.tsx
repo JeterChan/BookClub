@@ -20,7 +20,7 @@ export const Button = ({
   const baseStyles = 'px-4 py-3 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2';
   
   const variantStyles = {
-    primary: 'bg-blue-700 text-white hover:bg-blue-800 focus:ring-blue-500',
+    primary: 'bg-black text-white hover:bg-gray-800 focus:ring-gray-500',
     secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400',
     outline: 'border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-400',
     destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'

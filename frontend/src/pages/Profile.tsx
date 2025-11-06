@@ -99,12 +99,12 @@ const Profile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* 返回按鈕 */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors border border-gray-300 hover:border-gray-400 rounded-lg px-3 py-2 cursor-pointer"
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors border-2 border-gray-300 hover:border-gray-400 rounded-xl px-4 py-2 cursor-pointer"
         >
           <svg
             className="w-5 h-5 mr-2"
@@ -122,9 +122,9 @@ const Profile = () => {
           返回
         </button>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">個人檔案設定</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-8">個人檔案設定</h1>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 p-6">
           <Tabs tabs={profileTabs} defaultTab="basic" />
         </div>
       </div>

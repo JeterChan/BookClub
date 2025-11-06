@@ -25,18 +25,18 @@ export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
   return (
     <div className="w-full">
       {/* Tab navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-4 overflow-x-auto" aria-label="Tabs">
+      <div className="border-b-2 border-gray-200">
+        <nav className="flex space-x-8 overflow-x-auto" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                px-4 py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap
+                px-2 py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap -mb-0.5
                 ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-blue-600 hover:border-gray-300'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-600 hover:text-black hover:border-gray-300'
                 }
               `}
               aria-current={activeTab === tab.id ? 'page' : undefined}
@@ -49,7 +49,7 @@ export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
       </div>
 
       {/* Tab content */}
-      <div className="mt-6">{activeTabContent}</div>
+      <div className="mt-8">{activeTabContent}</div>
     </div>
   );
 };

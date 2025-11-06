@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/Input';
 import { Textarea } from '../../../components/ui/Textarea';
 import { DateTimePicker, convertLocalToUTC } from '../../../components/ui/DateTimePicker';
 import { createEvent, validateMeetingUrl, validateEventDatetime } from '../../../services/eventService';
+import { useBookClubStore } from '../../../store/bookClubStore';
 
 // 表單驗證 schema
 const eventCreateSchema = z.object({
@@ -43,6 +44,7 @@ export default function EventCreate() {
   const navigate = useNavigate();
   const { clubId } = useParams<{ clubId: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { detailClub, fetchClubDetail } = useBookClubStore();
 
   const {
     register,
@@ -63,8 +65,24 @@ export default function EventCreate() {
     if (!clubId) {
       toast.error('找不到讀書會');
       navigate('/clubs');
+      return;
     }
-  }, [clubId, navigate]);
+    
+    // 獲取讀書會資訊以檢查權限
+    fetchClubDetail(parseInt(clubId));
+  }, [clubId, navigate, fetchClubDetail]);
+
+  // 檢查權限
+  useEffect(() => {
+    if (detailClub && clubId && detailClub.id === parseInt(clubId)) {
+      const isAdminOrOwner = detailClub.membership_status === 'owner' || detailClub.membership_status === 'admin';
+      
+      if (!isAdminOrOwner) {
+        toast.error('只有讀書會管理員和創建者可以建立活動');
+        navigate(`/clubs/${clubId}/events`);
+      }
+    }
+  }, [detailClub, clubId, navigate]);
 
   const onSubmit = async (data: EventCreateForm) => {
     if (!clubId) return;

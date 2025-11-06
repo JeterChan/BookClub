@@ -24,7 +24,7 @@ export default function Header() {
         <div className="flex h-14 items-center justify-between lg:h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <span className="text-xl font-bold text-blue-800 lg:text-2xl">
+            <span className="text-xl font-bold text-gray-900 lg:text-2xl">
               OnlineBookClub
             </span>
           </Link>
@@ -33,18 +33,18 @@ export default function Header() {
           <nav className="hidden items-center space-x-6 lg:flex">
             {!isAuthenticated ? (
               <>
-                <Link to="/" className="text-gray-700 hover:text-blue-800">
+                <Link to="/" className="text-gray-700 hover:text-gray-900">
                   首頁
                 </Link>
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-blue-800"
+                  className="text-gray-700 hover:text-gray-900"
                 >
                   登入
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded-md bg-blue-800 px-4 py-2 text-white hover:bg-blue-900"
+                  className="rounded-md bg-black px-4 py-2 text-white hover:bg-gray-800"
                 >
                   註冊
                 </Link>
@@ -53,11 +53,11 @@ export default function Header() {
               <>
                 <Link
                   to="/dashboard"
-                  className="text-gray-700 hover:text-blue-800"
+                  className="text-gray-700 hover:text-gray-900"
                 >
                   儀表板
                 </Link>
-                <Link to="/clubs" className="text-gray-700 hover:text-blue-800">
+                <Link to="/clubs" className="text-gray-700 hover:text-gray-900">
                   探索讀書會
                 </Link>
                 {/* User Menu */}
@@ -76,7 +76,7 @@ export default function Header() {
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-800 text-white">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-white">
                         {user?.display_name?.charAt(0) || 'U'}
                       </div>
                     )}
@@ -161,7 +161,7 @@ export default function Header() {
                   </Link>
                   <Link 
                     to="/register" 
-                    className="block px-3 py-2 rounded-md bg-blue-800 text-white hover:bg-blue-900"
+                    className="block px-3 py-2 rounded-md bg-black text-white hover:bg-gray-800"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     註冊
@@ -180,7 +180,7 @@ export default function Header() {
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-800 text-white">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-white">
                         {user?.display_name?.charAt(0) || 'U'}
                       </div>
                     )}

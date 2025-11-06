@@ -125,10 +125,10 @@ export default function ClubCreate() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">建立讀書會</h1>
+        <div className="bg-white">
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">建立讀書會</h1>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* 讀書會名稱 */}
@@ -140,7 +140,7 @@ export default function ClubCreate() {
                 {...register('name')}
                 type="text"
                 id="name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                 placeholder="請輸入讀書會名稱（最多 50 個字元）"
               />
               {errors.name && (
@@ -158,7 +158,7 @@ export default function ClubCreate() {
                   <img 
                     src={coverImagePreview} 
                     alt="封面預覽" 
-                    className="w-full h-64 object-cover rounded-lg border-2 border-gray-300"
+                    className="w-full h-64 object-cover rounded-xl border-2 border-gray-300"
                   />
                   <button
                     type="button"
@@ -181,13 +181,13 @@ export default function ClubCreate() {
                   />
                   <label
                     htmlFor="cover-image-input"
-                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors bg-gray-50"
                   >
-                    <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <p className="text-sm text-gray-600 mb-1">點擊上傳封面照片</p>
-                    <p className="text-xs text-gray-500">支援 JPG, PNG, GIF (最大 5MB)</p>
+                    <p className="text-gray-600 mb-1">點擊上傳封面照片</p>
+                    <p className="text-sm text-gray-500">支援 JPG, PNG, GIF (最大 5MB)</p>
                   </label>
                 </div>
               )}
@@ -202,7 +202,7 @@ export default function ClubCreate() {
                 {...register('description')}
                 id="description"
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                 placeholder="請描述讀書會的主題、目標或特色（最多 500 個字元）"
               />
               {errors.description && (
@@ -223,8 +223,8 @@ export default function ClubCreate() {
                     onClick={() => handleTagToggle(tag.id)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       selectedTags.includes(tag.id)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? 'bg-black text-white'
+                        : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-gray-400'
                     }`}
                   >
                     {tag.name}
@@ -241,14 +241,14 @@ export default function ClubCreate() {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="flex-1 px-6 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                 disabled={loading}
               >
                 取消
               </button>
               <button
                 type="submit"
-                className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 bg-success-700 text-white rounded-xl font-medium hover:bg-success-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? '建立中...' : '建立讀書會'}

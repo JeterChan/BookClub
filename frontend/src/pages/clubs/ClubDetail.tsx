@@ -1,12 +1,16 @@
 // frontend/src/pages/clubs/ClubDetail.tsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBookClubStore } from '../../store/bookClubStore';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { SkeletonCard } from '../../components/common/SkeletonCard';
 import { getImageUrl } from '../../utils/imageUrl';
+import { getEventsList, isEventPast, type EventListItem } from '../../services/eventService';
+import type { DiscussionTopic } from '../../types/discussion';
 import toast from 'react-hot-toast';
+import { format } from 'date-fns';
+import { zhTW } from 'date-fns/locale';
 
 /**
  * ClubDetail - 讀書會詳細頁面
@@ -24,13 +28,78 @@ const ClubDetail = () => {
     joinClub,
     leaveClub,
     clearError,
+    discussions,
+    fetchDiscussions,
   } = useBookClubStore();
+
+  // 狀態：即將到來的活動和最近討論
+  const [upcomingEvents, setUpcomingEvents] = useState<EventListItem[]>([]);
+  const [recentDiscussions, setRecentDiscussions] = useState<DiscussionTopic[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [hasLoadedContent, setHasLoadedContent] = useState(false);
 
   useEffect(() => {
     if (clubId) {
       fetchClubDetail(parseInt(clubId));
     }
   }, [clubId, fetchClubDetail]);
+
+  // 當讀書會資訊載入後，檢查是否為成員，只有成員才載入活動和討論
+  // 使用 hasLoadedContent 防止重複載入
+  useEffect(() => {
+    if (detailClub && clubId && detailClub.id === parseInt(clubId) && !hasLoadedContent) {
+      const isMember = detailClub.membership_status === 'owner' 
+                    || detailClub.membership_status === 'admin' 
+                    || detailClub.membership_status === 'member';
+      
+      if (isMember) {
+        loadUpcomingEvents(parseInt(clubId));
+        loadRecentDiscussions(parseInt(clubId));
+        setHasLoadedContent(true);
+      } else {
+        // 非成員，標記為已檢查但不載入
+        setHasLoadedContent(true);
+      }
+    }
+  }, [detailClub, clubId, hasLoadedContent]);
+
+  // 載入即將到來的活動（最多3個）
+  const loadUpcomingEvents = async (clubId: number) => {
+    try {
+      setEventsLoading(true);
+      const response = await getEventsList(clubId, {
+        page: 1,
+        pageSize: 3,
+        sortBy: 'event_datetime',
+        order: 'asc',
+      });
+      
+      // 只顯示未來的活動
+      const upcoming = response.items.filter(event => !isEventPast(event.eventDatetime));
+      setUpcomingEvents(upcoming.slice(0, 3));
+    } catch (error: any) {
+      // 靜默處理錯誤，不顯示錯誤訊息給非成員
+      console.log('無法載入活動:', error.message);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  // 載入最近的討論（最多3個）
+  const loadRecentDiscussions = async (clubId: number) => {
+    try {
+      await fetchDiscussions(clubId);
+    } catch (error: any) {
+      // 靜默處理錯誤，不顯示錯誤訊息給非成員
+      console.log('無法載入討論:', error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (discussions && discussions.length > 0) {
+      setRecentDiscussions(discussions.slice(0, 3));
+    }
+  }, [discussions]);
 
   // Listen for errors from the store and display them
   useEffect(() => {
@@ -77,25 +146,35 @@ const ClubDetail = () => {
     // Owner or Admin Check
     if (membershipStatus === 'owner' || membershipStatus === 'admin') {
       return (
-        <div className="flex gap-2">
-          <Button 
+        <div className="flex gap-3 flex-wrap">
+          <button 
             onClick={() => navigate(`/clubs/${clubId}/events`)}
-            className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 rounded-xl transition-colors font-medium shadow-sm"
           >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
             活動
-          </Button>
-          <Button 
+          </button>
+          <button 
             onClick={() => navigate(`/clubs/${clubId}/discussions`)}
-            className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 rounded-xl transition-colors font-medium shadow-sm"
           >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
             討論區
-          </Button>
-          <Button 
+          </button>
+          <button 
             onClick={() => navigate(`/clubs/${clubId}/settings`)}
-            className="whitespace-nownowrap bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl transition-colors font-medium shadow-sm"
           >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
             管理
-          </Button>
+          </button>
         </div>
       );
     }
@@ -103,23 +182,29 @@ const ClubDetail = () => {
     // Member Check
     if (membershipStatus === 'member') {
       return (
-        <div className="flex gap-2">
-          <Button 
+        <div className="flex gap-3 flex-wrap">
+          <button 
             onClick={() => navigate(`/clubs/${clubId}/events`)}
-            className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 rounded-xl transition-colors font-medium shadow-sm"
           >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
             活動
-          </Button>
-          <Button 
+          </button>
+          <button 
             onClick={() => navigate(`/clubs/${clubId}/discussions`)}
-            className="whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 rounded-xl transition-colors font-medium shadow-sm"
           >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
             討論區
-          </Button>
+          </button>
           <Button 
             onClick={handleLeaveClick}
             variant="outline"
-            className="whitespace-nowrap"
+            className="whitespace-nowrap border-2 border-gray-300 rounded-xl px-5 py-2.5"
           >
             退出讀書會
           </Button>
@@ -204,7 +289,20 @@ const ClubDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white relative">
+      {/* 返回按鈕 - 左上角 */}
+      <div className="absolute top-4 left-4 z-20">
+        <button
+          onClick={() => navigate('/clubs')}
+          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-900 rounded-xl shadow-md transition-colors font-medium border-2 border-gray-300"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          返回
+        </button>
+      </div>
+
       {/* 封面圖片區域 */}
       <div className="w-full h-64 md:h-96 bg-gray-200 overflow-hidden">
         {detailClub.cover_image_url ? (
@@ -223,7 +321,7 @@ const ClubDetail = () => {
 
       {/* 內容區域 */}
       <div className="max-w-5xl mx-auto p-4 md:p-8 -mt-16 relative z-10">
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 md:p-8">
+        <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-6 md:p-8">
           {/* 標題和基本資訊 */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div className="flex-1">
@@ -276,6 +374,93 @@ const ClubDetail = () => {
                   )}
                 </div>
               </div>
+
+              {/* 即將到來的活動 - 只有成員可見 */}
+              {(detailClub.membership_status === 'owner' || 
+                detailClub.membership_status === 'admin' || 
+                detailClub.membership_status === 'member') && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">即將到來的活動</h2>
+                  {upcomingEvents.length > 0 && (
+                    <button
+                      onClick={() => navigate(`/clubs/${clubId}/events`)}
+                      className="text-sm text-gray-900 hover:text-gray-700 font-medium"
+                    >
+                      查看全部 →
+                    </button>
+                  )}
+                </div>
+                {eventsLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                  </div>
+                ) : upcomingEvents.length > 0 ? (
+                  <div className="space-y-3">
+                    {upcomingEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        onClick={() => navigate(`/clubs/${clubId}/events/${event.id}`)}
+                        className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer"
+                      >
+                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-1">{event.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                          <span>🕒 {format(new Date(event.eventDatetime), 'MM月dd日 HH:mm', { locale: zhTW })}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <span>👥 {event.currentParticipants}/{event.maxParticipants || '∞'} 人</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-xl p-6 text-center border-2 border-gray-200">
+                    <p className="text-gray-500 text-sm">暫無即將到來的活動</p>
+                  </div>
+                )}
+              </div>
+              )}
+
+              {/* 最近討論 - 只有成員可見 */}
+              {(detailClub.membership_status === 'owner' || 
+                detailClub.membership_status === 'admin' || 
+                detailClub.membership_status === 'member') && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">最近討論</h2>
+                  {recentDiscussions.length > 0 && (
+                    <button
+                      onClick={() => navigate(`/clubs/${clubId}/discussions`)}
+                      className="text-sm text-gray-900 hover:text-gray-700 font-medium"
+                    >
+                      查看全部 →
+                    </button>
+                  )}
+                </div>
+                {recentDiscussions.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentDiscussions.map((discussion) => (
+                      <div
+                        key={discussion.id}
+                        onClick={() => navigate(`/clubs/${clubId}/discussions/${discussion.id}`)}
+                        className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer"
+                      >
+                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{discussion.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <span>💬 {discussion.comment_count} 則留言</span>
+                          <span>•</span>
+                          <span>{discussion.author?.display_name}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-xl p-6 text-center border-2 border-gray-200">
+                    <p className="text-gray-500 text-sm">暫無討論主題</p>
+                  </div>
+                )}
+              </div>
+              )}
             </div>
 
             {/* 右側：資訊卡片 */}
@@ -314,16 +499,6 @@ const ClubDetail = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* 返回按鈕 */}
-        <div className="mt-6 text-center">
-          <Button
-            onClick={() => navigate('/clubs')}
-            variant="outline"
-          >
-            ← 返回探索頁面
-          </Button>
         </div>
       </div>
     </div>

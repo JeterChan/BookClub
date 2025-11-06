@@ -5,10 +5,12 @@ import type { EventListItem } from '../../../services/eventService';
 import { EventCard } from '../../../components/events/EventCard';
 import { Button } from '../../../components/ui/Button';
 import { toast } from 'react-hot-toast';
+import { useBookClubStore } from '../../../store/bookClubStore';
 
 export const EventsPage: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
+  const { detailClub, fetchClubDetail } = useBookClubStore();
   
   const [loading, setLoading] = useState(true);
   const [upcomingEvents, setUpcomingEvents] = useState<EventListItem[]>([]);
@@ -17,8 +19,14 @@ export const EventsPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    loadEvents();
+    if (clubId) {
+      fetchClubDetail(parseInt(clubId));
+      loadEvents();
+    }
   }, [clubId, currentPage]);
+
+  // 檢查是否為管理員或創建者
+  const isAdminOrOwner = detailClub?.membership_status === 'owner' || detailClub?.membership_status === 'admin';
 
   const loadEvents = async () => {
     if (!clubId) return;
@@ -86,12 +94,14 @@ export const EventsPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">讀書會活動</h1>
           <p className="text-gray-600 mt-2">查看所有活動，並報名參加</p>
         </div>
-        <button
-          onClick={handleCreateEvent}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          建立活動
-        </button>
+        {isAdminOrOwner && (
+          <button
+            onClick={handleCreateEvent}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            建立活動
+          </button>
+        )}
       </div>
 
       {/* 空狀態 */}
@@ -112,12 +122,14 @@ export const EventsPage: React.FC = () => {
           </svg>
           <h3 className="mt-4 text-xl font-semibold text-gray-900">尚無活動</h3>
           <p className="mt-2 text-gray-600">目前這個讀書會還沒有任何活動</p>
-          <button
-            onClick={handleCreateEvent}
-            className="mt-6 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            建立第一個活動
-          </button>
+          {isAdminOrOwner && (
+            <button
+              onClick={handleCreateEvent}
+              className="mt-6 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              建立第一個活動
+            </button>
+          )}
         </div>
       )}
 
