@@ -1,6 +1,5 @@
 // frontend/src/components/clubs/TagFilter.tsx
 import { useState, useEffect } from 'react';
-import { Button } from '../ui/Button';
 import type { ClubTag } from '../../types/bookClub';
 
 interface TagFilterProps {
@@ -42,50 +41,57 @@ export const TagFilter = ({ availableTags, selectedTagIds, onApplyFilter, onClea
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">主題標籤篩選</label>
+    <div className="space-y-4">
+      {/* 標籤篩選標題 */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-700">主題標籤篩選標籤</span>
       </div>
-      <div className="flex flex-wrap gap-2 pb-2">
+      
+      {/* 標籤按鈕組 */}
+      <div className="flex flex-wrap gap-2">
         {availableTags.map((tag) => (
           <button
             key={tag.id}
             onClick={() => handleTagClick(tag.id)}
             className={`
-              px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap
+              px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border
               ${
                 isSelected(tag.id)
-                  ? 'bg-blue-500 text-white hover:bg-blue-600'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-black text-white border-black hover:bg-gray-800'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
               }
             `}
           >
             {tag.name}
-            {isSelected(tag.id) && (
-              <span className="ml-1">✓</span>
-            )}
           </button>
         ))}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          {localSelectedTagIds.length > 0 ? (
+
+      {/* 底部操作區 */}
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center gap-3">
+          {localSelectedTagIds.length > 0 && (
             <>
-              <span>已選擇 {localSelectedTagIds.length} 個標籤</span>
+              <span className="text-sm text-gray-600">
+                已選擇 {localSelectedTagIds.length} 個標籤
+              </span>
               <button
                 onClick={handleClearAll}
-                className="text-blue-600 hover:text-blue-700 hover:underline"
+                className="text-sm text-gray-600 hover:text-gray-900 underline"
               >
-                清除全部
+                清除篩選
               </button>
             </>
-          ) : (
-            <span>請選擇標籤進行篩選</span>
           )}
         </div>
-        <Button onClick={handleApplyFilter} variant="primary" className="px-6 py-2">
-          篩選
-        </Button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleApplyFilter}
+            className="px-6 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+          >
+            篩選
+          </button>
+        </div>
       </div>
     </div>
   );

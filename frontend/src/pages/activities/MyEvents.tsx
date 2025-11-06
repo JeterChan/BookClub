@@ -73,24 +73,24 @@ export default function MyEvents() {
 
     if (isPast) {
       return (
-        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+        <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
           已結束
         </span>
       );
     }
 
     return (
-      <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-600">
+      <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-success-100 text-success-700">
         即將舉行
       </span>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-8">
           <Button
             onClick={() => navigate('/dashboard')}
             variant="outline"
@@ -98,12 +98,12 @@ export default function MyEvents() {
           >
             ← 返回儀表板
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">我的活動</h1>
+          <h1 className="text-4xl font-bold text-gray-900">我的活動</h1>
           <p className="text-gray-600 mt-2">瀏覽您參與讀書會的所有活動</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
           <div className="flex flex-wrap gap-4">
             {/* 狀態篩選 */}
             <div>
@@ -113,7 +113,7 @@ export default function MyEvents() {
               <select
                 value={statusFilter}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
               >
                 <option value="all">全部</option>
                 <option value="published">即將舉行</option>
@@ -130,7 +130,7 @@ export default function MyEvents() {
               <select
                 value={participationFilter}
                 onChange={(e) => handleFilterChange('participation', e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
               >
                 <option value="all">全部</option>
                 <option value="registered">已報名</option>
@@ -151,7 +151,7 @@ export default function MyEvents() {
             ))}
           </div>
         ) : events.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <p className="text-4xl mb-4">📅</p>
             <p className="text-gray-600 mb-4">沒有找到符合條件的活動</p>
             <Button onClick={() => navigate('/clubs')} variant="primary">
@@ -165,16 +165,16 @@ export default function MyEvents() {
                 <div
                   key={event.id}
                   onClick={() => navigate(`/clubs/${event.clubId}/events/${event.id}`)}
-                  className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer"
+                  className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all cursor-pointer animate-fade-in"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-semibold text-gray-900">
+                        <h3 className="text-xl font-bold text-gray-900">
                           {event.title}
                         </h3>
                         {event.isRegistered && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-600">
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-success-100 text-success-700">
                             ✓ 已報名
                           </span>
                         )}
@@ -210,7 +210,7 @@ export default function MyEvents() {
                       <img
                         src={getImageUrl(event.clubCoverImageUrl) || ''}
                         alt={event.clubName}
-                        className="w-20 h-20 rounded-lg object-cover ml-6 flex-shrink-0"
+                        className="w-24 h-24 rounded-xl object-cover ml-6 flex-shrink-0"
                       />
                     )}
                   </div>

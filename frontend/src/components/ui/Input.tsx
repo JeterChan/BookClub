@@ -19,7 +19,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label 
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-2"
           >
             {label}
             {props.required && <span className="text-red-500 ml-1">*</span>}
@@ -31,8 +31,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             ref={ref}
             className={clsx(
-              'w-full px-4 py-3 border rounded-lg transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+              'w-full px-4 py-2.5 border-2 rounded-xl transition-all',
+              'focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent',
               error
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300',

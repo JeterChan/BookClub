@@ -67,14 +67,14 @@ export const BasicInfoTab = ({ profile, onUpdate }: BasicInfoTabProps) => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
       {/* Email (read-only) */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           Email
         </label>
         <input
           type="email"
           value={profile.email}
           disabled
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-gray-600"
+          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed text-gray-600"
         />
         <p className="text-sm text-gray-500 mt-1">Email 無法修改</p>
       </div>
@@ -100,9 +100,9 @@ export const BasicInfoTab = ({ profile, onUpdate }: BasicInfoTabProps) => {
       />
 
       {/* Save button */}
-      <div className="flex items-center gap-4">
-        <Button type="submit" disabled={loading || !isDirty} loading={loading}>
-          儲存變更
+      <div className="flex items-center gap-4 pt-4">
+        <Button type="submit" disabled={loading || !isDirty} loading={loading} className="bg-success-700 hover:bg-success-800 text-white px-8 py-3 rounded-xl">
+          儲存更新
         </Button>
         {isDirty && (
           <p className="text-sm text-gray-600">您有未儲存的變更</p>
