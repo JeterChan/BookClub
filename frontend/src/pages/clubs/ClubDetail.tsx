@@ -79,7 +79,6 @@ const ClubDetail = () => {
       setUpcomingEvents(upcoming.slice(0, 3));
     } catch (error: any) {
       // 靜默處理錯誤，不顯示錯誤訊息給非成員
-      console.log('無法載入活動:', error.message);
     } finally {
       setEventsLoading(false);
     }
@@ -91,7 +90,6 @@ const ClubDetail = () => {
       await fetchDiscussions(clubId);
     } catch (error: any) {
       // 靜默處理錯誤，不顯示錯誤訊息給非成員
-      console.log('無法載入討論:', error.message);
     }
   };
 
@@ -121,10 +119,9 @@ const ClubDetail = () => {
     try {
       await joinClub(parseInt(clubId));
       toast.success('已發送加入請求，等待管理員審核');
-      // Refresh club details to update membership_status
-      await fetchClubDetail(parseInt(clubId));
+      // 不需要重新載入，joinClub 已經更新了 membership_status
     } catch (e) {
-      // Error is handled by the useEffect
+      // Error is handled by the store
     }
   };
 
@@ -140,11 +137,8 @@ const ClubDetail = () => {
 
     const membershipStatus = detailClub.membership_status || 'not_member';
     
-    // Debug: 在開發環境中顯示 membership_status
-    console.log('Club ID:', clubId, 'Membership Status:', membershipStatus);
-
-    // Owner or Admin Check
-    if (membershipStatus === 'owner' || membershipStatus === 'admin') {
+        // Owner Check - 創建者不能退出
+    if (membershipStatus === 'owner') {
       return (
         <div className="flex gap-3 flex-wrap">
           <button 
@@ -167,7 +161,8 @@ const ClubDetail = () => {
           </button>
           <button 
             onClick={() => navigate(`/clubs/${clubId}/settings`)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-xl transition-colors font-medium shadow-sm"
+            style={{ backgroundColor: '#1e40af' }}
+            className="flex items-center gap-2 px-5 py-2.5 hover:opacity-90 text-white rounded-xl transition-all font-medium shadow-sm"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -175,6 +170,50 @@ const ClubDetail = () => {
             </svg>
             管理
           </button>
+        </div>
+      );
+    }
+
+    // Admin Check - 可以退出
+    if (membershipStatus === 'admin') {
+      return (
+        <div className="flex gap-3 flex-wrap">
+          <button 
+            onClick={() => navigate(`/clubs/${clubId}/events`)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 rounded-xl transition-colors font-medium shadow-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            活動
+          </button>
+          <button 
+            onClick={() => navigate(`/clubs/${clubId}/discussions`)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 rounded-xl transition-colors font-medium shadow-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            討論區
+          </button>
+          <button 
+            onClick={() => navigate(`/clubs/${clubId}/settings`)}
+            style={{ backgroundColor: '#1e40af' }}
+            className="flex items-center gap-2 px-5 py-2.5 hover:opacity-90 text-white rounded-xl transition-all font-medium shadow-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            管理
+          </button>
+          <Button 
+            onClick={handleLeaveClick}
+            variant="destructive"
+            className="whitespace-nowrap rounded-xl px-5 py-2.5"
+          >
+            退出讀書會
+          </Button>
         </div>
       );
     }

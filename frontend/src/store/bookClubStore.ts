@@ -179,17 +179,13 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       set((state) => {
         const updatedDetailClub =
           state.detailClub && state.detailClub.id === clubId
-            ? { ...state.detailClub, membership_status: 'member' as const, member_count: state.detailClub.member_count + 1 }
+            ? { ...state.detailClub, membership_status: 'pending_request' as const }
             : state.detailClub;
-
-        const updatedClubs = state.clubs.map((club) =>
-          club.id === clubId ? { ...club, member_count: club.member_count + 1 } : club
-        );
 
         return {
           loading: false,
           detailClub: updatedDetailClub,
-          clubs: updatedClubs,
+          clubs: state.clubs, // 不更新成員數，因為還在等待審核
         };
       });
     } catch (error) {

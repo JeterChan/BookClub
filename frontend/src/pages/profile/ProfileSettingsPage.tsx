@@ -19,7 +19,6 @@ const ProfileSettingsPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isDirty = JSON.stringify(formData) !== JSON.stringify(initialData);
-  console.log("isDirty calculated as:", isDirty);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -30,7 +29,6 @@ const ProfileSettingsPage = () => {
         setFormData(initial);
         setInitialData(initial);
       } catch (error) {
-        console.error('Failed to fetch profile:', error);
         toast.error('無法載入個人資料，請稍後再試。');
       } finally {
         setLoading(false);
@@ -56,14 +54,7 @@ const ProfileSettingsPage = () => {
       setInitialData(newInitialData);
       setFormData(newInitialData);
       toast.success('個人資料已成功更新！');
-      setTimeout(() => {
-        console.log("State after update:", { 
-          formData: newInitialData, 
-          initialData: newInitialData 
-        });
-      }, 0);
     } catch (error) {
-      console.error('Failed to update profile:', error);
       toast.error('更新失敗，請稍後再試。');
     } finally {
       setIsSaving(false);

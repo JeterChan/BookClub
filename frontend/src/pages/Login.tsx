@@ -67,8 +67,6 @@ export default function Login() {
 
       } catch (err) {
 
-        console.log(err);
-
         const apiError = err as ApiError;
 
         const detail = apiError.response?.data?.detail;

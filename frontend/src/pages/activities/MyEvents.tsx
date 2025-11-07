@@ -47,7 +47,7 @@ export default function MyEvents() {
       setEvents(response.items);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
-      console.error('載入活動失敗:', err);
+      // Error handling - silently fail
     } finally {
       setLoading(false);
     }

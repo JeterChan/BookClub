@@ -10,7 +10,6 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, className, ...props }, ref) => {
-    console.log("Input error prop:", error);
     const id = useId();
     const inputId = props.id || id;
 

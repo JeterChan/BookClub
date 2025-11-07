@@ -42,7 +42,6 @@ const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthAction
       const userProfile = await profileService.getProfile();
       set(state => ({ ...state, user: userProfile, isInitializing: false }));
     } catch (error) {
-      console.error('Failed to fetch profile after login:', error);
       // If profile fetch fails, keep authenticated but without user data
       set(state => ({ ...state, user: null, isInitializing: false }));
     }
@@ -64,7 +63,6 @@ const actions = (set: (fn: (state: AuthState) => AuthState) => void): AuthAction
         set(state => ({ ...state, user: userProfile }));
       }
     } catch (error) {
-      console.error('Failed to initialize auth state:', error);
       // If fetching profile fails, treat as unauthenticated
       set(() => initialState);
     } finally {
