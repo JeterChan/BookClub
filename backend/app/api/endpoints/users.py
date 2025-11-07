@@ -1,6 +1,8 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
-from sqlmodel import Session
+from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
+
 from app.models.user import User, UserRead, UserUpdateDisplayName, UserProfileRead, UserProfileUpdate
 from app.models.interest_tag import InterestTagRead, UserInterestTagCreate
 from app.services.user_service import UserService

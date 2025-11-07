@@ -63,7 +63,7 @@ export default function Login() {
 
         toast.success('登入成功！正在跳轉...');
 
-        navigate('/dashboard');
+        navigate('/welcome');
 
       } catch (err) {
 

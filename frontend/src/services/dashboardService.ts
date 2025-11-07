@@ -1,4 +1,3 @@
-import type { User } from '../types/auth';
 import { apiClient } from './api';
 
 // Dashboard data types
@@ -6,6 +5,7 @@ export interface DashboardStats {
   clubsCount: number;
   booksRead: number;
   discussionsCount: number;
+  weeklyEvents: number;
 }
 
 export interface Club {
@@ -14,6 +14,11 @@ export interface Club {
   coverImage: string | null;
   memberCount: number;
   lastActivity: string;
+  totalEvents: number;
+  completedEvents: number;
+  upcomingEvents: number;
+  progressPercentage: number;
+  status: 'active' | 'completed' | 'planning';
 }
 
 export interface Activity {
@@ -40,6 +45,7 @@ const mockDashboardData: DashboardData = {
     clubsCount: 3,
     booksRead: 12,
     discussionsCount: 48,
+    weeklyEvents: 5,
   },
   clubs: [
     {
@@ -48,6 +54,11 @@ const mockDashboardData: DashboardData = {
       coverImage: null,
       memberCount: 24,
       lastActivity: '2025-10-20T10:30:00Z',
+      totalEvents: 8,
+      completedEvents: 5,
+      upcomingEvents: 3,
+      progressPercentage: 62.5,
+      status: 'active' as const,
     },
     {
       id: 2,
@@ -55,6 +66,11 @@ const mockDashboardData: DashboardData = {
       coverImage: null,
       memberCount: 18,
       lastActivity: '2025-10-19T15:45:00Z',
+      totalEvents: 12,
+      completedEvents: 12,
+      upcomingEvents: 0,
+      progressPercentage: 100,
+      status: 'completed' as const,
     },
     {
       id: 3,
@@ -62,6 +78,11 @@ const mockDashboardData: DashboardData = {
       coverImage: null,
       memberCount: 32,
       lastActivity: '2025-10-18T09:20:00Z',
+      totalEvents: 0,
+      completedEvents: 0,
+      upcomingEvents: 0,
+      progressPercentage: 0,
+      status: 'planning' as const,
     },
   ],
   recentActivities: [
