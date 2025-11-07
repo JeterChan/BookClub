@@ -47,11 +47,29 @@ export const MyClubsList = ({ clubs }: MyClubsListProps) => {
             <Link
               key={club.id}
               to={`/clubs/${club.id}`}
-              className="block p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all"
+              className="block p-4 rounded-lg border border-gray-200 hover:border-black hover:bg-gray-50 transition-all"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">{club.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-gray-900">{club.name}</h4>
+                    {/* 狀態標籤 */}
+                    {club.status === 'active' && (
+                      <span className="px-2 py-0.5 text-xs font-medium bg-success-700 text-white rounded">
+                        進行中
+                      </span>
+                    )}
+                    {club.status === 'completed' && (
+                      <span className="px-2 py-0.5 text-xs font-medium bg-gray-600 text-white rounded">
+                        已完成
+                      </span>
+                    )}
+                    {club.status === 'planning' && (
+                      <span className="px-2 py-0.5 text-xs font-medium bg-gray-400 text-white rounded">
+                        規劃中
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                     <span>👥 {club.memberCount} 成員</span>
                     <span>🕒 {formatRelativeTime(club.lastActivity)}</span>
@@ -65,6 +83,33 @@ export const MyClubsList = ({ clubs }: MyClubsListProps) => {
                   />
                 )}
               </div>
+              
+              {/* 進度條 */}
+              {club.totalEvents > 0 && (
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-gray-600">活動進度</span>
+                    <span className="font-medium text-gray-900">{club.progressPercentage}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-success-700 h-2 rounded-full transition-all"
+                      style={{ width: `${club.progressPercentage}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>{club.completedEvents} / {club.totalEvents} 活動完成</span>
+                    {club.upcomingEvents > 0 && (
+                      <span>{club.upcomingEvents} 場即將到來</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {club.totalEvents === 0 && (
+                <div className="mt-3 text-xs text-gray-500 italic">
+                  尚未規劃活動
+                </div>
+              )}
             </Link>
           ))}
         </div>

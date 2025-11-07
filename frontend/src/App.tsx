@@ -6,6 +6,8 @@ import { PrivateRoute } from './components/common/PrivateRoute';
 import Layout from './components/common/Layout';
 
 // Lazy load pages
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const WelcomePage = lazy(() => import('./pages/WelcomePage'));
 const Register = lazy(() => import('./pages/Register'));
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -72,7 +74,7 @@ function App() {
       />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/clubs" replace />} />
+          <Route path="/" element={<Layout><LandingPage /></Layout>} />
           <Route path="/register" element={<Layout><Register /></Layout>} />
           <Route path="/login" element={<Layout><Login /></Layout>} />
           <Route path="/verify-email" element={<Layout><VerifyEmail /></Layout>} />
@@ -80,6 +82,14 @@ function App() {
           <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
           <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
           <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
+          <Route 
+            path="/welcome" 
+            element={
+              <PrivateRoute>
+                <Layout><WelcomePage /></Layout>
+              </PrivateRoute>
+            } 
+          />
           <Route 
             path="/dashboard" 
             element={

@@ -18,16 +18,26 @@ export default function Header() {
     setIsMobileMenuOpen(false)
   }
 
+  // Logo 點擊處理：已登入導向 welcome，未登入導向首頁
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (isAuthenticated) {
+      navigate('/welcome')
+    } else {
+      navigate('/')
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between lg:h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <a href="/" onClick={handleLogoClick} className="flex items-center cursor-pointer">
             <span className="text-xl font-bold text-gray-900 lg:text-2xl">
               OnlineBookClub
             </span>
-          </Link>
+          </a>
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center space-x-6 lg:flex">

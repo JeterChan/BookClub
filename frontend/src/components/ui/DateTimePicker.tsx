@@ -22,20 +22,23 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
     const id = useId();
     const inputId = props.id || id;
 
-    // 取得當前時間（本地時區）
+    // 取得當前時間（本地時區），加1分鐘緩衝避免邊界問題
     const now = new Date();
+    now.setMinutes(now.getMinutes() + 1);
     const minDateTime = disablePast
       ? now.toISOString().slice(0, 16) // YYYY-MM-DDTHH:mm 格式
       : undefined;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      // 將本地時間轉換為 UTC ISO 8601 格式
       const localDatetime = e.target.value;
-      if (localDatetime) {
-        const date = new Date(localDatetime);
-        // 可以在這裡驗證是否為未來時間
-        if (disablePast && date <= now) {
-          return; // 不觸發 onChange
+      if (localDatetime && disablePast) {
+        const selectedDate = new Date(localDatetime);
+        const currentDate = new Date();
+        
+        // 驗證選擇的時間是否在未來
+        if (selectedDate <= currentDate) {
+          e.preventDefault();
+          return; // 不觸發 onChange，阻止選擇過去時間
         }
       }
       
@@ -106,30 +109,47 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
 DateTimePicker.displayName = 'DateTimePicker';
 
 /**
- * 將本地時間轉換為 UTC ISO 8601 格式
+ * 將本地時間轉換為 UTC+8 時區的 ISO 8601 格式
+ * 用戶在 datetime-local 選擇的時間會被視為 UTC+8 時間
+ * 
  * @param localDatetime datetime-local input 的值 (YYYY-MM-DDTHH:mm)
- * @returns UTC ISO 8601 格式字串
+ * @returns UTC+8 時區的 ISO 8601 格式字串
+ * 
+ * @example
+ * 用戶選擇: 2025-11-08T14:00 (希望是 UTC+8 下午2點)
+ * 返回: 2025-11-08T14:00:00+08:00
  */
 export const convertLocalToUTC = (localDatetime: string): string => {
   if (!localDatetime) return '';
-  const date = new Date(localDatetime);
-  return date.toISOString();
+  
+  // 將用戶選擇的時間視為 UTC+8 時區
+  // 格式：2025-11-08T14:00 → 2025-11-08T14:00:00+08:00
+  return `${localDatetime}:00+08:00`;
 };
 
 /**
- * 將 UTC ISO 8601 格式轉換為本地時間
- * @param utcDatetime UTC ISO 8601 格式字串
+ * 將 ISO 8601 格式轉換為本地 datetime-local 格式
+ * @param utcDatetime ISO 8601 格式字串（可能包含時區信息）
  * @returns datetime-local input 的值 (YYYY-MM-DDTHH:mm)
+ * 
+ * @example
+ * 輸入: 2025-11-08T14:00:00+08:00 或 2025-11-08T06:00:00Z
+ * 輸出: 2025-11-08T14:00 (UTC+8 時間)
  */
 export const convertUTCToLocal = (utcDatetime: string): string => {
   if (!utcDatetime) return '';
+  
   const date = new Date(utcDatetime);
-  // 轉換為本地時區的 YYYY-MM-DDTHH:mm 格式
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  // 轉換為 UTC+8 時區（加 8 小時）
+  const utc8Date = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+  
+  // 格式化為 YYYY-MM-DDTHH:mm
+  const year = utc8Date.getUTCFullYear();
+  const month = String(utc8Date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(utc8Date.getUTCDate()).padStart(2, '0');
+  const hours = String(utc8Date.getUTCHours()).padStart(2, '0');
+  const minutes = String(utc8Date.getUTCMinutes()).padStart(2, '0');
   
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
