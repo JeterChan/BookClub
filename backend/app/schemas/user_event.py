@@ -1,8 +1,11 @@
 from typing import Optional, List
-from datetime import datetime
-from pydantic import BaseModel, Field
+from datetime import datetime, timezone, timedelta
+from pydantic import BaseModel, Field, field_serializer
 from app.models.event import EventStatus
 from app.schemas.pagination import PaginationMeta
+
+# UTC+8 時區
+UTC_PLUS_8 = timezone(timedelta(hours=8))
 
 
 class UserEventRead(BaseModel):
@@ -21,6 +24,16 @@ class UserEventRead(BaseModel):
     current_participants: int = Field(alias="currentParticipants", serialization_alias="currentParticipants")
     max_participants: Optional[int] = Field(alias="maxParticipants", serialization_alias="maxParticipants")
     created_at: datetime = Field(alias="createdAt", serialization_alias="createdAt")
+    
+    @field_serializer('event_datetime', 'created_at')
+    def serialize_datetime(self, dt: datetime) -> str:
+        """將 datetime 序列化為 UTC+8 時區的 ISO 8601 格式"""
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt_utc8 = dt.astimezone(UTC_PLUS_8)
+        return dt_utc8.isoformat()
     
     class Config:
         from_attributes = True

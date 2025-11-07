@@ -9,6 +9,7 @@ class DashboardStats(SQLModel):
     clubs_count: int = Field(alias="clubsCount")
     books_read: int = Field(alias="booksRead")
     discussions_count: int = Field(alias="discussionsCount")
+    weekly_events: int = Field(alias="weeklyEvents")
     
     class Config:
         populate_by_name = True
@@ -21,6 +22,11 @@ class DashboardClub(SQLModel):
     cover_image: Optional[str] = Field(default=None, alias="coverImage")
     member_count: int = Field(alias="memberCount")
     last_activity: datetime = Field(alias="lastActivity")
+    total_events: int = Field(alias="totalEvents")
+    completed_events: int = Field(alias="completedEvents")
+    upcoming_events: int = Field(alias="upcomingEvents")
+    progress_percentage: float = Field(alias="progressPercentage")
+    status: str  # 'active', 'completed', 'upcoming', 'planning'
     
     class Config:
         populate_by_name = True

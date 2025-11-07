@@ -1,12 +1,15 @@
 from typing import List, Optional, TYPE_CHECKING, Annotated
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from sqlmodel import Field as SQLField, SQLModel, Relationship
 from enum import Enum
-from pydantic import field_validator, ConfigDict, BaseModel, AliasChoices, Field
+from pydantic import field_validator, field_serializer, ConfigDict, BaseModel, AliasChoices, Field
 
 if TYPE_CHECKING:
     from .book_club import BookClub
     from .user import User
+
+# UTC+8 時區
+UTC_PLUS_8 = timezone(timedelta(hours=8))
 
 class EventStatus(str, Enum):
     DRAFT = "draft"
@@ -101,6 +104,18 @@ class EventRead(BaseModel):
     
     # 計算欄位：目前報名人數
     participant_count: Annotated[int, Field(default=0, serialization_alias="participantCount", validation_alias=AliasChoices('participantCount', 'participant_count'))]
+    
+    @field_serializer('event_datetime', 'created_at', 'updated_at')
+    def serialize_datetime(self, dt: datetime) -> str:
+        """將 datetime 序列化為 UTC+8 時區的 ISO 8601 格式"""
+        if dt is None:
+            return None
+        # 如果 datetime 是 naive（沒有時區信息），視為 UTC
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        # 轉換為 UTC+8 時區並序列化
+        dt_utc8 = dt.astimezone(UTC_PLUS_8)
+        return dt_utc8.isoformat()
 
 
 class EventUpdate(BaseModel):
@@ -139,6 +154,16 @@ class EventListItem(BaseModel):
     is_organizer: Annotated[bool, Field(serialization_alias="isOrganizer")]
     is_participating: Annotated[bool, Field(serialization_alias="isParticipating")]
     created_at: Annotated[datetime, Field(serialization_alias="createdAt")]
+    
+    @field_serializer('event_datetime', 'created_at')
+    def serialize_datetime(self, dt: datetime) -> str:
+        """將 datetime 序列化為 UTC+8 時區的 ISO 8601 格式"""
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt_utc8 = dt.astimezone(UTC_PLUS_8)
+        return dt_utc8.isoformat()
 
 
 class EventDetail(BaseModel):
@@ -158,6 +183,16 @@ class EventDetail(BaseModel):
     is_organizer: Annotated[bool, Field(serialization_alias="isOrganizer")]
     is_participating: Annotated[bool, Field(serialization_alias="isParticipating")]
     created_at: Annotated[datetime, Field(serialization_alias="createdAt")]
+    
+    @field_serializer('event_datetime', 'created_at')
+    def serialize_datetime(self, dt: datetime) -> str:
+        """將 datetime 序列化為 UTC+8 時區的 ISO 8601 格式"""
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt_utc8 = dt.astimezone(UTC_PLUS_8)
+        return dt_utc8.isoformat()
 
 
 class PaginationMetadata(BaseModel):
