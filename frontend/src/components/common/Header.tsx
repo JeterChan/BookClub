@@ -33,7 +33,12 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between lg:h-16">
           {/* Logo */}
-          <a href="/" onClick={handleLogoClick} className="flex items-center cursor-pointer">
+          <a href="/" onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer">
+            <img 
+              src="/open-book.png" 
+              alt="OnlineBookClub Logo" 
+              className="h-8 w-8 lg:h-10 lg:w-10"
+            />
             <span className="text-xl font-bold text-gray-900 lg:text-2xl">
               OnlineBookClub
             </span>
