@@ -10,6 +10,7 @@ from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
 from app.schemas.book_club import BookClubReadWithDetails, BookClubUpdate
 from app.models.club_tag import ClubTagRead
 from app.core.cloudinary_config import upload_image, delete_image, extract_public_id_from_url
+from app.services import notification_service
 
 
 def upload_club_cover_to_cloudinary(upload_file: UploadFile, club_id: int) -> str:
@@ -426,6 +427,10 @@ def join_book_club(session: Session, club_id: int, user_id: int) -> ClubJoinRequ
     session.commit()
     session.refresh(new_request)
     print(f"---LOG: Join request successfully created.")
+    
+    # Send notification to club admins and owners
+    notification_service.notify_new_join_request(session, club_id, new_request)
+    
     return new_request
 
 def leave_book_club(session: Session, club_id: int, user_id: int) -> None:

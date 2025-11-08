@@ -1,6 +1,7 @@
 from typing import Optional
 from sqlmodel import Field, SQLModel, Relationship, JSON, Column
 from enum import Enum
+from datetime import datetime
 
 # Import forward references
 from .user import User
@@ -15,6 +16,7 @@ class Notification(SQLModel, table=True):
     content: dict = Field(sa_column=Column(JSON))
     type: NotificationType = Field(max_length=50)
     is_read: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     
     recipient_id: int = Field(foreign_key="user.id")
     recipient: "User" = Relationship(back_populates="notifications")
