@@ -4,14 +4,19 @@ import { Button } from '../../components/ui/Button';
 import { listBookClubs } from '../../services/bookClubService';
 import { getImageUrl } from '../../utils/imageUrl';
 import type { BookClubListItem } from '../../types/bookClub';
+import { getEventsList } from '../../services/eventService';
 import toast from 'react-hot-toast';
 
 type RoleFilter = 'all' | 'owner' | 'admin' | 'member';
 
+interface ClubWithEventCount extends BookClubListItem {
+  eventCount?: number;
+}
+
 export default function MyClubs() {
   const navigate = useNavigate();
-  const [clubs, setClubs] = useState<BookClubListItem[]>([]);
-  const [filteredClubs, setFilteredClubs] = useState<BookClubListItem[]>([]);
+  const [clubs, setClubs] = useState<ClubWithEventCount[]>([]);
+  const [filteredClubs, setFilteredClubs] = useState<ClubWithEventCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -39,7 +44,27 @@ export default function MyClubs() {
         pageSize: 20,
         myClubs: true,
       });
-      setClubs(response.items);
+      
+      // 為每個讀書會載入活動數量
+      const clubsWithEventCount = await Promise.all(
+        response.items.map(async (club) => {
+          try {
+            const eventsResponse = await getEventsList(club.id, {});
+            return {
+              ...club,
+              eventCount: eventsResponse.items.length,
+            };
+          } catch (error) {
+            // 如果獲取活動失敗，返回 0
+            return {
+              ...club,
+              eventCount: 0,
+            };
+          }
+        })
+      );
+      
+      setClubs(clubsWithEventCount);
       setTotalPages(response.pagination.total_pages);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || '載入我的讀書會失敗');
@@ -206,17 +231,27 @@ export default function MyClubs() {
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {club.description || '暫無描述'}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center text-sm text-gray-500">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                      </svg>
-                      {club.member_count || 0} 成員
-                    </span>
-                    {club.tags && club.tags.length > 0 && (
-                      <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-                        {club.tags[0].name}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center text-sm text-gray-500">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                        </svg>
+                        {club.member_count || 0} 成員
                       </span>
+                      {club.tags && club.tags.length > 0 && (
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                          {club.tags[0].name}
+                        </span>
+                      )}
+                    </div>
+                    {club.eventCount !== undefined && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                        </svg>
+                        {club.eventCount} 個活動
+                      </div>
                     )}
                   </div>
                 </div>

@@ -84,28 +84,15 @@ export const MyClubsList = ({ clubs }: MyClubsListProps) => {
                 )}
               </div>
               
-              {/* 進度條 */}
-              {club.totalEvents > 0 && (
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-gray-600">活動進度</span>
-                    <span className="font-medium text-gray-900">{club.progressPercentage}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-success-700 h-2 rounded-full transition-all"
-                      style={{ width: `${club.progressPercentage}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>{club.completedEvents} / {club.totalEvents} 活動完成</span>
-                    {club.upcomingEvents > 0 && (
-                      <span>{club.upcomingEvents} 場即將到來</span>
-                    )}
-                  </div>
+              {/* 活動數量 */}
+              {club.totalEvents > 0 ? (
+                <div className="mt-3 flex items-center text-xs text-gray-500">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                  </svg>
+                  <span>{club.totalEvents} 個活動</span>
                 </div>
-              )}
-              {club.totalEvents === 0 && (
+              ) : (
                 <div className="mt-3 text-xs text-gray-500 italic">
                   尚未規劃活動
                 </div>

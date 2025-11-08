@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { useNotificationStore } from '../../store/notificationStore'
 import { getAvatarUrl } from '../../services/profileService'
+import { BellIcon } from '@heroicons/react/24/outline'
 
 export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -10,6 +12,16 @@ export default function Header() {
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
+  
+  // Notification state
+  const { unreadCount, fetchNotifications } = useNotificationStore()
+
+  // 當用戶登入時自動獲取通知
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchNotifications()
+    }
+  }, [isAuthenticated, user, fetchNotifications])
 
   const handleLogout = () => {
     logout()
@@ -74,6 +86,19 @@ export default function Header() {
                 </Link>
                 <Link to="/clubs" className="text-gray-700 hover:text-gray-900">
                   探索讀書會
+                </Link>
+                {/* Notification Bell */}
+                <Link 
+                  to="/notifications" 
+                  className="relative text-gray-700 hover:text-gray-900 p-2"
+                  aria-label="通知"
+                >
+                  <BellIcon className="h-6 w-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 {/* User Menu */}
                 <div className="relative">
@@ -222,14 +247,19 @@ export default function Header() {
                     className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    探索
+                    探索讀書會
                   </Link>
                   <Link 
                     to="/notifications" 
-                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 flex items-center justify-between"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    通知
+                    <span>通知</span>
+                    {unreadCount > 0 && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                   <Link 
                     to="/profile" 

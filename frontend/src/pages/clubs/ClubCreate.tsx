@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useBookClubStore } from '../../store/bookClubStore';
+import { Button } from '../../components/ui/Button';
 
 // 表單驗證 schema
 const clubCreateSchema = z.object({
@@ -238,21 +239,24 @@ export default function ClubCreate() {
 
             {/* 按鈕區 */}
             <div className="flex gap-4 pt-4">
-              <button
+              <Button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                variant="outline"
+                className="flex-1"
                 disabled={loading}
               >
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="flex-1 px-6 py-3 bg-success-700 text-white rounded-xl font-medium hover:bg-success-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                variant="primary"
+                className="flex-1"
                 disabled={loading}
+                loading={loading}
               >
-                {loading ? '建立中...' : '建立讀書會'}
-              </button>
+                建立讀書會
+              </Button>
             </div>
           </form>
         </div>

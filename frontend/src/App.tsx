@@ -29,6 +29,7 @@ const EventCreate = lazy(() => import('./pages/clubs/events/EventCreate'));
 const EventsPage = lazy(() => import('./pages/clubs/events/EventsPage'));
 const EventDetail = lazy(() => import('./pages/clubs/events/EventDetail').then(m => ({ default: m.EventDetail })));
 const MyEvents = lazy(() => import('./pages/activities/MyEvents'));
+const Notifications = lazy(() => import('./pages/Notifications'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -185,6 +186,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><MyEvents /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/notifications" 
+            element={
+              <PrivateRoute>
+                <Layout><Notifications /></Layout>
               </PrivateRoute>
             } 
           />
