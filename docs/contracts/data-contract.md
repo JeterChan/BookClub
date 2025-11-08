@@ -1,15 +1,22 @@
 # Data Contract
 
-**版本**: 1.0  
-**最後更新**: 2025-10-22  
+**版本**: 1.3  
+**最後更新**: 2025-11-08  
 **擁有者**: Architect Winston  
-**狀態**: ✅ 已完成（Story 1.4）
+**狀態**: ✅ 已完成（Story 3.3）
 
 ---
 
 ## 📋 概述
 
 此文件定義線上讀書會平台前後端資料格式約定，確保資料在不同層次間正確轉換和傳遞。
+
+**涵蓋範圍**:
+- Epic 1: 用戶管理與興趣標籤
+- Epic 2: 讀書會管理與活動功能
+- Epic 3: 討論互動功能
+- 完整的資料 Model 對照表（Database ↔ Backend ↔ API ↔ Frontend）
+- 密碼重置與 Email 驗證功能
 
 **核心原則**:
 - **一致性**: 每層使用其慣用的命名規範
@@ -421,6 +428,9 @@ GET /api/book-clubs?page=1&page_size=20&sort_by=created_at&order=desc
 | `bio` | `bio: Optional[str]` | `bio` | `bio?: string` |
 | `avatar_url` | `avatar_url: Optional[str]` | `avatarUrl` | `avatarUrl?: string` |
 | `is_active` | `is_active: bool` | `isActive` | `isActive: boolean` |
+| `email_verified` | `email_verified: bool` | `emailVerified` | `emailVerified: boolean` |
+| `email_verification_token` | `email_verification_token: Optional[str]` | *(不回傳)* | *(不存在)* |
+| `email_verification_token_expires_at` | `email_verification_token_expires_at: Optional[datetime]` | *(不回傳)* | *(不存在)* |
 | `failed_login_attempts` | `failed_login_attempts: int` | *(不回傳)* | *(不存在)* |
 | `locked_until` | `locked_until: Optional[datetime]` | *(不回傳)* | *(不存在)* |
 | `created_at` | `created_at: datetime` | `createdAt` | `createdAt: string` |
@@ -444,6 +454,65 @@ GET /api/book-clubs?page=1&page_size=20&sort_by=created_at&order=desc
 | `description` | `description: Optional[str]` | `description` | `description?: string` |
 | `visibility` | `visibility: BookClubVisibility` | `visibility` | `visibility: "public" \| "private"` |
 | `owner_id` | `owner_id: int` | `ownerId` | `ownerId: number` |
+| `cover_image_url` | `cover_image_url: Optional[str]` | `coverImageUrl` | `coverImageUrl?: string` |
+| `created_at` | `created_at: datetime` | `createdAt` | `createdAt: string` |
+| `updated_at` | `updated_at: datetime` | `updatedAt` | `updatedAt: string` |
+
+### ClubTag Model 對照
+
+| Database Schema | Backend Model | API Response | Frontend Type |
+|-----------------|---------------|--------------|---------------|
+| `id` | `id: int` | `id` | `id: number` |
+| `name` | `name: str` | `name` | `name: string` |
+| `is_predefined` | `is_predefined: bool` | `isPredefined` | `isPredefined: boolean` |
+| `created_at` | `created_at: datetime` | `createdAt` | `createdAt: string` |
+
+### DiscussionTopic Model 對照
+
+| Database Schema | Backend Model | API Response | Frontend Type |
+|-----------------|---------------|--------------|---------------|
+| `id` | `id: int` | `id` | `id: number` |
+| `club_id` | `club_id: int` | `clubId` | `clubId: number` |
+| `owner_id` | `owner_id: int` | `ownerId` | `ownerId: number` |
+| `title` | `title: str` | `title` | `title: string` |
+| `content` | `content: str` | `content` | `content: string` |
+| `comment_count` | `comment_count: int` | `commentCount` | `commentCount: number` |
+| `created_at` | `created_at: datetime` | `createdAt` | `createdAt: string` |
+
+### DiscussionComment Model 對照
+
+| Database Schema | Backend Model | API Response | Frontend Type |
+|-----------------|---------------|--------------|---------------|
+| `id` | `id: int` | `id` | `id: number` |
+| `topic_id` | `topic_id: int` | `topicId` | `topicId: number` |
+| `owner_id` | `owner_id: int` | `ownerId` | `ownerId: number` |
+| `content` | `content: str` | `content` | `content: string` |
+| `created_at` | `created_at: datetime` | `createdAt` | `createdAt: string` |
+
+### ClubJoinRequest Model 對照
+
+| Database Schema | Backend Model | API Response | Frontend Type |
+|-----------------|---------------|--------------|---------------|
+| `id` | `id: int` | `id` | `id: number` |
+| `book_club_id` | `book_club_id: int` | `bookClubId` | `bookClubId: number` |
+| `user_id` | `user_id: int` | `userId` | `userId: number` |
+| `status` | `status: str` | `status` | `status: "pending" \| "approved" \| "rejected"` |
+| `created_at` | `created_at: datetime` | `createdAt` | `createdAt: string` |
+| `updated_at` | `updated_at: datetime` | `updatedAt` | `updatedAt: string` |
+
+### PasswordResetToken Model 對照
+
+| Database Schema | Backend Model | API Response | Frontend Type |
+|-----------------|---------------|--------------|---------------|
+| `id` | `id: int` | *(不回傳)* | *(不存在)* |
+| `user_id` | `user_id: int` | *(不回傳)* | *(不存在)* |
+| `token` | `token: str` | *(不回傳)* | *(不存在)* |
+| `expires_at` | `expires_at: datetime` | *(不回傳)* | *(不存在)* |
+| `used` | `used: bool` | *(不回傳)* | *(不存在)* |
+| `created_at` | `created_at: datetime` | *(不回傳)* | *(不存在)* |
+| `ip_address` | `ip_address: Optional[str]` | *(不回傳)* | *(不存在)* |
+
+**注意**: PasswordResetToken 僅用於後端驗證流程，不會在 API Response 中回傳。
 
 ---
 
@@ -1149,6 +1218,82 @@ class EventRead(SQLModel):
 
 **新增日期**: 2025-11-01  
 **維護者**: PM John, Architect Winston  
-**版本**: 1.1  
-**Epic**: Epic 2.6 - 讀書會活動管理
+**版本**: 1.3  
+**Epic**: Epic 3 - 讀書會討論與互動 (包含 Epic 2.6 活動管理)  
+**最後更新**: 2025-11-08
 
+---
+
+## 🎯 Epic 3: 討論功能 API 規格補充
+
+### 討論主題與回覆
+
+討論功能已在 Epic 3.2 和 3.3 完成實作，相關 API 端點：
+
+- `POST /api/clubs/{club_id}/topics` - 建立討論主題
+- `GET /api/clubs/{club_id}/topics` - 取得討論主題列表
+- `GET /api/clubs/{club_id}/topics/{topic_id}` - 取得單一討論主題
+- `PATCH /api/clubs/{club_id}/topics/{topic_id}` - 更新討論主題
+- `DELETE /api/clubs/{club_id}/topics/{topic_id}` - 刪除討論主題
+- `POST /api/clubs/{club_id}/topics/{topic_id}/comments` - 新增回覆
+- `GET /api/clubs/{club_id}/topics/{topic_id}/comments` - 取得回覆列表
+- `PATCH /api/clubs/{club_id}/topics/{topic_id}/comments/{comment_id}` - 更新回覆
+- `DELETE /api/clubs/{club_id}/topics/{topic_id}/comments/{comment_id}` - 刪除回覆
+
+詳細規格請參考 [CONTRACT_DOCUMENTATION_PRD_SUMMARY.md](CONTRACT_DOCUMENTATION_PRD_SUMMARY.md)。
+
+---
+
+## 📜 版本歷史
+
+### Version 1.3 (2025-11-08)
+**狀態**: ✅ Epic 3 完成
+
+**新增內容**:
+- 新增 `DiscussionTopic` 和 `DiscussionComment` Model 對照表
+- 新增 `ClubTag` 和 `BookClubTagLink` Model 對照表
+- 新增 `ClubJoinRequest` Model 對照表
+- 新增 `PasswordResetToken` Model 對照表（僅後端使用）
+- User Model 新增 email 驗證相關欄位：
+  - `email_verified` / `emailVerified`
+  - `email_verification_token` (不回傳前端)
+  - `email_verification_token_expires_at` (不回傳前端)
+- BookClub Model 新增欄位：
+  - `cover_image_url` / `coverImageUrl`
+  - `created_at` / `createdAt`
+  - `updated_at` / `updatedAt`
+- 補充 Epic 3 討論功能 API 規格說明
+
+**資料庫遷移**:
+- Schema Version: `b5b7ed9af23c`
+- 已套用 13 個 Alembic migrations
+
+---
+
+### Version 1.1 (2025-11-01)
+**狀態**: ✅ Epic 2.6 完成
+
+**新增內容**:
+- 新增 Epic 2: 活動管理 API 規格
+- 新增 `Event` 和 `EventParticipant` Model 定義
+- 定義活動狀態枚舉和參與者狀態枚舉
+- 新增活動相關 API 端點規格
+- 定義活動通知觸發規則
+- 定義定時任務需求
+
+---
+
+### Version 1.0 (2025-10-22)
+**狀態**: ✅ Epic 1 完成
+
+**初始內容**:
+- 定義資料層級與命名規範
+- 定義 Backend (snake_case) 和 Frontend (camelCase) 轉換機制
+- 標準 Response 格式定義
+- 資料型別規範（日期、布林、Null、ID、枚舉）
+- 特殊欄位約定（時間戳、分頁）
+- User、InterestTag、BookClub Model 完整對照
+- 實作指引與最佳實踐
+- 版本化與變更管理流程
+
+---

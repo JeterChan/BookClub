@@ -1,16 +1,24 @@
 # Database Schema Documentation
 
-**版本**: 1.2  
-**最後更新**: 2025-11-05  
+**版本**: 1.3  
+**最後更新**: 2025-11-08  
 **擁有者**: Architect Winston, Dev James  
 **狀態**: ✅ 已完成 (Story 3.3)  
-**Current Schema Version**: b2a6d580feb2
+**Current Schema Version**: b5b7ed9af23c
 
 ---
 
 ## 📋 概述
 
 此文件記錄線上讀書會平台的完整資料庫結構，包含所有 SQLModel Models、欄位定義、關聯關係和 ERD 圖表。此文件反映 Epic 3 完成後的資料庫狀態。
+
+**涵蓋範圍**:
+- ✅ Epic 1: 用戶認證與個人檔案管理（User, InterestTag, UserInterestTag）
+- ✅ Epic 2: 讀書會管理與活動功能（BookClub, ClubTag, BookClubMember, Event, EventParticipant）
+- ✅ Epic 3: 討論互動功能（DiscussionTopic, DiscussionComment）
+- ✅ 安全功能: 密碼重置與 Email 驗證（PasswordResetToken, email_verified 欄位）
+- ✅ 完整的 ERD 和 UML Class Diagrams
+- 📊 **總計 13 個資料表**，支援完整的讀書會社群平台功能
 
 **技術棧**:
 - **ORM**: SQLModel (FastAPI 整合)
@@ -117,15 +125,6 @@ entity "DiscussionComment" as discussioncomment {
   foreign_key(owner_id: INTEGER)
 }
 
-entity "Notification" as notification {
-  primary_key(id: INTEGER)
-  --
-  content: JSON
-  type: VARCHAR(50)
-  is_read: BOOLEAN
-  foreign_key(recipient_id: INTEGER)
-}
-
 entity "ClubJoinRequest" as clubjoinrequest {
     primary_key(id: INTEGER)
     --
@@ -176,7 +175,6 @@ user ||--o{ bookclubmember : "joins"
 user ||--o{ userinteresttag : "has interests"
 user ||--o{ discussiontopic : "creates"
 user ||--o{ discussioncomment : "writes"
-user ||--o{ notification : "receives"
 user ||--o{ clubjoinrequest : "requests to join"
 user ||--o{ event : "organizes"
 user ||--o{ eventparticipant : "participates in"
@@ -195,6 +193,237 @@ discussiontopic ||--o{ discussioncomment : "has comments"
 interesttag ||--o{ userinteresttag : "tagged by users"
 
 clubtag ||--o{ bookclubtaglink : "tagged to clubs"
+
+@enduml
+```
+
+---
+
+## 🎨 UML Class Diagram
+
+```plantuml
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' Core Domain Models
+class User {
+  - id: int
+  - email: str
+  - display_name: str
+  - password_hash: str | None
+  - bio: str | None
+  - avatar_url: str | None
+  - is_active: bool
+  - failed_login_attempts: int
+  - locked_until: datetime | None
+  - created_at: datetime
+  - updated_at: datetime
+  - email_verified: bool
+  - email_verification_token: str | None
+  - email_verification_token_expires_at: datetime | None
+  __
+  + verify_password(password: str): bool
+  + hash_password(password: str): str
+  + is_account_locked(): bool
+  + increment_failed_attempts(): void
+  + reset_failed_attempts(): void
+  + generate_verification_token(): str
+  + verify_email_token(token: str): bool
+}
+
+class InterestTag {
+  - id: int
+  - name: str
+  - is_predefined: bool
+  - created_at: datetime
+  __
+  + to_dict(): dict
+}
+
+class UserInterestTag {
+  - user_id: int
+  - tag_id: int
+  - created_at: datetime
+}
+
+class BookClub {
+  - id: int
+  - name: str
+  - description: str | None
+  - visibility: str
+  - cover_image_url: str | None
+  - owner_id: int
+  - created_at: datetime
+  - updated_at: datetime
+  __
+  + is_public(): bool
+  + is_private(): bool
+  + get_member_count(): int
+  + can_user_join(user: User): bool
+}
+
+class ClubTag {
+  - id: int
+  - name: str
+  - is_predefined: bool
+  - created_at: datetime
+  __
+  + to_dict(): dict
+}
+
+class BookClubTagLink {
+  - book_club_id: int
+  - tag_id: int
+  - created_at: datetime
+}
+
+class BookClubMember {
+  - user_id: int
+  - book_club_id: int
+  - role: str
+  __
+  + is_owner(): bool
+  + is_admin(): bool
+  + is_member(): bool
+  + can_manage_club(): bool
+}
+
+class ClubJoinRequest {
+  - id: int
+  - book_club_id: int
+  - user_id: int
+  - status: str
+  - created_at: datetime
+  - updated_at: datetime
+  __
+  + approve(): void
+  + reject(): void
+  + is_pending(): bool
+}
+
+class DiscussionTopic {
+  - id: int
+  - club_id: int
+  - owner_id: int
+  - title: str
+  - content: str
+  - comment_count: int
+  - created_at: datetime
+  __
+  + increment_comment_count(): void
+  + decrement_comment_count(): void
+}
+
+class DiscussionComment {
+  - id: int
+  - topic_id: int
+  - owner_id: int
+  - content: str
+  - created_at: datetime
+}
+
+class Event {
+  - id: int
+  - club_id: int
+  - organizer_id: int
+  - title: str
+  - description: str
+  - event_datetime: datetime
+  - meeting_url: str
+  - max_participants: int | None
+  - status: str
+  - created_at: datetime
+  - updated_at: datetime
+  __
+  + is_draft(): bool
+  + is_published(): bool
+  + is_completed(): bool
+  + is_cancelled(): bool
+  + publish(): void
+  + cancel(): void
+  + complete(): void
+  + is_full(): bool
+  + get_participant_count(): int
+  + can_register(user: User): bool
+}
+
+class EventParticipant {
+  - event_id: int
+  - user_id: int
+  - status: str
+  - registered_at: datetime
+  __
+  + is_registered(): bool
+  + cancel(): void
+}
+
+class PasswordResetToken {
+  - id: int
+  - user_id: int
+  - token: str
+  - expires_at: datetime
+  - used: bool
+  - created_at: datetime
+  - ip_address: str | None
+  __
+  + is_valid(): bool
+  + is_expired(): bool
+  + mark_as_used(): void
+}
+
+' Relationships
+
+' User relationships
+User "1" -- "0..*" BookClub : owns >
+User "1" -- "0..*" BookClubMember : member of >
+User "0..*" -- "0..*" InterestTag : has interests >
+(User, InterestTag) .. UserInterestTag
+
+User "1" -- "0..*" DiscussionTopic : creates >
+User "1" -- "0..*" DiscussionComment : writes >
+User "1" -- "0..*" ClubJoinRequest : requests >
+User "1" -- "0..*" Event : organizes >
+User "0..*" -- "0..*" Event : participates in >
+(User, Event) .. EventParticipant
+User "1" -- "0..*" PasswordResetToken : has reset tokens >
+
+' BookClub relationships
+BookClub "1" -- "0..*" BookClubMember : has members >
+BookClub "1" -- "0..*" DiscussionTopic : contains topics >
+BookClub "0..*" -- "0..*" ClubTag : tagged with >
+(BookClub, ClubTag) .. BookClubTagLink
+BookClub "1" -- "0..*" ClubJoinRequest : has requests >
+BookClub "1" -- "0..*" Event : hosts >
+
+' Discussion relationships
+DiscussionTopic "1" -- "0..*" DiscussionComment : has comments >
+
+' Event relationships
+Event "1" -- "0..*" EventParticipant : has participants >
+
+note right of User
+  Core entity representing platform users.
+  Supports email/password and OAuth authentication.
+  Includes account security features.
+end note
+
+note right of BookClub
+  Represents reading clubs.
+  Can be public or private.
+  Owner has full control.
+end note
+
+note right of Event
+  Online meetings and activities.
+  Status workflow: draft → published → completed/cancelled
+  Can have participant limits.
+end note
+
+note right of DiscussionTopic
+  Discussion threads within clubs.
+  Tracks comment count for performance.
+end note
 
 @enduml
 ```
@@ -230,7 +459,6 @@ clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 - `memberships`: One-to-Many → BookClubMember (user_id)
 - `threads`: One-to-Many → DiscussionTopic (owner_id)
 - `posts`: One-to-Many → DiscussionComment (owner_id)
-- `notifications`: One-to-Many → Notification (recipient_id)
 - `interest_tags`: Many-to-Many → InterestTag (via UserInterestTag)
 - `join_requests`: One-to-Many → ClubJoinRequest (user_id)
 - `organized_events`: One-to-Many → Event (organizer_id)
@@ -341,6 +569,7 @@ clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 | `comment_count` | INTEGER | NOT NULL | 0 | 回覆數量 |
 | `club_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 所屬讀書會 ID |
 | `owner_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 作者用戶 ID |
+| `created_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 建立時間 |
 
 **Relationships**:
 - `book_club`: Many-to-One → BookClub
@@ -358,28 +587,13 @@ clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 | `content` | TEXT | NOT NULL | - | 回覆內容 |
 | `topic_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 所屬討論主題 ID |
 | `owner_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 作者用戶 ID |
+| `created_at` | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | 建立時間 |
 
 **Relationships**:
 - `topic`: Many-to-One → DiscussionTopic
 - `author`: Many-to-One → User
 
-### 10. Notification (通知表)
-
-**Table Name**: `notification`  
-**Description**: 儲存用戶通知。
-
-| Column Name | Type | Constraints | Default | Description |
-|---|---|---|---|---|
-| `id` | INTEGER | PRIMARY KEY | AUTO | 通知唯一識別碼 |
-| `content` | JSON | NOT NULL | - | 通知內容（JSON 格式） |
-| `type` | VARCHAR(50) | NOT NULL | - | 通知類型 (NEW_POST, NEW_MEMBER, EVENT_CREATED) |
-| `is_read` | BOOLEAN | NOT NULL | FALSE | 是否已讀 |
-| `recipient_id` | INTEGER | FOREIGN KEY, NOT NULL | - | 接收者用戶 ID |
-
-**Relationships**:
-- `recipient`: Many-to-One → User
-
-### 11. ClubJoinRequest (加入讀書會請求表)
+### 10. ClubJoinRequest (加入讀書會請求表)
 
 **Table Name**: `clubjoinrequest`  
 **Description**: 儲存用戶加入私密讀書會的請求。
@@ -399,7 +613,7 @@ clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 
 ---
 
-### 12. Event (讀書會活動表)
+### 11. Event (讀書會活動表)
 
 **Table Name**: `event`  
 **Description**: 儲存讀書會的線上活動資訊，包含討論會、讀書會等各類活動。
@@ -437,7 +651,7 @@ clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 
 ---
 
-### 13. EventParticipant (活動參與者關聯表)
+### 12. EventParticipant (活動參與者關聯表)
 
 **Table Name**: `eventparticipant`  
 **Description**: 儲存用戶報名參加活動的關聯關係。
@@ -465,7 +679,7 @@ clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 
 ---
 
-### 14. PasswordResetToken (密碼重置 Token 表)
+### 13. PasswordResetToken (密碼重置 Token 表)
 
 **Table Name**: `password_reset_tokens`  
 **Description**: 儲存密碼重置請求的驗證 Token，用於忘記密碼功能。
@@ -514,7 +728,46 @@ clubtag ||--o{ bookclubtaglink : "tagged to clubs"
 | `ed5146efcb57` | Add discussion topic and comment models (merge) | 2025-10-30 | ✅ Applied |
 | `931f80d46dc0` | Add comment_count to DiscussionTopic | 2025-10-31 | ✅ Applied |
 | `f53859748ef5` | Add event and event participant tables | 2025-11-01 | ✅ Applied |
-| `9a61d7bbe93c` | Add EVENT_CREATED to notification type enum | 2025-11-02 | ✅ Applied |
+| `9a61d7bbe93c` | Add EVENT_CREATED to notification type enum | 2025-11-02 | ⚠️ Applied (Notification 未實作) |
 | `b2a6d580feb2` | Add password reset tokens table | 2025-11-02 | ✅ Applied |
+| `a55b55a8849e` | Merge heads (8dc583baeb87, c0ad6aeb438a) | 2025-11-05 | ✅ Applied |
+| `b5b7ed9af23c` | Add created_at to DiscussionTopic and DiscussionComment | 2025-11-07 | ✅ Applied |
 
-**Current Schema Version**: `b2a6d580feb2`
+**Current Schema Version**: `b5b7ed9af23c`
+
+---
+
+## 📝 文件版本歷史
+
+### Version 1.3 (2025-11-08)
+- 更新文件日期至 2025-11-08
+- 確認所有 Epic 1-3 的資料表已完整記錄
+- 包含 13 個資料表：User, InterestTag, UserInterestTag, BookClub, ClubTag, BookClubTagLink, BookClubMember, DiscussionTopic, DiscussionComment, ClubJoinRequest, Event, EventParticipant, PasswordResetToken
+- Schema Version: `b5b7ed9af23c`
+
+### Version 1.2 (2025-11-07)
+- 新增 `created_at` 欄位至 DiscussionTopic 和 DiscussionComment
+- Migration: `b5b7ed9af23c`
+
+### Version 1.1 (2025-11-02)
+- 新增 Event 和 EventParticipant 資料表（Epic 2.6）
+- 新增 PasswordResetToken 資料表（忘記密碼功能）
+
+### Version 1.0 (2025-10-30)
+- 新增 DiscussionTopic 和 DiscussionComment 資料表（Epic 3）
+- 新增 ClubJoinRequest 資料表（私密讀書會加入請求）
+- 完整記錄 Epic 1-2 的所有資料表結構
+
+---
+
+## 🔗 相關文件
+
+- [Data Contract](data-contract.md) - 前後端資料格式約定
+- [API Access Guide](api-access-guide.md) - API 文件訪問指南
+- [Contract Documentation Summary](CONTRACT_DOCUMENTATION_PRD_SUMMARY.md) - 契約文件總覽
+
+---
+
+**文件維護者**: Architect Winston, Dev James  
+**最後審查**: 2025-11-08  
+**下次審查**: Epic 4 開始前
