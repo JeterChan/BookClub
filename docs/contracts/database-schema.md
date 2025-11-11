@@ -1,10 +1,10 @@
 # Database Schema Documentation
 
-**版本**: 1.3  
+**版本**: 1.5  
 **最後更新**: 2025-11-08  
 **擁有者**: Architect Winston, Dev James  
-**狀態**: ✅ 已完成 (Story 3.3)  
-**Current Schema Version**: b5b7ed9af23c
+**狀態**: ✅ 已完成 (Story 3.3 + Notification + PasswordResetToken 修復)  
+**Current Schema Version**: 4cd595c838d3
 
 ---
 
@@ -16,9 +16,10 @@
 - ✅ Epic 1: 用戶認證與個人檔案管理（User, InterestTag, UserInterestTag）
 - ✅ Epic 2: 讀書會管理與活動功能（BookClub, ClubTag, BookClubMember, Event, EventParticipant）
 - ✅ Epic 3: 討論互動功能（DiscussionTopic, DiscussionComment）
+- ✅ 通知系統: 社群互動通知（Notification）
 - ✅ 安全功能: 密碼重置與 Email 驗證（PasswordResetToken, email_verified 欄位）
 - ✅ 完整的 ERD 和 UML Class Diagrams
-- 📊 **總計 13 個資料表**，支援完整的讀書會社群平台功能
+- 📊 **總計 14 個資料表**，支援完整的讀書會社群平台功能
 
 **技術棧**:
 - **ORM**: SQLModel (FastAPI 整合)
@@ -169,6 +170,16 @@ entity "PasswordResetToken" as passwordresettoken {
     ip_address: VARCHAR(45)
 }
 
+entity "Notification" as notification {
+    primary_key(id: INTEGER)
+    --
+    content: JSON
+    type: VARCHAR(50)
+    is_read: BOOLEAN
+    foreign_key(recipient_id: INTEGER)
+    created_at: TIMESTAMP
+}
+
 ' Relationships
 user ||--o{ bookclub : "owns"
 user ||--o{ bookclubmember : "joins"
@@ -179,6 +190,7 @@ user ||--o{ clubjoinrequest : "requests to join"
 user ||--o{ event : "organizes"
 user ||--o{ eventparticipant : "participates in"
 user ||--o{ passwordresettoken : "has reset tokens"
+user ||--o{ notification : "receives notifications"
 
 bookclub ||--o{ bookclubmember : "has members"
 bookclub ||--o{ discussiontopic : "contains topics"
@@ -372,6 +384,18 @@ class PasswordResetToken {
   + mark_as_used(): void
 }
 
+class Notification {
+  - id: int
+  - recipient_id: int
+  - content: dict
+  - type: str
+  - is_read: bool
+  - created_at: datetime
+  __
+  + mark_as_read(): void
+  + is_unread(): bool
+}
+
 ' Relationships
 
 ' User relationships
@@ -387,6 +411,7 @@ User "1" -- "0..*" Event : organizes >
 User "0..*" -- "0..*" Event : participates in >
 (User, Event) .. EventParticipant
 User "1" -- "0..*" PasswordResetToken : has reset tokens >
+User "1" -- "0..*" Notification : receives >
 
 ' BookClub relationships
 BookClub "1" -- "0..*" BookClubMember : has members >
@@ -464,6 +489,7 @@ end note
 - `organized_events`: One-to-Many → Event (organizer_id)
 - `event_participations`: One-to-Many → EventParticipant (user_id)
 - `password_reset_tokens`: One-to-Many → PasswordResetToken (user_id)
+- `notifications`: One-to-Many → Notification (recipient_id)
 
 ### 2. InterestTag (興趣標籤表)
 
@@ -710,11 +736,55 @@ end note
 
 ---
 
+### 14. Notification (通知表)
+
+**Table Name**: `notification`  
+**Description**: 儲存用戶通知訊息，用於社群互動提醒（新貼文、新成員、活動建立等）。
+
+| Column Name | Type | Constraints | Default | Description |
+|---|---|---|---|---|
+| `id` | INTEGER | PRIMARY KEY | AUTO | 通知唯一識別碼 |
+| `recipient_id` | INTEGER | FOREIGN KEY, NOT NULL, INDEX | - | 接收者用戶 ID |
+| `content` | JSON | NOT NULL | - | 通知內容（JSON 格式） |
+| `type` | VARCHAR(50) | NOT NULL, INDEX | - | 通知類型（NEW_POST, NEW_MEMBER, EVENT_CREATED） |
+| `is_read` | BOOLEAN | NOT NULL, INDEX | FALSE | 是否已讀 |
+| `created_at` | TIMESTAMP | NOT NULL, INDEX | CURRENT_TIMESTAMP | 通知建立時間 |
+
+**Relationships**:
+- `recipient`: Many-to-One → User
+
+**Business Rules**:
+- `type` 值域：`NEW_POST` (新討論), `NEW_MEMBER` (新成員), `EVENT_CREATED` (活動建立)
+- `content` 儲存 JSON 格式資料，包含相關資源 ID 和訊息文字
+- 通知建立時預設為未讀（`is_read = FALSE`）
+- 支援批次標記已讀功能
+
+**Indexes**:
+- `idx_notification_recipient_id` ON (recipient_id) - 查詢用戶的所有通知
+- `idx_notification_type` ON (type) - 依類型篩選通知
+- `idx_notification_is_read` ON (is_read) - 查詢未讀通知
+- `idx_notification_created_at` ON (created_at) - 依時間排序通知
+
+**Content JSON 格式範例**:
+
+```json
+{
+  "type": "EVENT_CREATED",
+  "eventId": 123,
+  "eventTitle": "《原子習慣》討論會",
+  "clubId": 45,
+  "clubName": "Python 讀書會",
+  "message": "讀書會建立了新活動"
+}
+```
+
+---
+
 ## 🔄 Alembic Migration History
 
 | Migration ID | Description | Date | Status |
 |---|---|---|---|
-| `ee6dbb92555d` | Create initial tables | 2025-10-15 | ✅ Applied |
+| `ee6dbb92555d` | Create initial tables (包含 Notification) | 2025-10-15 | ✅ Applied |
 | `7c65718e9851` | Add login protection fields to User | 2025-10-15 | ✅ Applied |
 | `feb7a31e9ed1` | Add OAuth support to User model | 2025-10-16 | ✅ Applied |
 | `26ef4d388ddb` | Add interest tags support | 2025-10-19 | ✅ Applied |
@@ -728,21 +798,37 @@ end note
 | `ed5146efcb57` | Add discussion topic and comment models (merge) | 2025-10-30 | ✅ Applied |
 | `931f80d46dc0` | Add comment_count to DiscussionTopic | 2025-10-31 | ✅ Applied |
 | `f53859748ef5` | Add event and event participant tables | 2025-11-01 | ✅ Applied |
-| `9a61d7bbe93c` | Add EVENT_CREATED to notification type enum | 2025-11-02 | ⚠️ Applied (Notification 未實作) |
+| `9a61d7bbe93c` | Add EVENT_CREATED to notification type enum | 2025-11-02 | ✅ Applied |
 | `b2a6d580feb2` | Add password reset tokens table | 2025-11-02 | ✅ Applied |
 | `a55b55a8849e` | Merge heads (8dc583baeb87, c0ad6aeb438a) | 2025-11-05 | ✅ Applied |
 | `b5b7ed9af23c` | Add created_at to DiscussionTopic and DiscussionComment | 2025-11-07 | ✅ Applied |
+| `7cfe7f4c1453` | Add created_at to Notification | 2025-11-08 | ⚠️ Applied (誤刪 password_reset_tokens) |
+| `4cd595c838d3` | Recreate password_reset_tokens table | 2025-11-08 | ✅ Applied |
 
-**Current Schema Version**: `b5b7ed9af23c`
+**Current Schema Version**: `4cd595c838d3`
 
 ---
 
 ## 📝 文件版本歷史
 
+### Version 1.5 (2025-11-08)
+- 🔧 **修復 Migration 問題**：重新建立 PasswordResetToken 表
+- Migration `7cfe7f4c1453` 錯誤地刪除了 `password_reset_tokens` 表
+- 新增 Migration `4cd595c838d3` 重新建立該表
+- 確認所有 14 個資料表都正確存在於資料庫中
+- Schema Version: `4cd595c838d3`
+
+### Version 1.4 (2025-11-08)
+- ✨ **新增 Notification 資料表文件**（之前遺漏）
+- 新增 Notification 至 ERD 和 UML Class Diagrams
+- 更新至 Schema Version: `7cfe7f4c1453`（但此版本有問題）
+- 包含 14 個資料表：User, InterestTag, UserInterestTag, BookClub, ClubTag, BookClubTagLink, BookClubMember, DiscussionTopic, DiscussionComment, ClubJoinRequest, Event, EventParticipant, PasswordResetToken, **Notification**
+- 記錄 Notification 表的 Business Rules 和 Indexes
+
 ### Version 1.3 (2025-11-08)
 - 更新文件日期至 2025-11-08
 - 確認所有 Epic 1-3 的資料表已完整記錄
-- 包含 13 個資料表：User, InterestTag, UserInterestTag, BookClub, ClubTag, BookClubTagLink, BookClubMember, DiscussionTopic, DiscussionComment, ClubJoinRequest, Event, EventParticipant, PasswordResetToken
+- 包含 13 個資料表（Notification 當時遺漏）
 - Schema Version: `b5b7ed9af23c`
 
 ### Version 1.2 (2025-11-07)
