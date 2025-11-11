@@ -8,6 +8,9 @@ from app.models.book_club import BookClub
 from app.models.book_club_member import BookClubMember, MemberRole
 from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
 from app.models.user import User
+from app.models.event import Event, EventParticipant
+from app.models.discussion import DiscussionTopic, DiscussionComment
+from app.models.club_tag import BookClubTagLink
 
 class ClubManagementService:
     def __init__(self, session: Session):
@@ -177,6 +180,35 @@ class ClubManagementService:
         if book_club.owner_id != current_user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the club owner can delete the club")
 
+        # Delete related event participants first (due to foreign key to events)
+        events = self.session.exec(select(Event).where(Event.club_id == club_id)).all()
+        for event in events:
+            event_participants = self.session.exec(
+                select(EventParticipant).where(EventParticipant.event_id == event.id)
+            ).all()
+            for participant in event_participants:
+                self.session.delete(participant)
+            self.session.delete(event)
+
+        # Delete related discussion comments first (due to foreign key to discussion topics)
+        discussion_topics = self.session.exec(
+            select(DiscussionTopic).where(DiscussionTopic.club_id == club_id)
+        ).all()
+        for topic in discussion_topics:
+            comments = self.session.exec(
+                select(DiscussionComment).where(DiscussionComment.topic_id == topic.id)
+            ).all()
+            for comment in comments:
+                self.session.delete(comment)
+            self.session.delete(topic)
+
+        # Delete club tag links
+        tag_links = self.session.exec(
+            select(BookClubTagLink).where(BookClubTagLink.book_club_id == club_id)
+        ).all()
+        for tag_link in tag_links:
+            self.session.delete(tag_link)
+
         # Delete related join requests
         join_requests = self.session.exec(select(ClubJoinRequest).where(ClubJoinRequest.book_club_id == club_id)).all()
         for req in join_requests:
@@ -187,5 +219,6 @@ class ClubManagementService:
         for member in memberships:
             self.session.delete(member)
 
+        # Finally delete the book club
         self.session.delete(book_club)
         self.session.commit()
