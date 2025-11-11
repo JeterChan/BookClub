@@ -81,3 +81,5 @@ logs/
 .github
 
 # !.bmad-core/agents
+
+/docs/diagrams
