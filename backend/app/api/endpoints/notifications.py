@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from datetime import datetime
+from pydantic import field_serializer
 
 from app.models.notification import Notification, NotificationType
 from app.models.user import User
@@ -21,6 +22,14 @@ class NotificationRead(BaseModel):
     is_read: bool
     created_at: datetime
     recipient_id: int
+    
+    @field_serializer('created_at')
+    def serialize_created_at(self, dt: datetime, _info):
+        """Serialize datetime to ISO format with Z suffix (UTC)"""
+        if dt.tzinfo is None:
+            # If datetime is naive (no timezone), treat it as UTC
+            return dt.isoformat() + 'Z'
+        return dt.isoformat()
     
     class Config:
         from_attributes = True

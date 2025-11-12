@@ -1,10 +1,13 @@
 /**
  * Format a date to relative time (e.g., "3小時前", "昨天")
- * @param dateString ISO 8601 date string
+ * @param dateString ISO 8601 date string (UTC time from backend)
  * @returns Formatted relative time string
  */
 export const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
+  // Parse the date string as UTC
+  // If the string doesn't end with 'Z', add it to ensure it's treated as UTC
+  const utcDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  const date = new Date(utcDateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffSec = Math.floor(diffMs / 1000);
@@ -36,11 +39,12 @@ export const formatRelativeTime = (dateString: string): string => {
 
 /**
  * Format a date to full date string (e.g., "2025年10月20日")
- * @param dateString ISO 8601 date string
- * @returns Formatted full date string
+ * @param dateString ISO 8601 date string (UTC time from backend)
+ * @returns Formatted full date string in local timezone
  */
 export const formatFullDate = (dateString: string): string => {
-  const date = new Date(dateString);
+  const utcDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  const date = new Date(utcDateString);
   return date.toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: 'long',
@@ -50,11 +54,12 @@ export const formatFullDate = (dateString: string): string => {
 
 /**
  * Format a date to short date string (e.g., "2025/10/20")
- * @param dateString ISO 8601 date string
- * @returns Formatted short date string
+ * @param dateString ISO 8601 date string (UTC time from backend)
+ * @returns Formatted short date string in local timezone
  */
 export const formatShortDate = (dateString: string): string => {
-  const date = new Date(dateString);
+  const utcDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  const date = new Date(utcDateString);
   return date.toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
@@ -64,11 +69,12 @@ export const formatShortDate = (dateString: string): string => {
 
 /**
  * Format a date to date with time (e.g., "2025年10月20日 14:22")
- * @param dateString ISO 8601 date string
- * @returns Formatted date with time string
+ * @param dateString ISO 8601 date string (UTC time from backend)
+ * @returns Formatted date with time string in local timezone
  */
 export const formatDateTime = (dateString: string): string => {
-  const date = new Date(dateString);
+  const utcDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  const date = new Date(utcDateString);
   return date.toLocaleString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
