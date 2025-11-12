@@ -5,10 +5,15 @@ from starlette.requests import Request
 from app.api.api import api_router
 from app.models.user import UserProfileRead
 from app.models.interest_tag import InterestTagRead
+from app.core.logging_middleware import LoggingMiddleware
+from app.core.logging_config import app_logger
 import os
 import re
 
 app = FastAPI(title="Book Club API")
+
+# 初始化日誌
+app_logger.info("🚀 Starting Book Club API application...")
 
 # CORS 設定
 origins = [
@@ -67,6 +72,9 @@ def is_allowed_origin(origin: str) -> bool:
 
 # 決定是否使用萬用字元（當設定 Vercel 或 dev mode 時）
 use_wildcard = bool(vercel_project_name) or os.getenv("ALLOW_ALL_VERCEL", "false").lower() == "true"
+
+# 添加日誌中間件（在 CORS 之前）
+app.add_middleware(LoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
