@@ -5,7 +5,7 @@ from typing import Optional
 from app.db.session import get_session
 from app.core.security import get_current_user
 from app.models.user import User
-from app.models.event import EventCreate, EventRead, EventListResponse, EventStatus, EventListItem, EventDetail
+from app.models.event import EventCreate, EventRead, EventUpdate, EventListResponse, EventStatus, EventListItem, EventDetail
 from app.services import event_service
 
 router = APIRouter()
@@ -16,7 +16,7 @@ router = APIRouter()
     response_model=EventRead,
     status_code=status.HTTP_201_CREATED,
     summary="建立讀書會活動",
-    description="讀書會成員可以建立活動，填寫活動名稱、時間、會議連結、討論內容等資訊"
+    description="讀書會管理員可以建立活動，填寫活動名稱、時間、會議連結、討論內容等資訊"
 )
 def create_club_event(
     club_id: int,
@@ -36,11 +36,11 @@ def create_club_event(
         - **maxParticipants**: 人數上限（選填）
         - **status**: 活動狀態（draft 或 published）
     
-    **權限要求**: 需要是讀書會成員
+    **權限要求**: 需要是讀書會管理員（owner 或 admin）
     
     **錯誤碼**:
     - 400: 活動時間為過去時間或 URL 格式錯誤
-    - 403: 非讀書會成員
+    - 403: 非讀書會管理員
     - 404: 讀書會不存在
     """
     try:
@@ -169,3 +169,96 @@ def leave_club_event(
         club_id=club_id,
         event_id=event_id
     )
+
+
+@router.put(
+    "/clubs/{club_id}/events/{event_id}",
+    response_model=EventRead,
+    summary="更新活動資訊",
+    description="活動發起人或讀書會管理員可以更新活動的名稱、時間、描述等資訊"
+)
+def update_club_event(
+    club_id: int,
+    event_id: int,
+    event_data: EventUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> EventRead:
+    """
+    更新活動資訊
+    
+    - **club_id**: 讀書會 ID
+    - **event_id**: 活動 ID
+    - **event_data**: 更新的活動資料（所有欄位都是選填）
+        - **title**: 活動名稱（選填）
+        - **description**: 活動描述（選填）
+        - **eventDatetime**: 活動時間（選填，必須為未來時間）
+        - **meetingUrl**: 會議連結（選填）
+        - **maxParticipants**: 人數上限（選填，不能小於目前報名人數）
+        - **status**: 活動狀態（選填）
+    
+    **權限要求**: 活動發起人或讀書會管理員（owner/admin）
+    
+    **錯誤碼**:
+    - 400: 驗證失敗（時間為過去、人數上限小於報名人數等）
+    - 403: 非活動發起人或管理員
+    - 404: 活動或讀書會不存在
+    """
+    try:
+        return event_service.update_event(
+            session=session,
+            current_user=current_user,
+            club_id=club_id,
+            event_id=event_id,
+            event_data=event_data
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"更新活動時發生錯誤: {str(e)}"
+        )
+
+
+@router.delete(
+    "/clubs/{club_id}/events/{event_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="刪除活動",
+    description="活動發起人或讀書會管理員可以刪除尚未開始的活動"
+)
+def delete_club_event(
+    club_id: int,
+    event_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> None:
+    """
+    刪除活動
+    
+    - **club_id**: 讀書會 ID
+    - **event_id**: 活動 ID
+    
+    **權限要求**: 活動發起人或讀書會管理員（owner/admin）
+    
+    **限制**: 只能刪除尚未開始的活動
+    
+    **錯誤碼**:
+    - 400: 活動已開始，無法刪除
+    - 403: 無權限刪除
+    - 404: 活動或讀書會不存在
+    """
+    try:
+        event_service.delete_event(
+            session=session,
+            current_user=current_user,
+            club_id=club_id,
+            event_id=event_id
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"刪除活動時發生錯誤: {str(e)}"
+        )

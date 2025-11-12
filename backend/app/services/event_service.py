@@ -6,7 +6,7 @@ import re
 import math
 
 from app.models.event import (
-    Event, EventCreate, EventRead, EventStatus, 
+    Event, EventCreate, EventRead, EventUpdate, EventStatus, 
     EventParticipant, ParticipantStatus,
     EventListItem, EventListResponse, PaginationMetadata, OrganizerInfo
 )
@@ -78,11 +78,11 @@ def create_event(
         EventRead: 建立的活動資料
         
     Raises:
-        HTTPException: 403 - 非讀書會成員
+        HTTPException: 403 - 非讀書會管理員
         HTTPException: 404 - 讀書會不存在
         HTTPException: 400 - 活動時間為過去時間或 URL 格式錯誤
     """
-    # 驗證用戶是讀書會成員
+    # 驗證用戶是讀書會管理員（owner 或 admin）
     membership = session.exec(
         select(BookClubMember)
         .where(BookClubMember.book_club_id == club_id)
@@ -92,7 +92,13 @@ def create_event(
     if not membership:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="只有讀書會成員可以建立活動"
+            detail="您不是此讀書會的成員"
+        )
+    
+    if membership.role not in ["owner", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有讀書會管理員可以建立活動"
         )
     
     # 驗證活動時間為未來時間
@@ -527,3 +533,219 @@ def leave_event(
     
     # 返回更新後的活動資訊
     return get_event_detail(session, current_user, club_id, event_id)
+
+
+def update_event(
+    session: Session,
+    current_user: User,
+    club_id: int,
+    event_id: int,
+    event_data: EventUpdate
+) -> EventRead:
+    """
+    更新活動資訊
+    
+    Args:
+        session: 資料庫 session
+        current_user: 當前用戶
+        club_id: 讀書會 ID
+        event_id: 活動 ID
+        event_data: 更新的活動資料
+        
+    Returns:
+        EventRead: 更新後的活動資料
+        
+    Raises:
+        HTTPException: 403 - 非活動發起人或管理員
+        HTTPException: 404 - 活動不存在或讀書會不存在
+        HTTPException: 400 - 驗證失敗
+    """
+    # 驗證用戶是讀書會成員
+    membership = session.exec(
+        select(BookClubMember)
+        .where(BookClubMember.book_club_id == club_id)
+        .where(BookClubMember.user_id == current_user.id)
+    ).first()
+    
+    if not membership:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有讀書會成員可以修改活動"
+        )
+    
+    # 取得活動
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="活動不存在"
+        )
+    
+    if event.club_id != club_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="活動不屬於此讀書會"
+        )
+    
+    # 檢查權限：活動發起人或讀書會管理員/擁有者
+    is_organizer = event.organizer_id == current_user.id
+    is_admin = membership.role in ["owner", "admin"]
+    
+    if not (is_organizer or is_admin):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有活動發起人或讀書會管理員可以修改活動"
+        )
+    
+    # 更新欄位（只更新有提供的欄位）
+    if event_data.title is not None:
+        if len(event_data.title.strip()) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="活動名稱不能為空"
+            )
+        event.title = event_data.title.strip()
+    
+    if event_data.description is not None:
+        if len(event_data.description.strip()) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="活動描述不能為空"
+            )
+        event.description = event_data.description.strip()
+    
+    if event_data.event_datetime is not None:
+        validate_event_datetime(event_data.event_datetime)
+        event.event_datetime = event_data.event_datetime
+    
+    if event_data.meeting_url is not None:
+        validate_meeting_url(event_data.meeting_url)
+        event.meeting_url = event_data.meeting_url
+    
+    if event_data.max_participants is not None:
+        # 檢查是否小於目前報名人數
+        current_count = session.exec(
+            select(func.count(EventParticipant.user_id))
+            .where(EventParticipant.event_id == event_id)
+            .where(EventParticipant.status == ParticipantStatus.REGISTERED)
+        ).one()
+        
+        if event_data.max_participants < current_count:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"人數上限不能小於目前報名人數 ({current_count})"
+            )
+        event.max_participants = event_data.max_participants
+    
+    if event_data.status is not None:
+        event.status = event_data.status
+    
+    # 更新修改時間
+    event.updated_at = datetime.utcnow()
+    
+    session.add(event)
+    session.commit()
+    session.refresh(event)
+    
+    # 計算報名人數
+    participant_count = session.exec(
+        select(func.count(EventParticipant.user_id))
+        .where(EventParticipant.event_id == event.id)
+        .where(EventParticipant.status == ParticipantStatus.REGISTERED)
+    ).one()
+    
+    return EventRead(
+        id=event.id,
+        club_id=event.club_id,
+        title=event.title,
+        description=event.description,
+        event_datetime=event.event_datetime,
+        meeting_url=event.meeting_url,
+        organizer_id=event.organizer_id,
+        max_participants=event.max_participants,
+        status=event.status,
+        created_at=event.created_at,
+        updated_at=event.updated_at,
+        participant_count=participant_count
+    )
+
+
+def delete_event(
+    session: Session,
+    current_user: User,
+    club_id: int,
+    event_id: int
+) -> None:
+    """
+    刪除活動
+    
+    Args:
+        session: 資料庫 session
+        current_user: 當前用戶
+        club_id: 讀書會 ID
+        event_id: 活動 ID
+        
+    Raises:
+        HTTPException: 403 - 非活動發起人或管理員
+        HTTPException: 404 - 活動不存在或讀書會不存在
+        HTTPException: 400 - 活動已開始無法刪除
+    """
+    # 驗證用戶是讀書會成員
+    membership = session.exec(
+        select(BookClubMember)
+        .where(BookClubMember.book_club_id == club_id)
+        .where(BookClubMember.user_id == current_user.id)
+    ).first()
+    
+    if not membership:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有讀書會成員可以刪除活動"
+        )
+    
+    # 取得活動
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="活動不存在"
+        )
+    
+    if event.club_id != club_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="活動不屬於此讀書會"
+        )
+    
+    # 檢查權限：活動發起人或讀書會管理員/擁有者
+    is_organizer = event.organizer_id == current_user.id
+    is_admin = membership.role in ["owner", "admin"]
+    
+    if not (is_organizer or is_admin):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有活動發起人或讀書會管理員可以刪除活動"
+        )
+    
+    # 檢查活動是否已開始
+    now = datetime.now(timezone.utc)
+    event_time = event.event_datetime
+    if event_time.tzinfo is None:
+        event_time = event_time.replace(tzinfo=timezone.utc)
+    
+    if event_time < now:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="活動已開始或結束，無法刪除"
+        )
+    
+    # 刪除所有參與記錄
+    participants = session.exec(
+        select(EventParticipant).where(EventParticipant.event_id == event_id)
+    ).all()
+    for participant in participants:
+        session.delete(participant)
+    
+    # 刪除活動
+    session.delete(event)
+    session.commit()

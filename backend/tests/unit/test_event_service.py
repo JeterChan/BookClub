@@ -93,21 +93,21 @@ class TestCreateEvent:
     
     @pytest.fixture
     def member_user(self, session: Session, test_club: BookClub) -> User:
-        """建立並加入讀書會的測試用戶"""
+        """建立測試用讀書會管理員"""
         user = User(
-            email="member@example.com",
-            display_name="Member User",
+            email="admin@test.com",
+            display_name="Admin User",
             password_hash="hashed"
         )
         session.add(user)
         session.commit()
         session.refresh(user)
         
-        # 加入讀書會
+        # 加入讀書會並設為管理員
         membership = BookClubMember(
             book_club_id=test_club.id,
             user_id=user.id,
-            role=MemberRole.MEMBER
+            role=MemberRole.ADMIN
         )
         session.add(membership)
         session.commit()
@@ -117,7 +117,7 @@ class TestCreateEvent:
     def test_create_event_success(
         self, session: Session, test_club: BookClub, member_user: User
     ):
-        """測試成功建立活動"""
+        """測試管理員成功建立活動"""
         event_data = EventCreate(
             title="測試活動",
             description="這是一個測試活動",
@@ -162,6 +162,48 @@ class TestCreateEvent:
         
         assert exc_info.value.status_code == 403
         assert "成員" in exc_info.value.detail
+    
+    def test_create_event_regular_member_fails(
+        self, session: Session, test_club: BookClub
+    ):
+        """測試普通成員無法建立活動"""
+        # 創建普通成員
+        regular_user = User(
+            email="regular@test.com",
+            display_name="Regular Member",
+            password_hash="hashed"
+        )
+        session.add(regular_user)
+        session.commit()
+        session.refresh(regular_user)
+        
+        # 加入讀書會但只是普通成員
+        membership = BookClubMember(
+            book_club_id=test_club.id,
+            user_id=regular_user.id,
+            role=MemberRole.MEMBER
+        )
+        session.add(membership)
+        session.commit()
+        
+        event_data = EventCreate(
+            title="測試活動",
+            description="這是一個測試活動",
+            event_datetime=datetime.utcnow() + timedelta(days=7),
+            meeting_url="https://meet.google.com/test-meet",
+            status=EventStatus.DRAFT
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            create_event(
+                session=session,
+                current_user=regular_user,
+                club_id=test_club.id,
+                event_data=event_data
+            )
+        
+        assert exc_info.value.status_code == 403
+        assert "管理員" in exc_info.value.detail
     
     def test_create_event_past_datetime_fails(
         self, session: Session, test_club: BookClub, member_user: User

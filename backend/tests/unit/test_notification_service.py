@@ -41,7 +41,8 @@ def test_notify_new_join_request_creates_notifications_for_admins(session: Sessi
     notification_service.notify_new_join_request(session, club.id, request)
     
     # 驗證通知
-    notifications = session.query(Notification).all()
+    from sqlmodel import select
+    notifications = session.exec(select(Notification)).all()
     
     # 應該只為 owner 和 admin 創建通知，不為 regular member 創建
     assert len(notifications) == 2

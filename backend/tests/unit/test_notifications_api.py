@@ -12,23 +12,23 @@ def test_get_notifications_returns_user_notifications(client: TestClient, sessio
     session.add(user2)
     session.commit()
     
-    # 為 test_user_for_auth 創建通知
+    # 為 test_user_for_auth 創建通知（使用非權限相關的通知類型）
     notif1 = Notification(
         recipient_id=test_user_for_auth.id,
-        type=NotificationType.NEW_MEMBER,
-        content={"club_name": "Club 1"}
+        type=NotificationType.NEW_POST,
+        content={"topic_title": "Topic 1", "author_name": "Author 1"}
     )
     notif2 = Notification(
         recipient_id=test_user_for_auth.id,
-        type=NotificationType.EVENT_CREATED,
-        content={"event_title": "Event 1"},
+        type=NotificationType.NEW_POST,
+        content={"topic_title": "Topic 2", "author_name": "Author 2"},
         is_read=True
     )
     # 為 user2 創建通知（不應該被返回）
     notif3 = Notification(
         recipient_id=user2.id,
-        type=NotificationType.NEW_MEMBER,
-        content={"club_name": "Club 2"}
+        type=NotificationType.NEW_POST,
+        content={"topic_title": "Topic 3", "author_name": "Author 3"}
     )
     
     session.add_all([notif1, notif2, notif3])
@@ -47,17 +47,17 @@ def test_get_notifications_returns_user_notifications(client: TestClient, sessio
 
 def test_get_notifications_filters_by_read_status(client: TestClient, session: Session, test_user_for_auth: User, auth_headers: dict):
     """測試通知列表可以按已讀/未讀狀態篩選"""
-    # 創建已讀和未讀通知
+    # 創建已讀和未讀通知（使用非權限相關的通知類型）
     notif1 = Notification(
         recipient_id=test_user_for_auth.id,
-        type=NotificationType.NEW_MEMBER,
-        content={"club_name": "Club 1"},
+        type=NotificationType.NEW_POST,
+        content={"topic_title": "Topic 1", "author_name": "Author 1"},
         is_read=False
     )
     notif2 = Notification(
         recipient_id=test_user_for_auth.id,
-        type=NotificationType.EVENT_CREATED,
-        content={"event_title": "Event 1"},
+        type=NotificationType.NEW_POST,
+        content={"topic_title": "Topic 2", "author_name": "Author 2"},
         is_read=True
     )
     
