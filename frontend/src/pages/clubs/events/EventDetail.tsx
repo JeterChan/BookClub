@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEventDetail, joinEvent, leaveEvent, isEventPast } from '../../../services/eventService';
+import { getEventDetail, joinEvent, leaveEvent, deleteEvent, isEventPast } from '../../../services/eventService';
 import type { EventDetail as EventDetailType } from '../../../services/eventService';
 import { Button } from '../../../components/ui/Button';
+import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
@@ -14,6 +15,7 @@ export const EventDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [event, setEvent] = useState<EventDetailType | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     loadEventDetail();
@@ -69,6 +71,26 @@ export const EventDetail: React.FC = () => {
     navigate(`/clubs/${clubId}/events`);
   };
 
+  const handleEdit = () => {
+    navigate(`/clubs/${clubId}/events/${eventId}/edit`);
+  };
+
+  const handleDelete = async () => {
+    if (!clubId || !eventId || !event) return;
+
+    try {
+      setActionLoading(true);
+      await deleteEvent(Number(clubId), Number(eventId));
+      toast.success('活動已刪除');
+      navigate(`/clubs/${clubId}/events`);
+    } catch (error: any) {
+      toast.error(error.message || '刪除活動失敗');
+    } finally {
+      setActionLoading(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -108,22 +130,50 @@ export const EventDetail: React.FC = () => {
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-white">{event.title}</h1>
-              {isPast && (
-                <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
-                  已結束
-                </span>
-              )}
-              {!isPast && event.status === 'published' && (
-                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
-                  報名中
-                </span>
-              )}
-              {event.status === 'draft' && (
-                <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm">
-                  草稿
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {isPast && (
+                  <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
+                    已結束
+                  </span>
+                )}
+                {!isPast && event.status === 'published' && (
+                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                    報名中
+                  </span>
+                )}
+                {event.status === 'draft' && (
+                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm">
+                    草稿
+                  </span>
+                )}
+              </div>
             </div>
+            
+            {/* 編輯和刪除按鈕（只有發起人可見，且活動未開始）*/}
+            {event.isOrganizer && !isPast && (
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={handleEdit}
+                  disabled={actionLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  編輯活動
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={actionLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-red-500/80 hover:bg-red-600 text-white rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  刪除活動
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="p-6">
@@ -271,6 +321,18 @@ export const EventDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 刪除活動確認對話框 */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="確認刪除活動"
+        message="你確定要永久刪除這個活動嗎？所有相關資料都將被移除，此操作無法復原。"
+        confirmText="刪除"
+        cancelText="取消"
+        isConfirming={actionLoading}
+      />
     </div>
   );
 };

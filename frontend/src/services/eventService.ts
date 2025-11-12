@@ -111,6 +111,18 @@ export interface EventListParams {
 }
 
 /**
+ * 更新活動請求介面
+ */
+export interface EventUpdateRequest {
+  title?: string;
+  description?: string;
+  eventDatetime?: string;
+  meetingUrl?: string;
+  maxParticipants?: number | null;
+  status?: EventStatus;
+}
+
+/**
  * 建立讀書會活動
  * @param clubId 讀書會 ID
  * @param data 活動資料
@@ -324,6 +336,73 @@ export const leaveEvent = async (
           throw new Error(data.detail || '活動不存在');
         default:
           throw new Error(data.detail || '退出活動時發生錯誤');
+      }
+    }
+    
+    throw new Error('網路連線錯誤，請稍後再試');
+  }
+};
+
+/**
+ * 更新活動資訊
+ * @param clubId 讀書會 ID
+ * @param eventId 活動 ID
+ * @param data 更新的活動資料
+ * @returns 更新後的活動資料
+ */
+export const updateEvent = async (
+  clubId: number,
+  eventId: number,
+  data: EventUpdateRequest
+): Promise<EventResponse> => {
+  try {
+    const response = await api.put<EventResponse>(
+      `/api/v1/clubs/${clubId}/events/${eventId}`,
+      data
+    );
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data) {
+      const data = error.response.data;
+      switch (error.response.status) {
+        case 400:
+          throw new Error(data.detail || '活動資料格式錯誤');
+        case 403:
+          throw new Error(data.detail || '您無權修改此活動');
+        case 404:
+          throw new Error(data.detail || '活動不存在');
+        default:
+          throw new Error(data.detail || '更新活動時發生錯誤');
+      }
+    }
+    
+    throw new Error('網路連線錯誤，請稍後再試');
+  }
+};
+
+/**
+ * 刪除活動
+ * @param clubId 讀書會 ID
+ * @param eventId 活動 ID
+ */
+export const deleteEvent = async (
+  clubId: number,
+  eventId: number
+): Promise<void> => {
+  try {
+    await api.delete(`/api/v1/clubs/${clubId}/events/${eventId}`);
+  } catch (error: any) {
+    if (error.response?.data) {
+      const data = error.response.data;
+      switch (error.response.status) {
+        case 400:
+          throw new Error(data.detail || '無法刪除活動');
+        case 403:
+          throw new Error(data.detail || '您無權刪除此活動');
+        case 404:
+          throw new Error(data.detail || '活動不存在');
+        default:
+          throw new Error(data.detail || '刪除活動時發生錯誤');
       }
     }
     

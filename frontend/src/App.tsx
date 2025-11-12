@@ -26,6 +26,7 @@ const Discussions = lazy(() => import('./pages/clubs/Discussions'));
 const DiscussionNew = lazy(() => import('./pages/clubs/DiscussionNew'));
 const DiscussionDetail = lazy(() => import('./pages/clubs/DiscussionDetail'));
 const EventCreate = lazy(() => import('./pages/clubs/events/EventCreate'));
+const EventEdit = lazy(() => import('./pages/clubs/events/EventEdit').then(m => ({ default: m.EventEdit })));
 const EventsPage = lazy(() => import('./pages/clubs/events/EventsPage'));
 const EventDetail = lazy(() => import('./pages/clubs/events/EventDetail').then(m => ({ default: m.EventDetail })));
 const MyEvents = lazy(() => import('./pages/activities/MyEvents'));
@@ -162,6 +163,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout><EventCreate /></Layout>
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/clubs/:clubId/events/:eventId/edit" 
+            element={
+              <PrivateRoute>
+                <Layout><EventEdit /></Layout>
               </PrivateRoute>
             } 
           />
