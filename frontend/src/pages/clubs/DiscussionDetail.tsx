@@ -112,7 +112,7 @@ const DiscussionDetail: React.FC = () => {
             <div className="mt-4 flex justify-end">
               <button 
                 type="submit" 
-                className="bg-success-700 text-white px-8 py-3 rounded-xl hover:bg-success-800 transition-colors font-medium"
+                className="bg-indigo-600 text-white px-8 py-3 rounded-xl hover:bg-indigo-700 transition-colors font-medium"
               >
                 送出留言
               </button>

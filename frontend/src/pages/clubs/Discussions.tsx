@@ -35,7 +35,7 @@ const Discussions: React.FC = () => {
           </div>
           <Link 
             to={`/clubs/${clubId}/discussions/new`} 
-            className="bg-success-700 text-white px-6 py-3 rounded-xl hover:bg-success-800 transition-colors font-medium"
+            className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors font-medium"
           >
             + 發起新討論
           </Link>
