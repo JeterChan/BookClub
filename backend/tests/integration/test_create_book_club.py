@@ -23,14 +23,15 @@ def test_create_public_book_club_success(
     session.refresh(tag1)
     session.refresh(tag2)
     
-    # Act: 發送建立讀書會請求
+    # Act: 發送建立讀書會請求（使用 FormData）
+    import json
     response = authenticated_client.post(
         "/api/v1/clubs",
-        json={
+        data={
             "name": "Python 進階讀書會",
             "description": "探討 Python 進階主題",
             "visibility": "public",
-            "tag_ids": [tag1.id, tag2.id]
+            "tag_ids": json.dumps([tag1.id, tag2.id])
         }
     )
     
@@ -69,6 +70,7 @@ def test_create_private_book_club_success(
 ):
     """測試認證用戶成功建立私密讀書會"""
     # Arrange
+    import json
     tag = ClubTag(name="私密", is_predefined=True)
     session.add(tag)
     session.commit()
@@ -77,11 +79,11 @@ def test_create_private_book_club_success(
     # Act
     response = authenticated_client.post(
         "/api/v1/clubs",
-        json={
+        data={
             "name": "私密讀書會",
             "description": "只限邀請加入",
             "visibility": "private",
-            "tag_ids": [tag.id]
+            "tag_ids": json.dumps([tag.id])
         }
     )
     
@@ -99,6 +101,7 @@ def test_create_book_club_as_owner(
 ):
     """測試建立者自動成為擁有者"""
     # Arrange
+    import json
     tag = ClubTag(name="測試", is_predefined=True)
     session.add(tag)
     session.commit()
@@ -107,11 +110,11 @@ def test_create_book_club_as_owner(
     # Act
     response = authenticated_client.post(
         "/api/v1/clubs",
-        json={
+        data={
             "name": "測試讀書會",
             "description": "測試",
             "visibility": "public",
-            "tag_ids": [tag.id]
+            "tag_ids": json.dumps([tag.id])
         }
     )
     
@@ -134,6 +137,7 @@ def test_create_book_club_tag_association(
 ):
     """測試標籤關聯正確性"""
     # Arrange
+    import json
     tags = [
         ClubTag(name="Tag1", is_predefined=True),
         ClubTag(name="Tag2", is_predefined=True),
@@ -147,11 +151,11 @@ def test_create_book_club_tag_association(
     # Act
     response = authenticated_client.post(
         "/api/v1/clubs",
-        json={
+        data={
             "name": "多標籤讀書會",
             "description": "測試多個標籤",
             "visibility": "public",
-            "tag_ids": [tags[0].id, tags[2].id]
+            "tag_ids": json.dumps([tags[0].id, tags[2].id])
         }
     )
     
@@ -205,13 +209,14 @@ def test_create_book_club_invalid_tag_ids(
 ):
     """測試使用無效標籤 ID"""
     # Act: 使用不存在的標籤 ID
+    import json
     response = authenticated_client.post(
         "/api/v1/clubs",
-        json={
+        data={
             "name": "測試讀書會",
             "description": "測試",
             "visibility": "public",
-            "tag_ids": [999, 1000]
+            "tag_ids": json.dumps([999, 1000])
         }
     )
     

@@ -213,7 +213,8 @@ def list_book_clubs(
 ) -> tuple[List[BookClubReadWithDetails], dict]:
     from sqlmodel import func, col
     
-    query = select(BookClub).where(BookClub.visibility == "public")
+    # 基礎查詢：顯示所有讀書會（不論 visibility）
+    query = select(BookClub)
     
     # 如果指定了 user_id，只返回該用戶加入的讀書會
     if user_id is not None:
@@ -391,9 +392,11 @@ def get_book_club_by_id(
         membership_status=membership_status
     )
 
-def join_book_club(session: Session, club_id: int, user_id: int) -> ClubJoinRequest:
+def join_book_club(session: Session, club_id: int, user_id: int) -> Optional[ClubJoinRequest]:
     """
-    創建加入讀書會的請求（所有讀書會都需要審核）
+    加入讀書會：
+    - 公開讀書會：直接加入，返回 None
+    - 私密讀書會：創建加入請求，返回 ClubJoinRequest
     """
     print(f"---LOG: Entering join_book_club service for club_id: {club_id}, user_id: {user_id}")
     book_club = session.get(BookClub, club_id)
@@ -409,7 +412,21 @@ def join_book_club(session: Session, club_id: int, user_id: int) -> ClubJoinRequ
         print(f"---LOG: User is already a member, raising 409")
         raise HTTPException(status_code=409, detail="您已經是此讀書會的成員")
 
-    # Check for existing pending request
+    # 公開讀書會：直接加入
+    if book_club.visibility == BookClubVisibility.PUBLIC:
+        print(f"---LOG: Public club - directly adding user as member")
+        new_member = BookClubMember(
+            user_id=user_id,
+            book_club_id=club_id,
+            role=MemberRole.MEMBER
+        )
+        session.add(new_member)
+        session.commit()
+        print(f"---LOG: User successfully added to public club")
+        return None
+    
+    # 私密讀書會：創建加入請求
+    print(f"---LOG: Private club - checking for existing request")
     existing_request = session.exec(
         select(ClubJoinRequest).where(
             ClubJoinRequest.book_club_id == club_id,
@@ -421,7 +438,7 @@ def join_book_club(session: Session, club_id: int, user_id: int) -> ClubJoinRequ
         print(f"---LOG: User already has pending request, raising 409")
         raise HTTPException(status_code=409, detail="您已送出過加入請求")
 
-    print(f"---LOG: All checks passed. Creating join request.")
+    print(f"---LOG: Creating join request for private club")
     new_request = ClubJoinRequest(user_id=user_id, book_club_id=club_id, status=JoinRequestStatus.PENDING)
     session.add(new_request)
     session.commit()
@@ -449,7 +466,50 @@ def leave_book_club(session: Session, club_id: int, user_id: int) -> None:
 
 def request_to_join_book_club(session: Session, club_id: int, user_id: int) -> ClubJoinRequest:
     """
-    創建加入讀書會的請求（所有讀書會都需要審核）
-    與 join_book_club 功能相同
+    請求加入私密讀書會
+    
+    注意：此函式保留供內部使用，但 API 已被 join_book_club 取代。
+    建議直接使用 join_book_club()，它會自動處理公開/私密讀書會。
     """
-    return join_book_club(session, club_id, user_id)
+    book_club = session.get(BookClub, club_id)
+    if not book_club:
+        raise HTTPException(status_code=404, detail="讀書會不存在")
+    
+    if book_club.visibility == BookClubVisibility.PUBLIC:
+        raise HTTPException(status_code=400, detail="公開讀書會請使用加入功能")
+    
+    # 檢查是否已是成員
+    member_record = session.exec(
+        select(BookClubMember).where(
+            BookClubMember.book_club_id == club_id,
+            BookClubMember.user_id == user_id
+        )
+    ).first()
+    if member_record:
+        raise HTTPException(status_code=409, detail="您已經是此讀書會的成員")
+    
+    # 檢查是否已有待處理的請求
+    existing_request = session.exec(
+        select(ClubJoinRequest).where(
+            ClubJoinRequest.book_club_id == club_id,
+            ClubJoinRequest.user_id == user_id,
+            ClubJoinRequest.status == JoinRequestStatus.PENDING
+        )
+    ).first()
+    if existing_request:
+        raise HTTPException(status_code=409, detail="您已送出過加入請求")
+    
+    # 創建加入請求
+    new_request = ClubJoinRequest(
+        user_id=user_id,
+        book_club_id=club_id,
+        status=JoinRequestStatus.PENDING
+    )
+    session.add(new_request)
+    session.commit()
+    session.refresh(new_request)
+    
+    # 發送通知
+    notification_service.notify_new_join_request(session, club_id, new_request)
+    
+    return new_request

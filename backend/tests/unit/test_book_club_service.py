@@ -201,22 +201,35 @@ def another_user(session: Session) -> User:
     return user
 
 def test_join_public_book_club_success(session: Session, public_club: BookClub, another_user: User):
-    book_club_service.join_book_club(session, public_club.id, another_user.id)
+    result = book_club_service.join_book_club(session, public_club.id, another_user.id)
+    # 公開讀書會直接加入，返回 None
+    assert result is None
+    # 驗證用戶已成為成員
     member_record = session.exec(
         select(BookClubMember).where(BookClubMember.book_club_id == public_club.id, BookClubMember.user_id == another_user.id)
     ).first()
     assert member_record is not None
     assert member_record.role == MemberRole.MEMBER
 
-def test_join_private_book_club_fail(session: Session, private_club: BookClub, another_user: User):
+def test_join_private_book_club_creates_request(session: Session, private_club: BookClub, another_user: User):
+    """Test that joining a private club creates a join request"""
+    result = book_club_service.join_book_club(session, private_club.id, another_user.id)
+    # 私密讀書會創建請求，返回 ClubJoinRequest
+    assert result is not None
+    assert result.book_club_id == private_club.id
+    assert result.user_id == another_user.id
+    assert result.status == JoinRequestStatus.PENDING
+    # 驗證用戶還不是成員
+    member_record = session.exec(
+        select(BookClubMember).where(BookClubMember.book_club_id == private_club.id, BookClubMember.user_id == another_user.id)
+    ).first()
+    assert member_record is None
+
+def test_join_private_club_duplicate_request_fail(session: Session, private_club: BookClub, another_user: User):
+    """Test that requesting to join a private club twice fails"""
+    book_club_service.join_book_club(session, private_club.id, another_user.id)
     with pytest.raises(HTTPException) as exc_info:
         book_club_service.join_book_club(session, private_club.id, another_user.id)
-    assert exc_info.value.status_code == 400
-
-def test_join_already_member_fail(session: Session, public_club: BookClub, another_user: User):
-    book_club_service.join_book_club(session, public_club.id, another_user.id)
-    with pytest.raises(HTTPException) as exc_info:
-        book_club_service.join_book_club(session, public_club.id, another_user.id)
     assert exc_info.value.status_code == 409
 
 def test_leave_book_club_success(session: Session, public_club: BookClub, another_user: User):
@@ -239,12 +252,14 @@ def test_owner_leave_book_club_fail(session: Session, public_club: BookClub, tes
     assert exc_info.value.status_code == 400
 
 def test_request_to_join_private_club_success(session: Session, private_club: BookClub, another_user: User):
+    """Test explicitly requesting to join a private club"""
     request = book_club_service.request_to_join_book_club(session, private_club.id, another_user.id)
     assert request.book_club_id == private_club.id
     assert request.user_id == another_user.id
     assert request.status == JoinRequestStatus.PENDING
 
 def test_request_to_join_public_club_fail(session: Session, public_club: BookClub, another_user: User):
+    """Test that explicitly requesting to join a public club fails"""
     with pytest.raises(HTTPException) as exc_info:
         book_club_service.request_to_join_book_club(session, public_club.id, another_user.id)
     assert exc_info.value.status_code == 400
@@ -254,16 +269,16 @@ def test_get_book_club_by_id_with_membership_status(session: Session, public_clu
     club_details = book_club_service.get_book_club_by_id(session, public_club.id, another_user)
     assert club_details.membership_status == "not_member"
 
-    # Is a member
+    # Is a member (public club - direct join)
     book_club_service.join_book_club(session, public_club.id, another_user.id)
     club_details_member = book_club_service.get_book_club_by_id(session, public_club.id, another_user)
     assert club_details_member.membership_status == "member"
 
-    # Pending request
-    book_club_service.request_to_join_book_club(session, private_club.id, another_user.id)
+    # Pending request (private club - creates request)
+    book_club_service.join_book_club(session, private_club.id, another_user.id)
     club_details_pending = book_club_service.get_book_club_by_id(session, private_club.id, another_user)
     assert club_details_pending.membership_status == "pending_request"
 
     # Is owner
     club_details_owner = book_club_service.get_book_club_by_id(session, public_club.id, test_user)
-    assert club_details_owner.membership_status == "member" # Owner is also a member
+    assert club_details_owner.membership_status == "owner"

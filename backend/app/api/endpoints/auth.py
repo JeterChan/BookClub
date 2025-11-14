@@ -16,6 +16,7 @@ from app.services.email_service import EmailService
 from app.services.password_reset_service import PasswordResetService
 from app.db.session import get_session
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER
+from app.core.logging_config import log_auth_event, log_error, log_business_event
 
 router = APIRouter()
 
@@ -33,19 +34,27 @@ def register(
     session: Session = Depends(get_session), # Keep for email service
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
-    existing_user = user_service.get_by_email(user_data.email)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this email already exists."
-        )
-    
-    new_user = user_service.create(user_data)
-    
-    token = EmailService.generate_verification_token(session, new_user)
-    background_tasks.add_task(EmailService.send_verification_email, new_user, token)
-    
-    return RegistrationResponse(message="註冊成功，請至信箱查收驗證信")
+    try:
+        existing_user = user_service.get_by_email(user_data.email)
+        if existing_user:
+            log_auth_event("Registration Failed - Email exists", email=user_data.email, success=False)
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this email already exists."
+            )
+        
+        new_user = user_service.create(user_data)
+        log_auth_event("User Registered", user_id=new_user.id, email=new_user.email)
+        
+        token = EmailService.generate_verification_token(session, new_user)
+        background_tasks.add_task(EmailService.send_verification_email, new_user, token)
+        
+        return RegistrationResponse(message="註冊成功，請至信箱查收驗證信")
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(e, context="User Registration", user_id=None)
+        raise HTTPException(status_code=500, detail="註冊失敗")
 
 @router.get("/verify-email", response_model=EmailVerificationResponse, status_code=status.HTTP_200_OK)
 def verify_email(
@@ -91,7 +100,40 @@ def login(
 ):
     try:
         user = user_service.authenticate(login_data.email, login_data.password)
+        
+        if not user:
+            log_auth_event("Login Failed - Invalid credentials", email=login_data.email, success=False)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password"
+            )
+        
+        if not user.is_active:
+            log_auth_event("Login Failed - Inactive account", user_id=user.id, email=user.email, success=False)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is inactive"
+            )
+        
+        if login_data.remember_me:
+            access_token_expires = timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER)
+        else:
+            access_token_expires = None
+        
+        access_token = create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        
+        log_auth_event("Login Successful", user_id=user.id, email=user.email)
+        
+        return TokenWithUser(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserRead.model_validate(user)
+        )
+        
     except ValueError as e:
+        log_auth_event(f"Login Failed - {str(e)}", email=login_data.email, success=False)
         if str(e) == "請先完成 Email 驗證":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -101,30 +143,11 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)
         )
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
-        )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is inactive"
-        )
-    
-    if login_data.remember_me:
-        access_token_expires = timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER)
-    else:
-        access_token_expires = None
-    
-    access_token = create_access_token(
-        data={"sub": user.email},
-        expires_delta=access_token_expires
-    )
-    
-    return TokenWithUser(access_token=access_token, token_type="bearer", user=UserRead.from_orm(user))
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_error(e, context="User Login", user_id=None)
+        raise HTTPException(status_code=500, detail="登入失敗")
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse, status_code=status.HTTP_200_OK)

@@ -21,19 +21,27 @@ def test_join_public_club_success(client: TestClient, session: Session, test_use
     session.commit()
     session.refresh(public_club)
 
-    # another_user joins the club
+    # another_user joins the club (direct join for public clubs)
     auth_headers = get_auth_headers(client, another_user.email, "TestPassword456")
     response = client.post(f"/api/v1/clubs/{public_club.id}/join", headers=auth_headers)
-    assert response.status_code == 204
+    assert response.status_code == 200
+    data = response.json()
+    assert data["joined"] is True
+    assert data["requires_approval"] is False
 
-def test_join_private_club_fail(client: TestClient, session: Session, test_user: User, another_user: User):
+def test_join_private_club_creates_request(client: TestClient, session: Session, test_user: User, another_user: User):
+    """Test that joining a private club creates a join request"""
     private_club = BookClub(name="Private Club", visibility=BookClubVisibility.PRIVATE, owner_id=test_user.id)
     session.add(private_club)
     session.commit()
 
+    # Joining a private club should create a join request
     auth_headers = get_auth_headers(client, another_user.email, "TestPassword456")
     response = client.post(f"/api/v1/clubs/{private_club.id}/join", headers=auth_headers)
-    assert response.status_code == 400
+    assert response.status_code == 200
+    data = response.json()
+    assert data["joined"] is False
+    assert data["requires_approval"] is True
 
 def test_leave_club_success(client: TestClient, session: Session, test_user: User, another_user: User):
     public_club = BookClub(name="Public Club", visibility=BookClubVisibility.PUBLIC, owner_id=test_user.id)
@@ -45,15 +53,6 @@ def test_leave_club_success(client: TestClient, session: Session, test_user: Use
     client.post(f"/api/v1/clubs/{public_club.id}/join", headers=auth_headers)
     response = client.delete(f"/api/v1/clubs/{public_club.id}/leave", headers=auth_headers)
     assert response.status_code == 204
-
-def test_request_to_join_private_club_success(client: TestClient, session: Session, test_user: User, another_user: User):
-    private_club = BookClub(name="Private Club", visibility=BookClubVisibility.PRIVATE, owner_id=test_user.id)
-    session.add(private_club)
-    session.commit()
-
-    auth_headers = get_auth_headers(client, another_user.email, "TestPassword456")
-    response = client.post(f"/api/v1/clubs/{private_club.id}/request-join", headers=auth_headers)
-    assert response.status_code == 201
 
 def test_get_club_detail_membership_status(client: TestClient, session: Session, test_user: User, another_user: User):
     public_club = BookClub(name="Public Club", visibility=BookClubVisibility.PUBLIC, owner_id=test_user.id)

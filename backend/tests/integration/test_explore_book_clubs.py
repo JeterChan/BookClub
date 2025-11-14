@@ -36,7 +36,7 @@ def test_get_clubs_list_success(client: TestClient, session: Session):
 
 
 def test_get_clubs_list_only_public(client: TestClient, session: Session):
-    """測試只返回公開讀書會"""
+    """測試返回所有讀書會（公開和私密都可以瀏覽）"""
     user = User(email="test@example.com", password_hash="hash", display_name="Test User")
     session.add(user)
     session.commit()
@@ -51,8 +51,11 @@ def test_get_clubs_list_only_public(client: TestClient, session: Session):
     assert response.status_code == 200
     data = response.json()
     
-    assert len(data["items"]) == 1
-    assert data["items"][0]["name"] == "Public"
+    # 所有讀書會都應該顯示（公開和私密）
+    assert len(data["items"]) == 2
+    club_names = [club["name"] for club in data["items"]]
+    assert "Public" in club_names
+    assert "Private" in club_names
 
 
 def test_get_clubs_list_with_pagination(client: TestClient, session: Session):

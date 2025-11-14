@@ -175,7 +175,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@router.post("/{club_id}/join", status_code=status.HTTP_201_CREATED)
+@router.post("/{club_id}/join")
 def join_club(
     *,
     session: Session = Depends(get_session),
@@ -183,16 +183,24 @@ def join_club(
     current_user: User = Depends(get_current_user)
 ):
     """
-    創建加入讀書會的請求（所有讀書會都需要管理員審核）
+    加入讀書會：
+    - 公開讀書會：直接加入，返回 {"joined": true, "requires_approval": false}
+    - 私密讀書會：創建加入請求，返回 {"joined": false, "requires_approval": true}
     """
     logger.info(f"Attempting to join club {club_id} for user {current_user.email}")
     try:
-        book_club_service.join_book_club(session, club_id, current_user.id)
-        logger.info(f"User {current_user.email} successfully created join request for club {club_id}")
+        result = book_club_service.join_book_club(session, club_id, current_user.id)
+        # 如果返回 None，表示公開讀書會直接加入
+        if result is None:
+            logger.info(f"User {current_user.email} successfully joined public club {club_id}")
+            return {"joined": True, "requires_approval": False}
+        else:
+            # 返回 ClubJoinRequest，表示私密讀書會需要審核
+            logger.info(f"User {current_user.email} created join request for private club {club_id}")
+            return {"joined": False, "requires_approval": True}
     except HTTPException as e:
         logger.error(f"Error during join_book_club service call for user {current_user.email} and club {club_id}: {e.detail}")
         raise e
-    return
 
 
 
@@ -204,15 +212,4 @@ def leave_club(
     current_user: User = Depends(get_current_user)
 ):
     book_club_service.leave_book_club(session, club_id, current_user.id)
-    return
-
-
-@router.post("/{club_id}/request-join", status_code=status.HTTP_201_CREATED)
-def request_to_join_club(
-    *,
-    session: Session = Depends(get_session),
-    club_id: int,
-    current_user: User = Depends(get_current_user)
-):
-    book_club_service.request_to_join_book_club(session, club_id, current_user.id)
     return

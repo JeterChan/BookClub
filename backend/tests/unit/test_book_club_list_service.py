@@ -12,9 +12,9 @@ from fastapi import HTTPException
 
 
 def test_list_book_clubs_returns_only_public_clubs(session: Session):
-    """測試只返回公開的讀書會"""
+    """測試返回所有讀書會（公開和私密都可以瀏覽）"""
     # 建立測試用戶
-    user = User(email="test@example.com", password_hash="hash", display_name="Test User")
+    user = User(email="test@example.com", hashed_password="hashedpassword", display_name="Test User")
     session.add(user)
     session.commit()
     
@@ -31,9 +31,11 @@ def test_list_book_clubs_returns_only_public_clubs(session: Session):
     # 測試
     clubs, pagination = list_book_clubs(session, page=1, page_size=20)
     
-    assert len(clubs) == 1
-    assert clubs[0].name == "Public Club"
-    assert clubs[0].visibility == "public"
+    # 所有讀書會都應該返回（公開和私密）
+    assert len(clubs) == 2
+    club_names = [club.name for club in clubs]
+    assert "Public Club" in club_names
+    assert "Private Club" in club_names
 
 
 def test_list_book_clubs_keyword_search(session: Session):
