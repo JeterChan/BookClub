@@ -12,6 +12,7 @@ import { Button } from '../../components/ui/Button';
 const clubCreateSchema = z.object({
   name: z.string().min(1, '請輸入讀書會名稱').max(50, '名稱最多 50 個字元'),
   description: z.string().max(500, '描述最多 500 個字元').optional(),
+  visibility: z.enum(['public', 'private']),
   tag_ids: z.array(z.number()).min(1, '請至少選擇一個標籤'),
   cover_image: z.instanceof(File).optional(),
 });
@@ -42,14 +43,18 @@ export default function ClubCreate() {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<ClubCreateForm>({
     resolver: zodResolver(clubCreateSchema),
     defaultValues: {
       name: '',
       description: '',
+      visibility: 'public',
       tag_ids: [],
     },
   });
+
+  const selectedVisibility = watch('visibility');
 
   // 載入標籤
   useEffect(() => {
@@ -116,7 +121,6 @@ export default function ClubCreate() {
     try {
       await createBookClub({
         ...data,
-        visibility: 'public', // Hardcode to public
         tag_ids: selectedTags,
         cover_image: coverImageFile || undefined,
       });
@@ -208,6 +212,72 @@ export default function ClubCreate() {
               />
               {errors.description && (
                 <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+              )}
+            </div>
+
+            {/* 讀書會可見性 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                讀書會類型 <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setValue('visibility', 'public', { shouldValidate: true })}
+                  className={`p-4 border-2 rounded-xl transition-all ${
+                    selectedVisibility === 'public'
+                      ? 'border-black bg-gray-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedVisibility === 'public'
+                        ? 'border-black'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedVisibility === 'public' && (
+                        <div className="w-3 h-3 rounded-full bg-black"></div>
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium text-gray-900 mb-1">公開讀書會</div>
+                      <div className="text-sm text-gray-600">
+                        任何人都可以瀏覽並直接加入
+                      </div>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setValue('visibility', 'private', { shouldValidate: true })}
+                  className={`p-4 border-2 rounded-xl transition-all ${
+                    selectedVisibility === 'private'
+                      ? 'border-black bg-gray-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedVisibility === 'private'
+                        ? 'border-black'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedVisibility === 'private' && (
+                        <div className="w-3 h-3 rounded-full bg-black"></div>
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium text-gray-900 mb-1">私密讀書會</div>
+                      <div className="text-sm text-gray-600">
+                        需要管理員審核才能加入
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+              {errors.visibility && (
+                <p className="mt-1 text-sm text-red-600">{errors.visibility.message}</p>
               )}
             </div>
 

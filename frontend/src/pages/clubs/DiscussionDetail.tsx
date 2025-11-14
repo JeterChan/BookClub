@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useBookClubStore } from '../../store/bookClubStore';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getImageUrl } from '../../utils/imageUrl';
+import toast from 'react-hot-toast';
 
 const DiscussionDetail: React.FC = () => {
   const { clubId, topicId } = useParams<{ clubId: string; topicId: string }>();
   const navigate = useNavigate();
-  const { currentTopic, loading, error, fetchDiscussion, addComment } = useBookClubStore();
+  const { currentTopic, loading, error, fetchDiscussion, addComment, detailClub, clearError } = useBookClubStore();
   const [comment, setComment] = useState('');
 
   useEffect(() => {
@@ -14,6 +15,20 @@ const DiscussionDetail: React.FC = () => {
       fetchDiscussion(Number(clubId), Number(topicId));
     }
   }, [fetchDiscussion, clubId, topicId]);
+
+  // 處理錯誤並在讀書會被刪除時導向列表頁
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearError();
+      
+      if (!detailClub && error === '此讀書會已被刪除') {
+        setTimeout(() => {
+          navigate('/clubs');
+        }, 2000);
+      }
+    }
+  }, [error, clearError, detailClub, navigate]);
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -71,9 +71,16 @@ export const getBookClubById = async (clubId: number): Promise<BookClubRead> => 
 
 /**
  * 加入讀書會
+ * 返回：{ joined: boolean, requires_approval: boolean }
+ * - joined: true 表示直接加入成功（公開讀書會）
+ * - requires_approval: true 表示需要等待審核（私密讀書會）
  */
-export const joinClub = async (clubId: number): Promise<void> => {
-  await api.post(`/api/v1/clubs/${clubId}/join`, {});
+export const joinClub = async (clubId: number): Promise<{ joined: boolean; requires_approval: boolean }> => {
+  const response = await api.post<{ joined: boolean; requires_approval: boolean }>(
+    `/api/v1/clubs/${clubId}/join`,
+    {}
+  );
+  return response.data;
 };
 
 /**
@@ -81,13 +88,6 @@ export const joinClub = async (clubId: number): Promise<void> => {
  */
 export const leaveClub = async (clubId: number): Promise<void> => {
   await api.delete(`/api/v1/clubs/${clubId}/leave`);
-};
-
-/**
- * 請求加入私密讀書會
- */
-export const requestToJoinClub = async (clubId: number): Promise<void> => {
-  await api.post(`/api/v1/clubs/${clubId}/request-join`);
 };
 
 /**
@@ -134,5 +134,9 @@ export default {
   getBookClubById,
   joinClub,
   leaveClub,
-  requestToJoinClub,
+  updateClubCover,
+  getDiscussions,
+  createDiscussion,
+  getDiscussion,
+  createComment,
 };

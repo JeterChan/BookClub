@@ -104,8 +104,15 @@ const ClubDetail = () => {
     if (error) {
       toast.error(error);
       clearError(); // Clear error after showing
+      
+      // 如果讀書會已被刪除（detailClub 為 null 且有錯誤訊息），導向列表頁
+      if (!detailClub && error === '此讀書會已被刪除') {
+        setTimeout(() => {
+          navigate('/clubs');
+        }, 2000); // 2秒後導向，讓用戶看到錯誤訊息
+      }
     }
-  }, [error, clearError]);
+  }, [error, clearError, detailClub, navigate]);
 
   const { isAuthenticated } = useAuthStore();
 
@@ -117,9 +124,14 @@ const ClubDetail = () => {
     }
     if (!clubId) return;
     try {
-      await joinClub(parseInt(clubId));
-      toast.success('已發送加入請求，等待管理員審核');
-      // 不需要重新載入，joinClub 已經更新了 membership_status
+      const result = await joinClub(parseInt(clubId));
+      // 根據後端返回的結果顯示不同的成功訊息
+      if (result.joined) {
+        toast.success('成功加入讀書會！');
+      } else if (result.requires_approval) {
+        toast.success('已發送加入請求，等待管理員審核');
+      }
+      // joinClub 已經更新了 membership_status
     } catch (e) {
       // Error is handled by the store
     }
@@ -271,7 +283,9 @@ const ClubDetail = () => {
       );
     }
 
-    // 未加入，顯示加入按鈕（所有讀書會都需要審核）
+    // 未加入，顯示加入按鈕
+    // - 公開讀書會：直接加入
+    // - 私密讀書會：創建加入請求
     return (
       <Button 
         onClick={handleJoinClick}

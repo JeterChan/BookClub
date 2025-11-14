@@ -1,6 +1,6 @@
 // frontend/src/pages/clubs/ClubSettings.tsx
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useClubManagementStore } from '../../store/clubManagementStore';
 import { useBookClubStore } from '../../store/bookClubStore';
 import { ClubInfoSettings } from '../../components/clubs/ClubInfoSettings';
@@ -13,20 +13,31 @@ import toast from 'react-hot-toast';
 const ClubSettings = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const fetchClubManagementData = useClubManagementStore(state => state.fetchClubManagementData);
   const deleteClub = useClubManagementStore(state => state.deleteClub);
-  const loading = useClubManagementStore(state => state.loading);
-  const error = useClubManagementStore(state => state.error);
-  const { detailClub } = useBookClubStore();
-  const [activeTab, setActiveTab] = useState('info');
+  const managementLoading = useClubManagementStore(state => state.loading);
+  const managementError = useClubManagementStore(state => state.error);
+  const { detailClub, fetchClubDetail, loading: clubLoading } = useBookClubStore();
+  
+  // 從 URL 參數讀取 tab，預設為 'info'
+  const tabFromUrl = searchParams.get('tab') || 'info';
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
 
   useEffect(() => {
     const clubIdNum = parseInt(clubId || '0');
     if (clubIdNum) {
+      // 同時載入讀書會詳細資訊和管理資料
+      fetchClubDetail(clubIdNum);
       fetchClubManagementData(clubIdNum);
     }
-  }, [clubId, fetchClubManagementData]);
+  }, [clubId, fetchClubDetail, fetchClubManagementData]);
+
+  // 當 URL 參數變化時更新 activeTab
+  useEffect(() => {
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
 
   const handleDeleteConfirm = async () => {
     const clubIdNum = parseInt(clubId || '0');
@@ -56,12 +67,30 @@ const ClubSettings = () => {
     }
   };
 
+  const loading = managementLoading || clubLoading;
+
   if (loading && !detailClub) {
-    return <div>Loading club settings...</div>;
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  if (error) {
-    return <div className="text-red-500">Error: {error}</div>;
+  if (managementError) {
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">錯誤: {managementError}</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const isOwner = detailClub?.membership_status === 'owner';

@@ -127,11 +127,11 @@ describe('ClubCreate', () => {
     
     // Select tag
     await user.click(techTag);
-    expect(techTag).toHaveClass('bg-blue-600', 'text-white');
+    expect(techTag).toHaveClass('bg-black', 'text-white');
 
     // Deselect tag
     await user.click(techTag);
-    expect(techTag).toHaveClass('bg-gray-200', 'text-gray-700');
+    expect(techTag).toHaveClass('bg-white', 'text-gray-700');
   });
 
   it('should submit form with valid data', async () => {
@@ -147,7 +147,7 @@ describe('ClubCreate', () => {
     await user.click(screen.getByText('文學'));
     await user.click(screen.getByText('科技'));
 
-    // Submit
+    // Submit (default visibility is public)
     const submitButton = screen.getByRole('button', { name: '建立讀書會' });
     await user.click(submitButton);
 
@@ -186,7 +186,7 @@ describe('ClubCreate', () => {
 
     renderComponent();
 
-    expect(screen.getByRole('button', { name: '建立中...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '建立讀書會' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '取消' })).toBeDisabled();
   });
 });

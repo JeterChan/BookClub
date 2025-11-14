@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBookClubStore } from '../../store/bookClubStore';
+import toast from 'react-hot-toast';
 
 
 const DiscussionNew: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
-  const { addDiscussion, detailClub } = useBookClubStore();
+  const { addDiscussion, detailClub, error, clearError } = useBookClubStore();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+
+  // 處理錯誤並在讀書會被刪除時導向列表頁
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearError();
+      
+      if (!detailClub && error === '此讀書會已被刪除') {
+        setTimeout(() => {
+          navigate('/clubs');
+        }, 2000);
+      }
+    }
+  }, [error, clearError, detailClub, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

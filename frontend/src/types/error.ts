@@ -2,6 +2,7 @@
 
 export interface ApiError {
   response?: {
+    status?: number;
     data?: {
       detail?: string;
     };

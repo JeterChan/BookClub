@@ -1,17 +1,32 @@
 import React, { useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useBookClubStore } from '../../store/bookClubStore';
+import toast from 'react-hot-toast';
 
 const Discussions: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
-  const { discussions, loading, error, fetchDiscussions, detailClub } = useBookClubStore();
+  const { discussions, loading, error, fetchDiscussions, detailClub, clearError } = useBookClubStore();
 
   useEffect(() => {
     if (clubId) {
       fetchDiscussions(Number(clubId));
     }
   }, [fetchDiscussions, clubId]);
+
+  // 處理錯誤並在讀書會被刪除時導向列表頁
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearError();
+      
+      if (!detailClub && error === '此讀書會已被刪除') {
+        setTimeout(() => {
+          navigate('/clubs');
+        }, 2000);
+      }
+    }
+  }, [error, clearError, detailClub, navigate]);
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-500">Error: {error}</div>;

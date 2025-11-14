@@ -66,8 +66,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
     switch (notification.type) {
       case "NEW_MEMBER": {
         const content = notification.content as NewMemberContent;
-        // 導航到讀書會設定頁面處理加入請求
-        navigate(`/clubs/${content.club_id}/settings`);
+        // 導航到讀書會設定頁面的加入請求 tab
+        navigate(`/clubs/${content.club_id}/settings?tab=requests`);
         break;
       }
       case "EVENT_CREATED": {

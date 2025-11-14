@@ -6,7 +6,6 @@ import {
   getBookClubById,
   joinClub as joinClubService,
   leaveClub as leaveClubService,
-  requestToJoinClub as requestToJoinClubService,
   getDiscussions,
   createDiscussion,
   getDiscussion,
@@ -43,9 +42,8 @@ interface BookClubState {
   setSearchKeyword: (keyword: string) => void;
   setSelectedTagIds: (tagIds: number[]) => void;
   fetchClubDetail: (clubId: number) => Promise<void>;
-  joinClub: (clubId: number) => Promise<void>;
+  joinClub: (clubId: number) => Promise<{ joined: boolean; requires_approval: boolean }>;
   leaveClub: (clubId: number) => Promise<void>;
-  requestToJoinClub: (clubId: number) => Promise<void>;
   resetCreateSuccess: () => void;
   clearError: () => void;
   setDetailClub: (club: BookClubRead | null) => void;
@@ -164,34 +162,56 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       set({ detailClub: club, loading: false });
     } catch (error) {
       const apiError = error as ApiError;
-      const errorMessage = apiError.response?.data?.detail || '載入讀書會詳情失敗';
-      set({
-        error: errorMessage,
-        loading: false,
-      });
+      // 如果是 404，表示讀書會已被刪除
+      if (apiError.response?.status === 404) {
+        set({
+          detailClub: null,
+          error: '此讀書會已被刪除',
+          loading: false,
+        });
+      } else {
+        const errorMessage = apiError.response?.data?.detail || '載入讀書會詳情失敗';
+        set({
+          error: errorMessage,
+          loading: false,
+        });
+      }
     }
   },
 
   joinClub: async (clubId: number) => {
     set({ loading: true, error: null });
     try {
-      await joinClubService(clubId);
+      const result = await joinClubService(clubId);
       set((state) => {
         const updatedDetailClub =
           state.detailClub && state.detailClub.id === clubId
-            ? { ...state.detailClub, membership_status: 'pending_request' as const }
+            ? {
+                ...state.detailClub,
+                membership_status: result.joined ? ('member' as const) : ('pending_request' as const),
+                member_count: result.joined ? state.detailClub.member_count + 1 : state.detailClub.member_count,
+              }
             : state.detailClub;
+
+        const updatedClubs = state.clubs.map((club) =>
+          club.id === clubId && result.joined ? { ...club, member_count: club.member_count + 1 } : club
+        );
 
         return {
           loading: false,
           detailClub: updatedDetailClub,
-          clubs: state.clubs, // 不更新成員數，因為還在等待審核
+          clubs: updatedClubs,
         };
       });
+      return result;
     } catch (error) {
       const apiError = error as ApiError;
-      const errorMessage = apiError.response?.data?.detail || '加入讀書會失敗';
-      set({ loading: false, error: errorMessage });
+      if (apiError.response?.status === 404) {
+        set({ loading: false, error: '此讀書會已被刪除', detailClub: null });
+      } else {
+        const errorMessage = apiError.response?.data?.detail || '加入讀書會失敗';
+        set({ loading: false, error: errorMessage });
+      }
       throw error;
     }
   },
@@ -218,75 +238,75 @@ export const useBookClubStore = create<BookClubState>((set, get) => ({
       });
     } catch (error) {
       const apiError = error as ApiError;
-      const errorMessage = apiError.response?.data?.detail || '退出讀書會失敗';
-      set({ loading: false, error: errorMessage });
-      throw error;
-    }
-  },
-
-  requestToJoinClub: async (clubId: number) => {
-    set({ loading: true, error: null });
-    try {
-      await requestToJoinClubService(clubId);
-      set((state) => {
-        if (state.detailClub && state.detailClub.id === clubId) {
-          return {
-            loading: false,
-            detailClub: {
-              ...state.detailClub,
-              membership_status: 'pending_request' as const,
-            },
-          };
-        }
-        return { loading: false };
-      });
-    } catch (error) {
-      const apiError = error as ApiError;
-      const errorMessage = apiError.response?.data?.detail || '請求加入失敗';
-      set({ loading: false, error: errorMessage });
+      if (apiError.response?.status === 404) {
+        set({ loading: false, error: '此讀書會已被刪除', detailClub: null });
+      } else {
+        const errorMessage = apiError.response?.data?.detail || '退出讀書會失敗';
+        set({ loading: false, error: errorMessage });
+      }
       throw error;
     }
   },
 
   resetCreateSuccess: () => set({ createSuccess: false }),
   clearError: () => set({ error: null }),
-  setDetailClub: (club) => set({ detailClub: club }),
+  setDetailClub: (club: BookClubRead | null) => set({ detailClub: club }),
 
-  fetchDiscussions: async (clubId) => {
+  fetchDiscussions: async (clubId: number) => {
     set({ loading: true, error: null });
     try {
       const discussions = await getDiscussions(clubId);
       set({ discussions, loading: false });
     } catch (error) {
-      set({ error: 'Failed to fetch discussions', loading: false });
+      const apiError = error as ApiError;
+      if (apiError.response?.status === 404) {
+        set({ error: '此讀書會已被刪除', loading: false, detailClub: null });
+      } else {
+        set({ error: 'Failed to fetch discussions', loading: false });
+      }
     }
   },
-  addDiscussion: async (clubId, data) => {
+  addDiscussion: async (clubId: number, data: { title: string; content: string }) => {
     set({ loading: true, error: null });
     try {
       const newTopic = await createDiscussion(clubId, data);
       set((state) => ({ discussions: [...state.discussions, newTopic], loading: false }));
     } catch (error) {
-      set({ error: 'Failed to add discussion', loading: false });
+      const apiError = error as ApiError;
+      if (apiError.response?.status === 404) {
+        set({ error: '此讀書會已被刪除', loading: false, detailClub: null });
+      } else {
+        set({ error: 'Failed to add discussion', loading: false });
+      }
     }
   },
-  fetchDiscussion: async (clubId, topicId) => {
+  fetchDiscussion: async (clubId: number, topicId: number) => {
     set({ loading: true, error: null });
     try {
       const topic = await getDiscussion(clubId, topicId);
       set({ currentTopic: topic, loading: false });
     } catch (error) {
-      set({ error: 'Failed to fetch discussion', loading: false });
+      const apiError = error as ApiError;
+      if (apiError.response?.status === 404) {
+        set({ error: '此讀書會已被刪除', loading: false, detailClub: null });
+      } else {
+        set({ error: 'Failed to fetch discussion', loading: false });
+      }
     }
   },
-  addComment: async (clubId, topicId, data) => {
+  addComment: async (clubId: number, topicId: number, data: { content: string }) => {
     set({ loading: true, error: null });
     try {
       await createComment(clubId, topicId, data);
       const topic = await getDiscussion(clubId, topicId);
       set({ currentTopic: topic, loading: false });
     } catch (error) {
-      set({ error: 'Failed to add comment', loading: false });
+      const apiError = error as ApiError;
+      if (apiError.response?.status === 404) {
+        set({ error: '此讀書會已被刪除', loading: false, detailClub: null });
+      } else {
+        set({ error: 'Failed to add comment', loading: false });
+      }
     }
   },
 }));
