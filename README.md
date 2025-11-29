@@ -32,27 +32,40 @@ cd SE_Test_Project
 
 ```bash
 cd backend
-cp .env.example .env  # 如果有範例檔案
-# 或手動創建 .env 檔案
+cp .env.example .env
 ```
 
-`.env` 檔案內容範例：
+`.env` 檔案內容範例（請參考 `.env.example`）：
 
 ```env
 # Database
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
 POSTGRES_DB=bookclub_db
-
-# API
 DATABASE_URL=postgresql://postgres:your_password@db:5432/bookclub_db
-SECRET_KEY=your-secret-key-here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# Google OAuth (選填)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
+# Security
+SECRET_KEY=your-secret-key-here-please-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# CORS & Frontend
+FRONTEND_URL=http://localhost:5173,http://localhost:5174
+
+# Email (SendGrid)
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_FROM_EMAIL=noreply@example.com
+SENDGRID_VERIFICATION_TEMPLATE_ID=d-your_template_id
+SENDGRID_PASSWORD_RESET_TEMPLATE_ID=d-your_template_id
+
+# Cloudinary (Images)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Google OAuth (Optional)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 ### 3️⃣ 啟動後端服務 (Docker)
@@ -407,6 +420,17 @@ npm run build:check
 - **Architect**: 系統架構設計與技術決策
 - **Developer**: 功能開發與實作
 - **QA (Quality Assurance)**: 品質保證與測試
+
+## 👥 貢獻者
+
+感謝所有為本專案做出貢獻的人！
+
+<a href="https://github.com/JeterChan/BookClub/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=JeterChan/BookClub" alt="Contributors" />
+</a>
+<a href="https://github.com/jjwang1118">
+  <img src="https://github.com/jjwang1118.png?size=100" width="60px;" alt=""/>
+</a>
 
 ## 🚀 部署
 
