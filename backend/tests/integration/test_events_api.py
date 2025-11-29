@@ -481,3 +481,135 @@ class TestListEventsAPI:
         assert len(data["items"]) == 0
         assert data["pagination"]["totalItems"] == 0
         assert data["pagination"]["totalPages"] == 0
+
+
+class TestJoinLeaveEventAPI:
+    """測試加入與退出活動 API 端點"""
+
+    @pytest.fixture
+    def test_club_and_event(
+        self, session: Session, test_user_for_auth: User
+    ):
+        """建立測試讀書會與活動"""
+        # 1. 建立讀書會
+        club = BookClub(
+            name="活動測試讀書會",
+            description="用於測試加入退出",
+            visibility=BookClubVisibility.PUBLIC,
+            owner_id=test_user_for_auth.id
+        )
+        session.add(club)
+        session.commit()
+        session.refresh(club)
+        
+        # 2. 建立成員關係 (Owner)
+        membership = BookClubMember(
+            book_club_id=club.id,
+            user_id=test_user_for_auth.id,
+            role=MemberRole.OWNER
+        )
+        session.add(membership)
+        
+        # 3. 建立活動 (未來, Published)
+        from app.models.event import Event
+        event = Event(
+            club_id=club.id,
+            title="未來活動",
+            description="即將舉行",
+            event_datetime=datetime.utcnow() + timedelta(days=7),
+            meeting_url="https://meet.google.com/test",
+            organizer_id=test_user_for_auth.id,
+            status=EventStatus.PUBLISHED,
+            max_participants=10
+        )
+        session.add(event)
+        session.commit()
+        session.refresh(event)
+        
+        return {"club": club, "event": event}
+
+    def test_join_event_success(
+        self, authenticated_client: TestClient, test_club_and_event: dict, test_user_for_auth: User, session: Session
+    ):
+        """測試成功加入活動"""
+        # 建立另一個使用者作為參加者
+        participant_user = User(email="joiner@test.com", display_name="Joiner", password_hash="hash")
+        session.add(participant_user)
+        session.commit()
+        session.refresh(participant_user)
+        
+        # 加入讀書會
+        session.add(BookClubMember(book_club_id=test_club_and_event["club"].id, user_id=participant_user.id, role="member"))
+        session.commit()
+        
+        # 產生新的 token 給參加者
+        from app.core.security import create_access_token
+        token = create_access_token(data={"sub": participant_user.email})
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        response = authenticated_client.post(
+            f"/api/v1/clubs/{test_club_and_event['club'].id}/events/{test_club_and_event['event'].id}/join",
+            headers=headers
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["isParticipating"] is True
+        # 因為 owner 沒有參加，只有 joiner 參加，所以人數為 1
+        assert data["currentParticipants"] == 1
+
+    def test_join_event_already_joined(
+        self, authenticated_client: TestClient, test_club_and_event: dict
+    ):
+        """測試重複加入活動失敗"""
+        # 先加入一次
+        club_id = test_club_and_event["club"].id
+        event_id = test_club_and_event["event"].id
+        
+        response = authenticated_client.post(
+            f"/api/v1/clubs/{club_id}/events/{event_id}/join"
+        )
+        assert response.status_code == 200
+        
+        # 再加入一次
+        response = authenticated_client.post(
+            f"/api/v1/clubs/{club_id}/events/{event_id}/join"
+        )
+        assert response.status_code == 400
+        assert "已經參與" in response.json()["detail"]
+
+    def test_leave_event_success(
+        self, authenticated_client: TestClient, test_club_and_event: dict
+    ):
+        """測試成功退出活動"""
+        club_id = test_club_and_event["club"].id
+        event_id = test_club_and_event["event"].id
+        
+        # 先加入
+        authenticated_client.post(
+            f"/api/v1/clubs/{club_id}/events/{event_id}/join"
+        )
+        
+        # 退出
+        response = authenticated_client.post(
+            f"/api/v1/clubs/{club_id}/events/{event_id}/leave"
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["isParticipating"] is False
+        assert data["currentParticipants"] == 0
+
+    def test_leave_event_not_joined(
+        self, authenticated_client: TestClient, test_club_and_event: dict
+    ):
+        """測試未加入時退出失敗"""
+        club_id = test_club_and_event["club"].id
+        event_id = test_club_and_event["event"].id
+        
+        response = authenticated_client.post(
+            f"/api/v1/clubs/{club_id}/events/{event_id}/leave"
+        )
+        
+        assert response.status_code == 400
+        assert "尚未參與" in response.json()["detail"]
