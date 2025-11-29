@@ -37,13 +37,13 @@ def test_upload_avatar_api(authenticated_client: TestClient, auth_headers: dict)
     assert response.status_code == 200
     data = response.json()
     assert "avatar_url" in data
-    assert data["avatar_url"].startswith("/uploads/avatars/")
+    assert data["avatar_url"].startswith("https://res.cloudinary.com/")
 
-    # Clean up the created file
-    avatar_path = data["avatar_url"].lstrip("/")
-    import os
-    if os.path.exists(avatar_path):
-        os.remove(avatar_path)
+    # Removed local file cleanup as avatar is uploaded to Cloudinary
+    # avatar_path = data["avatar_url"].lstrip("/")
+    # import os
+    # if os.path.exists(avatar_path):
+    #     os.remove(avatar_path)
 
 def test_get_profile_unauthenticated_fails(client: TestClient):
     """測試未認證用戶無法獲取檔案"""

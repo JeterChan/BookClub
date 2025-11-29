@@ -31,7 +31,8 @@ def test_dashboard_data_structure():
         stats=DashboardStats(
             clubs_count=0,
             books_read=0,
-            discussions_count=0
+            discussions_count=0,
+            weekly_events=0
         ),
         clubs=[],
         recent_activities=[]
@@ -53,7 +54,8 @@ def test_dashboard_stats_camelcase_alias():
     stats = DashboardStats(
         clubs_count=5,
         books_read=10,
-        discussions_count=20
+        discussions_count=20,
+        weekly_events=0
     )
     
     # 使用 model_dump 並啟用 by_alias 來測試 alias

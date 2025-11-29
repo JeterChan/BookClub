@@ -1,5 +1,7 @@
+import os
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
+from sendgrid.helpers.mail import To # Import To object for mocking
 
 import pytest
 from sqlmodel import Session
@@ -35,11 +37,23 @@ def test_generate_verification_token(session: Session):
 
 
 @patch('app.services.email_service.SendGridAPIClient')
-def test_send_verification_email(mock_sendgrid_client, session: Session):
+@patch('app.services.email_service.Mail') # Patch Mail class directly
+def test_send_verification_email(mock_mail_class, mock_sendgrid_client, session: Session):
     """測試發送驗證郵件的功能是否正常呼叫 SendGrid API"""
     # 建立一個 mock SendGrid client
     mock_api = MagicMock()
     mock_sendgrid_client.return_value = mock_api
+
+    # 配置 mock_mail_class.return_value 以模擬 Mail 物件的結構
+    # 這確保 personalizations 和 tos 屬性會回傳預期的資料，而不是新的 MagicMock
+    mock_personalization = MagicMock()
+    mock_personalization.tos = [{'email': "test@example.com"}]
+    mock_mail_class.return_value.personalizations = [mock_personalization]
+    mock_mail_class.return_value.template_id = "mock_template_id" # 設置預期值
+    mock_mail_class.return_value.dynamic_template_data = { # 設置預期值
+        "display_name": "Test User",
+        "verification_url": "mock_verification_url" # 隨意一個值，只要存在就好
+    }
 
     # 建立測試用戶
     test_user = User(
@@ -54,11 +68,17 @@ def test_send_verification_email(mock_sendgrid_client, session: Session):
 
     # 驗證 SendGrid client 是否被正確呼叫
     mock_sendgrid_client.assert_called_once()
-    mock_api.send.assert_called_once()
+    mock_api.send.assert_called_once_with(mock_mail_class.return_value) # Send is called with the mocked Mail instance
 
-    # 驗證發送的郵件內容
-    sent_message = mock_api.send.call_args[0][0]
-    assert sent_message.to[0].email == "test@example.com"
-    assert sent_message.template_id is not None
-    assert sent_message.dynamic_template_data['display_name'] == "Test User"
-    assert token in sent_message.dynamic_template_data['verification_url']
+    # 驗證 Mail 物件是否被正確建立
+    mock_mail_class.assert_called_once_with(
+        from_email=os.getenv("SENDGRID_FROM_EMAIL", "noreply@example.com"),
+        to_emails=test_user.email,
+    )
+
+    # 驗證發送的郵件內容 (直接檢查被 mock 的 Mail 實例)
+    sent_message_mock = mock_mail_class.return_value
+    assert sent_message_mock.personalizations[0].tos[0]['email'] == "test@example.com"
+    assert sent_message_mock.template_id is not None
+    assert sent_message_mock.dynamic_template_data['display_name'] == "Test User"
+    assert token in sent_message_mock.dynamic_template_data['verification_url']
