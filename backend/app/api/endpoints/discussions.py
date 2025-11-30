@@ -29,6 +29,8 @@ def get_discussion_topics(
     topics = db.exec(select(DiscussionTopic).where(DiscussionTopic.club_id == club_id).options(selectinload(DiscussionTopic.author))).all()
     return topics
 
+from app.services import discussion_service
+
 @router.post("/{club_id}/discussions", response_model=DiscussionTopicRead)
 def create_discussion_topic(
     *, 
@@ -39,14 +41,12 @@ def create_discussion_topic(
     member: BookClubMember = Depends(get_club_member)
 ):
     """建立新的討論主題"""
-    topic = DiscussionTopic.from_orm(topic_in, update={
-        'club_id': club_id,
-        'owner_id': current_user.id
-    })
-    db.add(topic)
-    db.commit()
-    db.refresh(topic)
-    return topic
+    return discussion_service.create_topic(
+        session=db,
+        club_id=club_id,
+        owner_id=current_user.id,
+        topic_in=topic_in
+    )
 
 @router.get("/{club_id}/discussions/{topic_id}", response_model=DiscussionTopicReadWithComments)
 def get_discussion_topic(
@@ -86,15 +86,12 @@ def create_discussion_comment(
     if not topic or topic.club_id != club_id:
         raise HTTPException(status_code=404, detail="Topic not found")
 
-    comment = DiscussionComment.from_orm(comment_in, update={
-        'topic_id': topic_id,
-        'owner_id': current_user.id
-    })
-    topic.comment_count += 1
-    db.add(comment)
-    db.add(topic)
-    db.commit()
-    db.refresh(comment)
+    comment = discussion_service.create_comment(
+        session=db,
+        topic_id=topic_id,
+        owner_id=current_user.id,
+        comment_in=comment_in
+    )
     
     # 重新載入 comment 以包含 owner 關聯資料
     comment = db.exec(
