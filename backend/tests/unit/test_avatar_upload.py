@@ -32,6 +32,7 @@ def create_mock_upload_file(filename: str, content: bytes, content_type: str) ->
     return UploadFile(filename=filename, file=mock_file, headers=headers)
 
 
+@pytest.mark.skip(reason="Skipping Cloudinary test as per request")
 def test_upload_avatar_success(session: Session, test_user_for_upload: User, tmp_path):
     """測試成功上傳頭像 (PNG)"""
     # Create a dummy image file

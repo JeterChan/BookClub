@@ -4,10 +4,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import ClubDetail from '../ClubDetail';
 import { useBookClubStore } from '../../../store/bookClubStore';
+import { useAuthStore } from '../../../store/authStore';
 import toast from 'react-hot-toast';
 
 // Mock the store
 vi.mock('../../../store/bookClubStore');
+vi.mock('../../../store/authStore');
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
@@ -48,6 +50,11 @@ describe('ClubDetail Component', () => {
   // 重置 mocks
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mock for auth store - authenticated
+    (useAuthStore as any).mockReturnValue({
+      isAuthenticated: true,
+      user: { id: 1, name: 'Test User' }
+    });
   });
 
   // 測試 1: 未加入的公開讀書會顯示「加入讀書會」按鈕
@@ -83,18 +90,18 @@ describe('ClubDetail Component', () => {
     expect(mockJoinClub).toHaveBeenCalledWith(1);
   });
 
-  // 測試 2: 未加入的私密讀書會顯示「請求加入」按鈕
-  test('shows "請求加入" button for private club when not a member', () => {
+  // 測試 2: 未加入的私密讀書會顯示「加入讀書會」按鈕 (統一顯示文字)
+  test('shows "加入讀書會" button for private club when not a member', () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
-    const mockRequestToJoinClub = vi.fn();
+    const mockJoinClub = vi.fn();
     
     vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPrivateClub, membership_status: 'not_member' },
       loading: false,
       error: null,
       fetchClubDetail: mockFetchClubDetail,
-      requestToJoinClub: mockRequestToJoinClub
+      joinClub: mockJoinClub
     });
 
     render(
@@ -105,15 +112,15 @@ describe('ClubDetail Component', () => {
       </MemoryRouter>
     );
 
-    // 驗證「請求加入」按鈕存在
-    const requestButton = screen.getByText('請求加入');
-    expect(requestButton).toBeInTheDocument();
+    // 驗證「加入讀書會」按鈕存在 (私密社團也顯示加入，點擊後邏輯不同)
+    const joinButton = screen.getByText('加入讀書會');
+    expect(joinButton).toBeInTheDocument();
     
     // 點擊按鈕
-    fireEvent.click(requestButton);
+    fireEvent.click(joinButton);
     
-    // 驗證 requestToJoinClub 被調用
-    expect(mockRequestToJoinClub).toHaveBeenCalledWith(2);
+    // 驗證 joinClub 被調用
+    expect(mockJoinClub).toHaveBeenCalledWith(2);
   });
 
   // 測試 3: 已加入的讀書會顯示「退出讀書會」按鈕
@@ -149,8 +156,8 @@ describe('ClubDetail Component', () => {
     expect(mockLeaveClub).toHaveBeenCalledWith(1);
   });
 
-  // 測試 4: 已請求加入的私密讀書會顯示禁用的「已請求加入」按鈕
-  test('shows disabled "已請求加入" button when join request is pending', () => {
+  // 測試 4: 已請求加入的私密讀書會顯示禁用的「等待審核」按鈕
+  test('shows disabled "等待審核" button when join request is pending', () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
     
@@ -169,8 +176,8 @@ describe('ClubDetail Component', () => {
       </MemoryRouter>
     );
 
-    // 驗證「已請求加入」按鈕存在且被禁用
-    const pendingButton = screen.getByText('已請求加入');
+    // 驗證「等待審核」按鈕存在且被禁用
+    const pendingButton = screen.getByText('等待審核');
     expect(pendingButton).toBeInTheDocument();
     expect(pendingButton).toBeDisabled();
   });
@@ -204,7 +211,8 @@ describe('ClubDetail Component', () => {
   test('shows success toast when joining club succeeds', async () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
-    const mockJoinClub = vi.fn().mockResolvedValue(undefined);
+    // Mock return value structure expected by component
+    const mockJoinClub = vi.fn().mockResolvedValue({ joined: true, requires_approval: false });
 
     vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPublicClub, membership_status: 'not_member' },
@@ -229,17 +237,15 @@ describe('ClubDetail Component', () => {
     // 等待操作完成
     await waitFor(() => {
       expect(mockJoinClub).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('成功加入讀書會！');
     });
-    
-    // 驗證成功提示被顯示
-    expect(toast.success).toHaveBeenCalledWith('成功加入讀書會！');
   });
 
-  // 測試 7: 操作失敗時顯示錯誤提示
-  test('shows error toast when joining club fails', async () => {
+  // 測試 7: 操作失敗時呼叫 joinClub
+  test('calls joinClub on button click even if it fails', async () => {
     // 設置 mock store
     const mockFetchClubDetail = vi.fn();
-    const mockJoinClub = vi.fn().mockRejectedValue(new Error('加入失敗'));
+    const mockJoinClub = vi.fn().mockRejectedValue(new Error('加入讀書會失敗'));
 
     vi.mocked(useBookClubStore).mockReturnValue({
       detailClub: { ...mockPublicClub, membership_status: 'not_member' },
@@ -265,9 +271,31 @@ describe('ClubDetail Component', () => {
     await waitFor(() => {
       expect(mockJoinClub).toHaveBeenCalled();
     });
-    
-    // 驗證錯誤提示被顯示
+  });
+
+  // 測試 7b: 當 store 有錯誤時顯示錯誤提示
+  test('shows error toast when store reports error', () => {
+    const mockFetchClubDetail = vi.fn();
+    const mockClearError = vi.fn();
+
+    vi.mocked(useBookClubStore).mockReturnValue({
+      detailClub: { ...mockPublicClub, membership_status: 'not_member' },
+      loading: false,
+      error: '加入讀書會失敗',
+      fetchClubDetail: mockFetchClubDetail,
+      clearError: mockClearError
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/clubs/1']}>
+        <Routes>
+          <Route path="/clubs/:clubId" element={<ClubDetail />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
     expect(toast.error).toHaveBeenCalledWith('加入讀書會失敗');
+    expect(mockClearError).toHaveBeenCalled();
   });
 
   // 測試 8: 擁有者或管理員顯示「管理」按鈕
@@ -291,7 +319,5 @@ describe('ClubDetail Component', () => {
     const manageButton = screen.getByText('管理');
     expect(manageButton).toBeInTheDocument();
     fireEvent.click(manageButton);
-    // Here we can't easily test navigation with this setup,
-    // but we've confirmed the button renders and is clickable.
   });
 });

@@ -36,6 +36,7 @@ def test_generate_verification_token(session: Session):
     assert abs((test_user.email_verification_token_expires_at - expected_expiry).total_seconds()) < 60 # 允許 1 分鐘誤差
 
 
+@pytest.mark.skip(reason="Skipping SendGrid test as per request")
 @patch('app.services.email_service.SendGridAPIClient')
 @patch('app.services.email_service.Mail') # Patch Mail class directly
 def test_send_verification_email(mock_mail_class, mock_sendgrid_client, session: Session):

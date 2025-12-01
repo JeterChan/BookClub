@@ -140,7 +140,7 @@ export default function Login() {
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
             <Input
               label="Email"
               type="email"

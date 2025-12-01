@@ -15,5 +15,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    reporters: ['default', 'junit'],
+    outputFile: 'allure-results/results.xml',
   },
 })

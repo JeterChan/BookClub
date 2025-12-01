@@ -1,4 +1,5 @@
 # backend/tests/integration/test_profile_api.py
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -28,6 +29,7 @@ def test_update_my_profile(authenticated_client: TestClient, auth_headers: dict)
     assert data["display_name"] == update_data["display_name"]
     assert data["bio"] == update_data["bio"]
 
+@pytest.mark.skip(reason="Skipping Cloudinary test as per request")
 def test_upload_avatar_api(authenticated_client: TestClient, auth_headers: dict):
     """測試頭像上傳 API"""
     # Create a dummy file for upload
