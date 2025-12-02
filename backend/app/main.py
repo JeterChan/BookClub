@@ -4,7 +4,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from app.api.api import api_router
 from app.models.user import UserProfileRead
-from app.models.interest_tag import InterestTagRead
 from app.core.logging_middleware import LoggingMiddleware
 from app.core.logging_config import app_logger
 import os

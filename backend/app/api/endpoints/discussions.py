@@ -11,11 +11,10 @@ from app.schemas.discussion import (
     DiscussionCommentCreate, DiscussionCommentRead
 )
 from app.models.book_club_member import BookClubMember
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_club_member
+from app.services import discussion_service
 
 router = APIRouter()
-
-from app.core.security import get_club_member
 
 @router.get("/{club_id}/discussions", response_model=List[DiscussionTopicRead])
 def get_discussion_topics(
@@ -28,8 +27,6 @@ def get_discussion_topics(
     """獲取讀書會的所有討論主題"""
     topics = db.exec(select(DiscussionTopic).where(DiscussionTopic.club_id == club_id).options(selectinload(DiscussionTopic.author))).all()
     return topics
-
-from app.services import discussion_service
 
 @router.post("/{club_id}/discussions", response_model=DiscussionTopicRead)
 def create_discussion_topic(

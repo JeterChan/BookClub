@@ -8,7 +8,7 @@ from app.models.user import User
 from app.models.book_club import BookClub, BookClubCreate, BookClubVisibility
 from app.models.book_club_member import BookClubMember, MemberRole
 from app.models.club_tag import ClubTag
-from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
+from app.models.club_join_request import JoinRequestStatus
 from app.services import book_club_service
 
 

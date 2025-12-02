@@ -51,7 +51,7 @@ class PasswordResetService:
         if len(recent_tokens) >= PasswordResetService.MAX_REQUESTS_PER_HOUR:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"您在 1 小時內已請求過多次，請稍後再試"
+                detail="您在 1 小時內已請求過多次，請稍後再試"
             )
         
         # 生成新 Token

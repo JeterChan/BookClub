@@ -1,4 +1,3 @@
-import pytest
 from datetime import datetime
 from sqlmodel import Session
 from app.models.user import User

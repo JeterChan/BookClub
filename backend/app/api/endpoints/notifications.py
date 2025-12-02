@@ -7,7 +7,6 @@ from pydantic import field_serializer
 from app.models.notification import Notification, NotificationType
 from app.models.user import User
 from app.models.book_club_member import BookClubMember
-from app.models.event import Event
 from app.db.session import get_session
 from app.core.security import get_current_user
 from pydantic import BaseModel

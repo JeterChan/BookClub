@@ -1,5 +1,4 @@
 
-import pytest
 from sqlmodel import Session
 from app.services.discussion_service import create_topic, create_comment, get_topics_by_club
 from app.schemas.discussion import DiscussionTopicCreate, DiscussionCommentCreate
@@ -52,8 +51,8 @@ def test_get_topics_by_club(session: Session, test_user: User):
     session.commit()
     session.refresh(club)
 
-    topic1 = create_topic(session=session, club_id=club.id, owner_id=test_user.id, topic_in=DiscussionTopicCreate(title="T1", content="C1"))
-    topic2 = create_topic(session=session, club_id=club.id, owner_id=test_user.id, topic_in=DiscussionTopicCreate(title="T2", content="C2"))
+    create_topic(session=session, club_id=club.id, owner_id=test_user.id, topic_in=DiscussionTopicCreate(title="T1", content="C1"))
+    create_topic(session=session, club_id=club.id, owner_id=test_user.id, topic_in=DiscussionTopicCreate(title="T2", content="C2"))
 
     # Execute
     topics = get_topics_by_club(session=session, club_id=club.id)

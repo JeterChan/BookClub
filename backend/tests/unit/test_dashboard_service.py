@@ -1,4 +1,3 @@
-import pytest
 from sqlmodel import Session
 from app.services.dashboard_service import get_user_dashboard
 from app.schemas.dashboard import DashboardData, DashboardStats

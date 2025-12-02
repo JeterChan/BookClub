@@ -1,9 +1,7 @@
 # backend/tests/integration/test_profile_api.py
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
 
-from app.models.user import User
 
 
 import base64

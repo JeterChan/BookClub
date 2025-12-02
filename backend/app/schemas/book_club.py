@@ -5,7 +5,7 @@
 """
 from typing import List, Optional
 from datetime import datetime
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel
 from pydantic import BaseModel
 
 from app.models.book_club import BookClubVisibility

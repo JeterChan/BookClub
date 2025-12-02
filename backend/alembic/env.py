@@ -1,21 +1,21 @@
-from logging.config import fileConfig
-from os.path import abspath, dirname
 import os
 import sys
+from logging.config import fileConfig
+
 from dotenv import load_dotenv
-
-project_root = dirname(dirname(abspath(__file__)))
-sys.path.insert(0, project_root)
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
-from alembic import context
 
 load_dotenv()  # Load environment variables from .env file
 
-from sqlmodel import SQLModel
-from app.models import *  # Import all models to ensure they are registered with SQLModel
+# Determine the project root directory
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+from sqlalchemy import engine_from_config  # noqa: E402
+from sqlalchemy import pool  # noqa: E402
+from sqlmodel import SQLModel  # noqa: E402
+
+from alembic import context  # noqa: E402
+from app.models import *  # noqa: E402, F403 Import all models to ensure they are registered with SQLModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

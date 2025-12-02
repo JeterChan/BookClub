@@ -101,19 +101,3 @@ def another_user_fixture(session: Session) -> User:
     session.commit()
     session.refresh(user)
     return user
-
-
-@pytest.fixture(name="another_user")
-def another_user_fixture(session: Session) -> User:
-    """Create another test user for various scenarios."""
-    from app.core.security import hash_password
-    user = User(
-        email="another@example.com",
-        display_name="Another User",
-        password_hash=hash_password("TestPassword456"),
-        email_verified=True
-    )
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return user

@@ -1,13 +1,14 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
-from sqlmodel import Field, SQLModel, Relationship
-from .user import User
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from .book_club import BookClub
+    from .user import User
 
 class DiscussionTopicBase(SQLModel):
     title: str
     content: str
-
-from .book_club import BookClub
 
 class DiscussionTopic(DiscussionTopicBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

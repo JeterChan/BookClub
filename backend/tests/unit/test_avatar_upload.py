@@ -1,10 +1,7 @@
 # backend/tests/unit/test_avatar_upload.py
 import pytest
-import os
 import io
 import base64
-import time
-from unittest.mock import MagicMock
 from sqlmodel import Session
 from fastapi import UploadFile
 

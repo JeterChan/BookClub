@@ -5,8 +5,7 @@ from app.schemas.dashboard import (
     DashboardData,
     DashboardStats,
     DashboardClub,
-    DashboardActivity,
-    RelatedEntity
+    DashboardActivity
 )
 from app.models.book_club import BookClub
 from app.models.book_club_member import BookClubMember

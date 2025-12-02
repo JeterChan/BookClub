@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from app.core.security import get_current_user
@@ -6,7 +6,6 @@ from app.db.session import get_session
 from app.models.user import User
 from app.schemas.dashboard import DashboardData
 from app.services import dashboard_service
-from app.services.user_service import UserService
 
 router = APIRouter()
 

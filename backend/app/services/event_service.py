@@ -486,7 +486,7 @@ def leave_event(
     """
     from ..models.book_club import BookClub
     from ..models.book_club_member import BookClubMember
-    from ..models.event import Event, EventParticipant, ParticipantStatus, EventStatus
+    from ..models.event import Event, EventParticipant, ParticipantStatus
     
     # 檢查讀書會是否存在
     club = session.get(BookClub, club_id)

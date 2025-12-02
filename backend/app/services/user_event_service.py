@@ -1,6 +1,5 @@
 from typing import List, Optional, Tuple
 from sqlmodel import Session, select, func
-from datetime import datetime
 
 from app.models.event import Event, EventStatus, EventParticipant
 from app.models.book_club import BookClub

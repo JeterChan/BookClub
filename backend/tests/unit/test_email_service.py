@@ -1,7 +1,6 @@
 import os
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
-from sendgrid.helpers.mail import To # Import To object for mocking
 
 import pytest
 from sqlmodel import Session

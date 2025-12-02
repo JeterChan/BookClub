@@ -1,9 +1,8 @@
 import pytest
-from sqlmodel import Session, select
-from fastapi import HTTPException
+from sqlmodel import Session
 from sqlalchemy.exc import IntegrityError
 from app.services.user_service import UserService
-from app.models.user import User, UserCreate
+from app.models.user import UserCreate
 
 @pytest.fixture
 def user_service(session: Session):
@@ -67,7 +66,7 @@ def test_update_profile(session: Session, user_service: UserService):
 def test_authenticate_unverified_user(session: Session, user_service: UserService):
     """Test unverified email user cannot login"""
     user_data = UserCreate(email="unverified@example.com", password="ValidPassword123", display_name="Unverified")
-    user = user_service.create(user_data)
+    user_service.create(user_data)
     # user.email_verified is False by default
     
     with pytest.raises(ValueError, match="請先完成 Email 驗證"):
