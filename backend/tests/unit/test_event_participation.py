@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from sqlmodel import Session
 
 from app.models.user import User
-from app.models.book_club import BookClub, BookClubVisibility
-from app.models.book_club_member import BookClubMember, MemberRole
+from app.models.book_club import BookClub
+from app.models.book_club_member import BookClubMember
 from app.models.event import Event, EventStatus, EventParticipant, ParticipantStatus
 from app.services.event_service import join_event, leave_event
 

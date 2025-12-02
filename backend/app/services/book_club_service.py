@@ -211,7 +211,7 @@ def list_book_clubs(
     user_id: Optional[int] = None,
     current_user: Optional[User] = None
 ) -> tuple[List[BookClubReadWithDetails], dict]:
-    from sqlmodel import func, col
+    from sqlmodel import func
     
     # 基礎查詢：顯示所有讀書會（不論 visibility）
     query = select(BookClub)
@@ -404,17 +404,17 @@ def join_book_club(session: Session, club_id: int, user_id: int) -> Optional[Clu
         print(f"---LOG: Club with id {club_id} not found")
         raise HTTPException(status_code=404, detail="讀書會不存在")
 
-    print(f"---LOG: Checking if user is already a member")
+    print("---LOG: Checking if user is already a member")
     member_record = session.exec(
         select(BookClubMember).where(BookClubMember.book_club_id == club_id, BookClubMember.user_id == user_id)
     ).first()
     if member_record:
-        print(f"---LOG: User is already a member, raising 409")
+        print("---LOG: User is already a member, raising 409")
         raise HTTPException(status_code=409, detail="您已經是此讀書會的成員")
 
     # 公開讀書會：直接加入
     if book_club.visibility == BookClubVisibility.PUBLIC:
-        print(f"---LOG: Public club - directly adding user as member")
+        print("---LOG: Public club - directly adding user as member")
         new_member = BookClubMember(
             user_id=user_id,
             book_club_id=club_id,
@@ -422,11 +422,11 @@ def join_book_club(session: Session, club_id: int, user_id: int) -> Optional[Clu
         )
         session.add(new_member)
         session.commit()
-        print(f"---LOG: User successfully added to public club")
+        print("---LOG: User successfully added to public club")
         return None
     
     # 私密讀書會：創建加入請求
-    print(f"---LOG: Private club - checking for existing request")
+    print("---LOG: Private club - checking for existing request")
     existing_request = session.exec(
         select(ClubJoinRequest).where(
             ClubJoinRequest.book_club_id == club_id,
@@ -435,15 +435,15 @@ def join_book_club(session: Session, club_id: int, user_id: int) -> Optional[Clu
         )
     ).first()
     if existing_request:
-        print(f"---LOG: User already has pending request, raising 409")
+        print("---LOG: User already has pending request, raising 409")
         raise HTTPException(status_code=409, detail="您已送出過加入請求")
 
-    print(f"---LOG: Creating join request for private club")
+    print("---LOG: Creating join request for private club")
     new_request = ClubJoinRequest(user_id=user_id, book_club_id=club_id, status=JoinRequestStatus.PENDING)
     session.add(new_request)
     session.commit()
     session.refresh(new_request)
-    print(f"---LOG: Join request successfully created.")
+    print("---LOG: Join request successfully created.")
     
     # Send notification to club admins and owners
     notification_service.notify_new_join_request(session, club_id, new_request)

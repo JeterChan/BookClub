@@ -1,14 +1,12 @@
 # backend/app/api/endpoints/interest_tags.py
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session
 
 from app.db.session import get_session
 from app.core.security import get_current_user
-from app.models.user import User
 from app.models.interest_tag import InterestTagRead, InterestTagCreate
 from app.services.interest_tag_service import interest_tag_service
-from app.services.user_service import UserService
 
 router = APIRouter()
 

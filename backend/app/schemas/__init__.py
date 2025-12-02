@@ -1,3 +1,3 @@
-from .book_club import BookClubReadWithDetails, BookClubListItem
-from .dashboard import DashboardData, DashboardStats, DashboardClub, DashboardActivity
-from .email_verification import EmailVerificationRequest, EmailVerificationResponse, VerifyEmailRequest
+from .book_club import BookClubReadWithDetails as BookClubReadWithDetails, BookClubListItem as BookClubListItem
+from .dashboard import DashboardData as DashboardData, DashboardStats as DashboardStats, DashboardClub as DashboardClub, DashboardActivity as DashboardActivity
+from .email_verification import EmailVerificationRequest as EmailVerificationRequest, EmailVerificationResponse as EmailVerificationResponse, VerifyEmailRequest as VerifyEmailRequest

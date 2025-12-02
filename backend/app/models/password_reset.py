@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
 
 class PasswordResetToken(SQLModel, table=True):

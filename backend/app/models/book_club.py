@@ -8,8 +8,10 @@ from pydantic import field_validator
 from .user import User
 
 if TYPE_CHECKING:
-    from .club_tag import ClubTag, ClubTagRead
+    from .club_tag import ClubTag
     from .event import Event
+    from .book_club_member import BookClubMember
+    from .discussion import DiscussionTopic
 
 # 必須在運行時導入 BookClubTagLink 作為 link_model
 from .club_tag import BookClubTagLink

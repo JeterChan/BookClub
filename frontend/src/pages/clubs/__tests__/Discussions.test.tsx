@@ -23,8 +23,8 @@ describe('Discussions Page', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Discussions')).toBeInTheDocument();
-    expect(screen.getByText('New Topic')).toBeInTheDocument();
+    expect(screen.getByText('討論區')).toBeInTheDocument();
+    expect(screen.getByText('+ 發起新討論')).toBeInTheDocument();
     expect(await screen.findByText('Test Topic')).toBeInTheDocument();
   });
 });

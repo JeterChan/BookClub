@@ -6,7 +6,6 @@ import logging
 import sys
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
-from datetime import datetime
 
 # 日誌目錄
 LOG_DIR = Path(__file__).parent.parent.parent / "logs"
