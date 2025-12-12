@@ -1,5 +1,4 @@
 # backend/tests/integration/test_view_book_club.py
-import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 

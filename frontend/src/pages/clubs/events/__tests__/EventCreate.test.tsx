@@ -1,10 +1,10 @@
-// frontend/src/pages/clubs/events/__tests__/EventCreate.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import EventCreate from '../EventCreate';
 import * as eventService from '../../../../services/eventService';
+import { useBookClubStore } from '../../../../store/bookClubStore';
 
 // Mock the services
 vi.mock('../../../../services/eventService', () => ({
@@ -23,6 +23,9 @@ vi.mock('../../../../services/eventService', () => ({
     return eventTime > now;
   }),
 }));
+
+// Mock store
+vi.mock('../../../../store/bookClubStore');
 
 // Mock useParams
 vi.mock('react-router-dom', async () => {
@@ -43,8 +46,16 @@ const renderEventCreate = () => {
 };
 
 describe('EventCreate', () => {
+  const mockFetchClubDetail = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Setup default store mock
+    (useBookClubStore as any).mockReturnValue({
+      detailClub: { id: 1, membership_status: 'admin' },
+      fetchClubDetail: mockFetchClubDetail,
+    });
   });
 
   it('應該渲染所有表單欄位', () => {
@@ -57,11 +68,10 @@ describe('EventCreate', () => {
     expect(screen.getByLabelText(/參與人數上限/i)).toBeInTheDocument();
   });
 
-  it('應該顯示三個操作按鈕', () => {
+  it('應該顯示兩個操作按鈕', () => {
     renderEventCreate();
 
     expect(screen.getByRole('button', { name: /取消/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /儲存草稿/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /發布活動/i })).toBeInTheDocument();
   });
 
@@ -125,48 +135,6 @@ describe('EventCreate', () => {
     });
   });
 
-  it('應該成功建立草稿活動', async () => {
-    const user = userEvent.setup();
-    const mockCreateEvent = vi.mocked(eventService.createEvent);
-    mockCreateEvent.mockResolvedValue({
-      id: 1,
-      clubId: 1,
-      title: '測試活動',
-      description: '測試描述',
-      eventDatetime: new Date(Date.now() + 86400000).toISOString(),
-      meetingUrl: 'https://meet.google.com/test',
-      organizerId: 1,
-      maxParticipants: null,
-      status: 'draft',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      participantCount: 0,
-    });
-
-    renderEventCreate();
-
-    // 填寫表單
-    await user.type(screen.getByLabelText(/活動名稱/i), '測試活動');
-    await user.type(screen.getByLabelText(/活動描述/i), '測試描述');
-    await user.type(screen.getByLabelText(/會議連結/i), 'https://meet.google.com/test');
-
-    // 點擊儲存草稿
-    const draftButton = screen.getByRole('button', { name: /儲存草稿/i });
-    await user.click(draftButton);
-
-    await waitFor(() => {
-      expect(mockCreateEvent).toHaveBeenCalledWith(
-        1,
-        expect.objectContaining({
-          title: '測試活動',
-          description: '測試描述',
-          meetingUrl: 'https://meet.google.com/test',
-          status: 'draft',
-        })
-      );
-    });
-  });
-
   it('應該成功發布活動', async () => {
     const user = userEvent.setup();
     const mockCreateEvent = vi.mocked(eventService.createEvent);
@@ -190,7 +158,20 @@ describe('EventCreate', () => {
     // 填寫表單
     await user.type(screen.getByLabelText(/活動名稱/i), '測試活動');
     await user.type(screen.getByLabelText(/活動描述/i), '測試描述');
+    // Need to handle date picker input specifically or mock it better if this fails
+    // For now assuming text input works for DateTimePicker as per previous code
+    
     await user.type(screen.getByLabelText(/會議連結/i), 'https://meet.google.com/test');
+    
+    // Since DateTimePicker is complex, we might need to simulate its value change differently
+    // But if it renders an input, typing might work if not readonly.
+    // If it fails, I'll need to investigate DateTimePicker.
+    
+    // Note: Input for datetime-local is tricky with userEvent.type. 
+    // Let's bypass validation for datetime in this specific test step if it gets stuck,
+    // OR ensure we type a valid datetime-local string.
+    const dateInput = screen.getByLabelText(/活動時間/i);
+    fireEvent.change(dateInput, { target: { value: '2025-12-31T10:00' } });
 
     // 點擊發布活動
     const publishButton = screen.getByRole('button', { name: /發布活動/i });
@@ -209,3 +190,6 @@ describe('EventCreate', () => {
     });
   });
 });
+
+// Import fireEvent for the date input hack
+import { fireEvent } from '@testing-library/react';

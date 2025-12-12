@@ -2,7 +2,6 @@
 from sqlmodel import Session, select
 from typing import Optional
 from datetime import datetime, timedelta
-import time
 from fastapi import UploadFile
 from PIL import Image
 

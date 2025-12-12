@@ -104,7 +104,7 @@ export default function Register() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <Input
               label="顯示名稱"
               placeholder="請輸入顯示名稱"

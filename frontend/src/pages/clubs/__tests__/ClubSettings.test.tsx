@@ -21,9 +21,10 @@ describe('ClubSettings Page', () => {
   };
 
   const renderComponent = (membership_status = 'owner') => {
-    // Mock the book club store to provide detailClub
-    (useBookClubStore as vi.Mock).mockReturnValue({ 
-      detailClub: { ...mockClub, membership_status } 
+    // Mock the book club store to provide detailClub AND fetchClubDetail
+    (useBookClubStore as any).mockReturnValue({ 
+      detailClub: { ...mockClub, membership_status },
+      fetchClubDetail: vi.fn(),
     });
 
     // Reset the state of the actual management store before each render
@@ -88,4 +89,3 @@ describe('ClubSettings Page', () => {
     });
   });
 });
-

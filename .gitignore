@@ -78,8 +78,14 @@ logs/
 # *.bmad
 .bmad-infrastructure-devops
 # .gemini
-.github
+# .github
 
 # !.bmad-core/agents
 
 /docs/diagrams
+
+# Allure Reports and Results
+allure-report/
+all-results/
+frontend/allure-results/
+backend/allure-results/

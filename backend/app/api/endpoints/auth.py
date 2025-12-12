@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from sqlmodel import Session
 from datetime import timedelta
-from app.models.user import UserCreate, RegistrationResponse, UserLogin, Token, TokenWithUser, UserRead
+from app.models.user import UserCreate, RegistrationResponse, UserLogin, TokenWithUser, UserRead
 from app.schemas.email_verification import EmailVerificationRequest, EmailVerificationResponse
 from app.models.password_reset import (
     ForgotPasswordRequest, 
@@ -16,7 +16,7 @@ from app.services.email_service import EmailService
 from app.services.password_reset_service import PasswordResetService
 from app.db.session import get_session
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER
-from app.core.logging_config import log_auth_event, log_error, log_business_event
+from app.core.logging_config import log_auth_event, log_error
 
 router = APIRouter()
 

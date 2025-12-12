@@ -1,9 +1,3 @@
-# backend/app/core/permissions.py
-print("Loading permissions.py")
-
-from functools import wraps
-from typing import Annotated
-
 from fastapi import Depends, HTTPException, status
 from sqlmodel import Session
 
@@ -12,7 +6,6 @@ from app.db.session import get_session
 from app.models.book_club_member import MemberRole
 from app.models.user import User
 from app.services.member_service import MemberService
-from app.services.user_service import UserService
 
 def get_member_service(session: Session = Depends(get_session)) -> MemberService:
     return MemberService(session)

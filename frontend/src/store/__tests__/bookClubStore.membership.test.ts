@@ -44,8 +44,8 @@ describe('BookClubStore - Membership Actions', () => {
         useBookClubStore.setState({ detailClub: initialDetailClub });
       });
 
-      // Mock the service call to resolve successfully
-      (bookClubService.joinClub as vi.Mock).mockResolvedValue(undefined);
+      // Mock the service call to resolve successfully with joined: true
+      (bookClubService.joinClub as vi.Mock).mockResolvedValue({ joined: true, requires_approval: false });
 
       // Call the action
       await act(async () => {
@@ -57,6 +57,27 @@ describe('BookClubStore - Membership Actions', () => {
       expect(result.current.error).toBeNull();
       expect(result.current.detailClub?.membership_status).toBe('member');
       expect(result.current.detailClub?.member_count).toBe(initialDetailClub.member_count + 1);
+    });
+
+    it('should update membership_status to "pending_request" when approval is required', async () => {
+      const { result } = renderHook(() => useBookClubStore());
+      
+      act(() => {
+        useBookClubStore.setState({ detailClub: { ...initialDetailClub, visibility: 'private' } });
+      });
+
+      // Mock the service call to resolve with requires_approval: true
+      (bookClubService.joinClub as vi.Mock).mockResolvedValue({ joined: false, requires_approval: true });
+
+      await act(async () => {
+        await result.current.joinClub(clubId);
+      });
+
+      expect(result.current.loading).toBe(false);
+      expect(result.current.error).toBeNull();
+      expect(result.current.detailClub?.membership_status).toBe('pending_request');
+      // Member count should NOT increase
+      expect(result.current.detailClub?.member_count).toBe(initialDetailClub.member_count);
     });
 
     it('should set an error message on failed join', async () => {
@@ -119,45 +140,6 @@ describe('BookClubStore - Membership Actions', () => {
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toContain(errorMessage);
       expect(result.current.detailClub?.membership_status).toBe('member');
-    });
-  });
-
-  describe('requestToJoinClub', () => {
-    it('should update membership_status to "pending_request" on successful request', async () => {
-      const { result } = renderHook(() => useBookClubStore());
-      
-      act(() => {
-        useBookClubStore.setState({ detailClub: { ...initialDetailClub, visibility: 'private' } });
-      });
-
-      (bookClubService.requestToJoinClub as vi.Mock).mockResolvedValue(undefined);
-
-      await act(async () => {
-        await result.current.requestToJoinClub(clubId);
-      });
-
-      expect(result.current.loading).toBe(false);
-      expect(result.current.error).toBeNull();
-      expect(result.current.detailClub?.membership_status).toBe('pending_request');
-    });
-
-    it('should set an error on failed request', async () => {
-      const { result } = renderHook(() => useBookClubStore());
-      const errorMessage = '請求加入失敗';
-
-      act(() => {
-        useBookClubStore.setState({ detailClub: { ...initialDetailClub, visibility: 'private' } });
-      });
-
-      (bookClubService.requestToJoinClub as vi.Mock).mockRejectedValue(new Error(errorMessage));
-
-      await act(async () => {
-        await expect(result.current.requestToJoinClub(clubId)).rejects.toThrow(errorMessage);
-      });
-
-      expect(result.current.loading).toBe(false);
-      expect(result.current.error).toContain(errorMessage);
-      expect(result.current.detailClub?.membership_status).toBe('not_member');
     });
   });
 });

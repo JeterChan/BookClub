@@ -1,4 +1,3 @@
-import pytest
 from sqlmodel import Session
 from app.services import notification_service
 from app.models.notification import Notification, NotificationType
@@ -60,4 +59,4 @@ def test_notify_new_join_request_creates_notifications_for_admins(session: Sessi
         assert notif.content['club_id'] == club.id
         assert notif.content['club_name'] == "Test Club"
         assert notif.content['request_id'] == request.id
-        assert notif.is_read == False
+        assert notif.is_read is False

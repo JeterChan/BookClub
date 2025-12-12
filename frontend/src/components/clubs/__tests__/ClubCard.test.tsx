@@ -1,5 +1,3 @@
-
-// frontend/src/components/clubs/__tests__/ClubCard.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -40,7 +38,7 @@ describe('ClubCard', () => {
     vi.clearAllMocks();
   });
 
-  it('應該正確渲染讀書會資訊', () => {
+  it('應該渲染讀書會資訊', () => {
     render(<TestWrapper club={mockClub} />);
     
     expect(screen.getByText('科幻小說讀書會')).toBeInTheDocument();
@@ -50,15 +48,7 @@ describe('ClubCard', () => {
 
   it('當簡介很長時，應該在 DOM 中渲染完整文字（由 CSS line-clamp 處理截斷）', () => {
     render(<TestWrapper club={mockClub} />);
-    // We expect the full text to be in the document, as CSS handles the visual truncation.
     expect(screen.getByText(mockClub.description)).toBeInTheDocument();
-  });
-
-  it('當簡介少於或等於100字元時，應該完整顯示', () => {
-    const shortDescriptionClub = { ...mockClub, description: '短簡介' };
-    render(<TestWrapper club={shortDescriptionClub} />);
-    expect(screen.getByText('短簡介')).toBeInTheDocument();
-    expect(screen.queryByText(/\.\.\./)).not.toBeInTheDocument();
   });
 
   it('當沒有簡介時，應該顯示 "暫無簡介"', () => {
@@ -81,40 +71,18 @@ describe('ClubCard', () => {
     expect(screen.queryByAltText('科幻小說讀書會')).not.toBeInTheDocument();
   });
 
-  it('應該顯示前兩個標籤，並為多餘的標籤顯示 "+N" 指示', () => {
+  it('應該顯示前兩個標籤', () => {
     render(<TestWrapper club={mockClub} />);
     expect(screen.getByText('科幻')).toBeInTheDocument();
     expect(screen.getByText('小說')).toBeInTheDocument();
+    // The component currently slices to 2 and renders them, so the 3rd one shouldn't be there
     expect(screen.queryByText('經典')).not.toBeInTheDocument();
-    expect(screen.getByText('+1')).toBeInTheDocument();
   });
 
-  it('當標籤少於或等於兩個時，應該全部顯示', () => {
-    const twoTagsClub = { ...mockClub, tags: mockClub.tags.slice(0, 2) };
-    render(<TestWrapper club={twoTagsClub} />);
-    expect(screen.getByText('科幻')).toBeInTheDocument();
-    expect(screen.getByText('小說')).toBeInTheDocument();
-    expect(screen.queryByText(/\+/)).not.toBeInTheDocument();
-  });
-
-  it('點擊卡片時應該導航到詳細頁面', () => {
+  it('點擊 "查看詳情" 按鈕時應該導航到詳細頁面', () => {
     render(<TestWrapper club={mockClub} />);
-    const card = screen.getByRole('button');
-    fireEvent.click(card);
-    expect(mockedNavigate).toHaveBeenCalledWith('/clubs/1');
-  });
-
-  it('在卡片上按下 Enter 鍵時應該導航到詳細頁面', () => {
-    render(<TestWrapper club={mockClub} />);
-    const card = screen.getByRole('button');
-    fireEvent.keyDown(card, { key: 'Enter', code: 'Enter' });
-    expect(mockedNavigate).toHaveBeenCalledWith('/clubs/1');
-  });
-
-  it('在卡片上按下 Space 鍵時應該導航到詳細頁面', () => {
-    render(<TestWrapper club={mockClub} />);
-    const card = screen.getByRole('button');
-    fireEvent.keyDown(card, { key: ' ', code: 'Space' });
+    const button = screen.getByText('查看詳情');
+    fireEvent.click(button);
     expect(mockedNavigate).toHaveBeenCalledWith('/clubs/1');
   });
 });

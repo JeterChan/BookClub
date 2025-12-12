@@ -15,7 +15,7 @@ class InterestTagService:
         """獲取所有興趣標籤，可選擇只看預設或依名稱搜尋"""
         query = select(InterestTag)
         if predefined_only:
-            query = query.where(InterestTag.is_predefined == True)
+            query = query.where(InterestTag.is_predefined.is_(True))
         if search:
             query = query.where(func.lower(InterestTag.name).contains(search.lower()))
         

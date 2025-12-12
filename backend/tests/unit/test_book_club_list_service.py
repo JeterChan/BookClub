@@ -1,7 +1,6 @@
 # backend/tests/unit/test_book_club_list_service.py
 import pytest
-from sqlmodel import Session, select
-from datetime import datetime
+from sqlmodel import Session
 
 from app.models.book_club import BookClub
 from app.models.club_tag import ClubTag, BookClubTagLink
