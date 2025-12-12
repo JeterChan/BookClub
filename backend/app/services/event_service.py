@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, Tuple
 from datetime import datetime, timezone
 from sqlmodel import Session, select, func, col
+from sqlalchemy import func as sql_func
 from fastapi import HTTPException, status
 import re
 import math
@@ -191,8 +192,29 @@ def list_events(
     # 限制 page_size 最大值
     page_size = min(page_size, 100)
     
-    # 建立基礎查詢
-    query = select(Event).where(Event.club_id == club_id)
+    # ✨ 使用 JOIN 查詢解決 N+1 問題
+    # Step 1: 建立 subquery 計算每個活動的參與人數
+    participant_count_subq = (
+        select(
+            EventParticipant.event_id,
+            sql_func.count(EventParticipant.user_id).label('participant_count')
+        )
+        .where(EventParticipant.status == ParticipantStatus.REGISTERED)
+        .group_by(EventParticipant.event_id)
+        .subquery()
+    )
+    
+    # Step 2: 建立主查詢，使用 JOIN 一次取得所有資料（活動、發起人、參與人數）
+    query = (
+        select(
+            Event,
+            User,
+            sql_func.coalesce(participant_count_subq.c.participant_count, 0).label('participant_count')
+        )
+        .join(User, Event.organizer_id == User.id)  # JOIN 發起人資料
+        .outerjoin(participant_count_subq, Event.id == participant_count_subq.c.event_id)  # LEFT JOIN 參與人數
+        .where(Event.club_id == club_id)
+    )
     
     # 狀態篩選（預設只顯示 published）
     if status_filter:
@@ -226,41 +248,35 @@ def list_events(
     offset = (page - 1) * page_size
     query = query.offset(offset).limit(page_size)
     
-    # 執行查詢
-    events = session.exec(query).all()
+    # ✨ 執行主查詢（只需 1 次查詢取得活動、發起人、參與人數）
+    results = session.exec(query).all()
+    
+    # Step 3: 一次查詢取得當前用戶對所有活動的參與狀態
+    event_ids = [result[0].id for result in results]
+    user_participations = {}
+    if event_ids:
+        participation_query = (
+            select(EventParticipant.event_id)
+            .where(EventParticipant.event_id.in_(event_ids))
+            .where(EventParticipant.user_id == current_user.id)
+            .where(EventParticipant.status == ParticipantStatus.REGISTERED)
+        )
+        user_event_ids = session.exec(participation_query).all()
+        user_participations = {event_id for event_id in user_event_ids}
     
     # 組裝回應資料
     items = []
-    for event in events:
-        # 查詢發起人資訊
-        organizer = session.get(User, event.organizer_id)
-        
-        # 計算目前參與人數
-        participant_count = session.exec(
-            select(func.count())
-            .select_from(EventParticipant)
-            .where(EventParticipant.event_id == event.id)
-            .where(EventParticipant.status == ParticipantStatus.REGISTERED)
-        ).one()
-        
-        # 檢查當前用戶是否為發起人
+    for event, organizer, participant_count in results:
+        # ✅ 所有資料都已從 JOIN 查詢中取得，無需額外查詢
         is_organizer = event.organizer_id == current_user.id
-        
-        # 檢查當前用戶是否已報名
-        participation = session.exec(
-            select(EventParticipant)
-            .where(EventParticipant.event_id == event.id)
-            .where(EventParticipant.user_id == current_user.id)
-            .where(EventParticipant.status == ParticipantStatus.REGISTERED)
-        ).first()
-        is_participating = participation is not None
+        is_participating = event.id in user_participations
         
         items.append(EventListItem(
             id=event.id,
             club_id=event.club_id,
             title=event.title,
             event_datetime=event.event_datetime,
-            current_participants=int(participant_count),  # 確保為整數類型
+            current_participants=int(participant_count),
             max_participants=event.max_participants,
             status=event.status,
             organizer=OrganizerInfo(
