@@ -344,7 +344,6 @@ docker-compose exec api pytest --cov=app --cov-report=term-missing
 
 測試覆蓋率報告將生成在 `backend/htmlcov/index.html`。
 
-### 前端測試
 
 ```bash
 # 進入前端目錄
@@ -845,7 +844,9 @@ docker compose version
 <a href="https://github.com/JeterChan/BookClub/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=JeterChan/BookClub" alt="Contributors" />
 </a>
-
+<a href="https://github.com/jjwang1118">
+  <img src="https://github.com/jjwang1118.png?size=100" width="60px;" alt=""/>
+</a>
 ---
 
 ## 📄 授權
