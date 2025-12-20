@@ -15,3 +15,7 @@ cloudinary
 pytest
 pytest-cov
 httpx
+# Integration Testing
+pytest-asyncio
+pytest-xdist
+Faker

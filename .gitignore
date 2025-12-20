@@ -81,5 +81,8 @@ logs/
 .github
 
 # !.bmad-core/agents
-
 /docs/diagrams
+/all-results
+/allure-report
+/backend/allure-results
+/generate_test_report.py
