@@ -44,7 +44,7 @@ export const config: Options.Testrunner = {
     // ===================
     logLevel: 'info',
     bail: 0,
-    baseUrl: 'http://localhost:5174',
+    baseUrl: 'http://localhost:5173',
     waitforTimeout: 10000,
     connectionRetryTimeout: 120000,
     connectionRetryCount: 3,
