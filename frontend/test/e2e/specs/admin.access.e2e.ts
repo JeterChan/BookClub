@@ -28,9 +28,9 @@ import ClubCreatePage from '../pageobjects/ClubCreatePage';
  */
 describe('管理員權限測試 (Admin Access Tests)', () => {
     const ADMIN_EMAIL = 'jjwang1118@gmail.com';
-    const ADMIN_PASSWORD = 'Mega1118'; // TODO: 替換為真實密碼才可實測
+    const ADMIN_PASSWORD = ''; // TODO: 替換為真實密碼才可實測
     const MEMBER_EMAIL = '980072g@gmail.com';
-    const MEMBER_PASSWORD = 'Wei980072@'; // TODO: 替換為真實密碼才可實測
+    const MEMBER_PASSWORD = ''; // TODO: 替換為真實密碼才可實測
     
     // 測試資料
     let testClubId: string;

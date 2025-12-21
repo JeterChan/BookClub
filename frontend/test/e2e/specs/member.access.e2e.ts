@@ -21,7 +21,7 @@ describe('會員權限測試 (Member Access Tests)', () => {
     // 測試用戶資料 - 使用已驗證的真實會員帳號
     const testUser = {
         email: 'jjwang1118@gmail.com',
-        password: 'Mega1118', // TODO: 替換為真實密碼才可實測
+        password: '', // TODO: 替換為真實密碼才可實測
         name: 'JJ Wang'
     };
 
