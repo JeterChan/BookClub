@@ -2,6 +2,82 @@
 
 一個現代化的線上讀書會管理平台，提供完整的用戶管理、社群互動和學習協作功能。
 
+## 🎬 Demo 影片
+
+觀看完整功能演示：[https://youtu.be/TjyBhNho2CM](https://youtu.be/TjyBhNho2CM)
+
+## ⚡ 快速啟動
+
+### 🌟 方案 1：使用雲端測試環境（最推薦，零設定）
+
+**最快速的體驗方式！** 無需任何安裝或設定，立即開始使用：
+
+👉 **直接訪問**: [https://bookclub-frontend-rouge.vercel.app/](https://bookclub-frontend-rouge.vercel.app/)
+
+**測試帳號**：
+```
+帳號：TestUser@gmail.com
+密碼：TestUser1234
+```
+
+**優點**：
+- ✅ **零設定**：無需安裝 Docker、Node.js 或任何開發工具
+- ✅ **完整功能**：所有功能（SendGrid、Cloudinary）都已部署
+- ✅ **立即使用**：開啟瀏覽器即可開始體驗
+- ✅ **跨平台**：任何裝置、任何作業系統都能使用
+
+> 💡 更多雲端環境資訊請參考：[雲端測試環境](#-雲端測試環境)
+
+---
+
+### 🔧 方案 2：本地開發環境設定
+
+如果您想在本地進行開發或客製化修改，請依照以下步驟：
+
+#### 前置要求
+- Docker & Docker Compose
+- Node.js (v18+)
+- Git
+
+#### 一鍵啟動
+
+```bash
+# 1. 複製專案
+git clone https://github.com/JeterChan/BookClub.git
+cd bookclub
+
+# 2. 設定後端環境變數
+cd backend
+cp .env.example .env
+# 編輯 .env 檔案，填入必要的 API Keys（SendGrid 等）
+cd ..
+
+# 3. 設定前端環境變數
+cd frontend
+cp .env.example .env
+# 編輯 .env 檔案，設定後端 API URL
+cd ..
+
+# 4. 啟動後端（Docker）
+cd backend
+docker-compose up -d
+cd ..
+
+# 5. 啟動前端
+cd frontend
+npm install
+npm run dev
+```
+
+### 訪問應用程式
+- **前端**: http://localhost:5173
+- **後端 API**: http://localhost:8000
+- **API 文件**: http://localhost:8000/docs
+
+> **💡 提示**：詳細的環境變數設定說明請參考下方的[快速開始](#-快速開始)章節。
+
+---
+
 ## 📋 專案概述
 
 本專案採用前後端分離架構：
@@ -175,7 +251,7 @@
 git clone https://github.com/JeterChan/BookClub.git
 
 # 進入專案目錄
-cd SE_Test_Project
+cd bookclub
 ```
 
 ### ⚙️ 步驟 2: 設定後端環境變數
@@ -629,7 +705,7 @@ alembic current
 ## 📁 專案結構
 
 ```
-SE_Test_Project/
+bookclub/
 ├── backend/                      # 後端 FastAPI 應用
 │   ├── alembic/                  # 資料庫遷移管理
 │   │   └── versions/             # 遷移版本檔案
