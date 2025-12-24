@@ -13,7 +13,148 @@
 
 ---
 
+## ⚡ 快速導航
+
+| 您想做什麼？ | 跳轉到 |
+|------------|--------|
+| 🌐 **直接體驗線上版** | [雲端測試環境](#-雲端測試環境) |
+| 🚀 立即開始使用 | [快速開始](#-快速開始) |
+| 📧 設定電子郵件服務 | [SendGrid 設定](#4--sendgrid-電子郵件服務設定必要) |
+| ⚠️ 遇到問題了 | [常見問題排解](#️-常見問題排解) |
+| 🔧 查看開發指令 | [常用開發指令](#️-常用開發指令) |
+| 📚 閱讀完整文檔 | [文檔資源](#-文檔資源) |
+| 🚀 部署到線上 | [部署指南](#-部署指南) |
+
+> **💡 想快速體驗功能？** 直接使用[雲端測試環境](#-雲端測試環境)，無需任何設定即可立即體驗所有功能！
+>
+> **🔴 想本地開發？** 本專案需要 **SendGrid API** 才能完成用戶註冊流程（電子郵件驗證）。
+> 如果您暫時不想設定，請參考[開發環境替代方案](#-開發環境替代方案不想設定-sendgrid)。
+
+---
+
+## 🌐 雲端測試環境
+
+**想立即體驗功能而不想設定本地環境？** 我們提供了完整的雲端測試環境！
+
+### 📍 線上測試網址
+
+**前端網址**: [https://bookclub-frontend-rouge.vercel.app/](https://bookclub-frontend-rouge.vercel.app/)
+
+> **⏱️ 首次使用提醒**：
+> - 後端伺服器採用**免費方案部署**，閒置時會自動休眠
+> - **第一次訪問**或長時間未使用後，後端需要**冷啟動**
+> - 首次登入或註冊時，請耐心等待 **30-60 秒**讓後端伺服器啟動
+> - 如果看到載入畫面或請求超時，請稍等片刻後重新嘗試
+> - 伺服器啟動後，後續操作就會非常快速流暢！
+
+### 🔑 測試用帳號
+
+無需註冊，直接使用以下測試帳號登入：
+
+```
+帳號：TestUser@gmail.com
+密碼：TestUser1234
+```
+
+**首次登入步驟**：
+1. 開啟 [https://bookclub-frontend-rouge.vercel.app/](https://bookclub-frontend-rouge.vercel.app/)
+2. 點擊「登入」按鈕
+3. 輸入測試帳號與密碼
+4. 點擊「登入」後，**首次可能需要等待 30-60 秒**（後端冷啟動）
+5. 如果登入失敗，請稍等 30 秒後重試
+6. 成功登入後，所有功能都會快速響應
+
+### ✨ 雲端環境特色
+
+- ✅ **完整功能**：所有功能都已部署並可正常使用
+- ✅ **SendGrid 已設定**：電子郵件驗證功能完整可用
+- ✅ **Cloudinary 已設定**：圖片上傳功能完整可用
+- ✅ **即開即用**：無需任何本地設定或 API Key
+- ✅ **測試帳號**：提供測試帳號，可直接登入體驗
+- ⏱️ **免費部署**：使用免費方案，首次訪問需等待後端冷啟動（約 30-60 秒）
+
+### 💡 使用小提示
+
+**首次使用或長時間未使用？**
+- 後端伺服器閒置時會自動休眠（免費方案特性）
+- 第一次操作（登入、註冊等）時，請耐心等待 30-60 秒
+- 看到載入畫面是正常的，表示後端正在啟動
+- 啟動完成後，所有功能都會快速響應
+- 建議：如果操作失敗，等待 30 秒後重試即可
+
+**已經登入過？**
+- 如果近期使用過（15 分鐘內），後端會保持活躍狀態
+- 所有操作都會立即響應，無需等待
+
+### 🎯 可測試的功能
+
+使用測試帳號登入後，您可以體驗：
+
+1. **個人資料管理**
+   - 查看個人資料頁面
+   - 編輯個人資料（暱稱、簡介等）
+   - 上傳/更換個人頭像
+   - 修改密碼
+
+2. **帳號功能**
+   - 登入/登出功能
+   - 忘記密碼流程（會發送真實郵件）
+
+3. **響應式設計**
+   - 在不同裝置上測試（手機、平板、桌面）
+   - 測試介面的適應性
+
+### 💡 想註冊新帳號？
+
+您也可以在雲端環境註冊新帳號：
+
+1. 前往 [註冊頁面](https://bookclub-frontend-rouge.vercel.app/register)
+2. 填寫註冊表單
+3. 點擊「註冊」後，**首次可能需要等待 30-60 秒**（後端冷啟動）
+4. 註冊成功後，系統會發送驗證信到您的電子郵件
+5. 點擊驗證連結後即可登入
+
+> **📧 注意事項**：
+> - 註冊需要驗證電子郵件，請確保填寫有效的信箱地址
+> - 如果註冊時看到載入畫面或超時，請等待 30 秒後重試
+> - 驗證信通常會在 1-2 分鐘內送達
+> - 請檢查垃圾郵件資料夾，確保沒有漏掉驗證信
+
+### 🔄 測試環境與本地開發的差異
+
+| 項目 | 雲端測試環境 | 本地開發環境 |
+|------|------------|------------|
+| **設定難度** | 🟢 無需設定 | 🟡 需要設定 Docker、Node.js 等 |
+| **SendGrid** | 🟢 已完整設定 | 🔴 需要自行設定 API Key |
+| **Cloudinary** | 🟢 已完整設定 | 🟡 可選設定 |
+| **資料持久性** | 🟡 測試資料可能定期清理 | 🟢 完全控制 |
+| **開發彈性** | 🔴 無法修改程式碼 | 🟢 可自由修改開發 |
+| **適合對象** | 快速體驗、功能測試 | 程式開發、客製化修改 |
+
+---
+
 ## 🚀 快速開始
+
+### 📋 準備清單
+
+在開始之前，請確認您已準備好以下項目：
+
+| 類別 | 項目 | 必要性 | 說明 |
+|------|------|--------|------|
+| **軟體環境** | Docker & Docker Compose | 🔴 必要 | 用於運行後端與資料庫 |
+| | Node.js (v18+) | 🔴 必要 | 用於前端開發 |
+| | Git | 🔴 必要 | 版本控制工具 |
+| **API 服務** | SendGrid API Key | 🔴 **必要** | **電子郵件驗證功能（註冊必須）** |
+| | SendGrid 寄件者電子郵件 | 🔴 **必要** | 需在 SendGrid 完成驗證 |
+| | SendGrid 電子郵件模板 | 🔴 **必要** | 驗證信與密碼重置信模板 |
+| | Cloudinary API（可選） | 🟡 可選 | 圖片儲存（不設定則存本地） |
+
+> **🔴 重點提醒**：
+> - **SendGrid 為必要服務**，未設定將無法完成用戶註冊流程
+> - SendGrid 免費方案每月 100 封信，足夠開發測試使用
+> - 如不想立即設定，可先閱讀「開發環境替代方案」
+
+---
 
 ### 系統需求
 
@@ -49,58 +190,242 @@ cd backend
 cp .env.example .env
 ```
 
-編輯 `backend/.env` 檔案，根據您的需求修改以下設定：
+#### 📝 必要設定項目
 
+編輯 `backend/.env` 檔案，**務必**修改以下設定：
+
+##### 1. 資料庫設定
 ```env
-# === 資料庫設定 ===
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_secure_password_here
+POSTGRES_PASSWORD=your_secure_password_here  # ⚠️ 請改為強密碼
 POSTGRES_DB=bookclub_db
 DATABASE_URL=postgresql://postgres:your_secure_password_here@db:5432/bookclub_db
+```
 
-# === 安全設定 ===
-SECRET_KEY=your-super-secret-key-min-32-chars-please-change-in-production
+##### 2. 安全金鑰設定
+```env
+SECRET_KEY=your-super-secret-key-min-32-chars-please-change-in-production  # ⚠️ 請改為隨機字串
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
+```
 
-# === CORS 設定 ===
+> 💡 **生成安全金鑰**：可使用以下指令生成隨機金鑰
+> ```bash
+> openssl rand -hex 32
+> ```
+
+##### 3. CORS 設定
+```env
 FRONTEND_URL=http://localhost:5173,http://localhost:5174
+```
 
-# === 電子郵件服務 (SendGrid - 必要) ===
-SENDGRID_API_KEY=your_sendgrid_api_key
-SENDGRID_FROM_EMAIL=noreply@yourdomain.com
-SENDGRID_VERIFICATION_TEMPLATE_ID=d-your_template_id
-SENDGRID_PASSWORD_RESET_TEMPLATE_ID=d-your_template_id
+##### 4. 🔴 SendGrid 電子郵件服務設定（**必要**）
 
-# === 圖片儲存服務 (Cloudinary - 可選) ===
+**本專案使用電子郵件驗證機制**，新用戶註冊後必須透過電子郵件驗證才能登入系統。因此 **SendGrid API 為必要設定**。
+
+```env
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxx  # ⚠️ 必填
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com  # ⚠️ 必填（需在 SendGrid 驗證）
+SENDGRID_VERIFICATION_TEMPLATE_ID=d-xxxxxxxxxxxxxxxx  # ⚠️ 必填
+SENDGRID_PASSWORD_RESET_TEMPLATE_ID=d-xxxxxxxxxxxxxxxx  # ⚠️ 必填
+```
+
+**如何取得 SendGrid API Key**：
+
+**✅ 步驟 1：註冊 SendGrid 帳號**
+1. 前往 [SendGrid 官網](https://sendgrid.com/)
+2. 點擊 **Start for Free** 註冊免費帳號
+3. 填寫基本資料並驗證電子郵件
+4. 完成註冊（**不需要信用卡**）
+
+**✅ 步驟 2：建立 API Key**
+1. 登入 SendGrid 後，點擊左側選單 **Settings** → **API Keys**
+2. 點擊右上角 **Create API Key** 按鈕
+3. 填寫 API Key 名稱（例如：`bookclub-dev`）
+4. 選擇 **Full Access**（或至少選擇 Mail Send 權限）
+5. 點擊 **Create & View** 生成 API Key
+6. **立即複製** API Key（格式：`SG.xxxxxxxxx...`）
+   - ⚠️ **重要**：API Key 只會顯示一次，請務必立即複製並保存
+7. 貼到 `backend/.env` 的 `SENDGRID_API_KEY` 欄位
+
+**✅ 步驟 3：驗證寄件者電子郵件**
+1. 點擊左側選單 **Settings** → **Sender Authentication**
+2. 選擇 **Single Sender Verification**（適合開發測試）
+3. 點擊 **Create New Sender**
+4. 填寫寄件者資訊：
+   ```
+   From Name: BookClub Platform
+   From Email Address: （您的電子郵件，例如：noreply@gmail.com）
+   Reply To: （同上，或另一個信箱）
+   Company: （可填 "Personal" 或公司名稱）
+   Address, City, Country: （隨意填寫）
+   ```
+5. 點擊 **Save** 後，SendGrid 會發送驗證信到您填寫的信箱
+6. 開啟信箱，點擊驗證連結完成驗證
+7. 驗證成功後，該信箱會顯示綠色勾勾 ✅
+8. 將此信箱填入 `backend/.env` 的 `SENDGRID_FROM_EMAIL`
+
+**✅ 步驟 4：建立電子郵件模板**
+
+**4.1 建立「帳號驗證」模板**
+1. 點擊左側選單 **Email API** → **Dynamic Templates**
+2. 點擊右上角 **Create a Dynamic Template**
+3. 填寫模板名稱：`Account Verification`
+4. 點擊 **Create** 後，複製模板 ID（格式：`d-xxxxxxxxx...`）
+5. 將模板 ID 填入 `backend/.env` 的 `SENDGRID_VERIFICATION_TEMPLATE_ID`
+6. 點擊 **Add Version** → 選擇 **Blank Template** → **Code Editor**
+7. 貼上以下 HTML 模板：
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #4F46E5;">歡迎加入 BookClub！</h2>
+    <p>親愛的 {{username}}，</p>
+    <p>感謝您註冊 BookClub 線上讀書會平台。請點擊下方按鈕驗證您的帳號：</p>
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{verification_url}}" 
+           style="background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            驗證帳號
+        </a>
+    </div>
+    <p style="color: #666; font-size: 14px;">如果按鈕無法點擊，請複製以下連結到瀏覽器：</p>
+    <p style="color: #4F46E5; word-break: break-all; font-size: 14px;">{{verification_url}}</p>
+    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+    <p style="color: #999; font-size: 12px;">此連結將在 24 小時內有效。如果您沒有註冊此帳號，請忽略此郵件。</p>
+</body>
+</html>
+```
+
+8. 點擊 **Save** 儲存模板
+
+**4.2 建立「密碼重置」模板**
+1. 回到 **Dynamic Templates** 頁面
+2. 重複步驟 2-6，模板名稱改為：`Password Reset`
+3. 複製模板 ID 並填入 `backend/.env` 的 `SENDGRID_PASSWORD_RESET_TEMPLATE_ID`
+4. 貼上以下 HTML 模板：
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #4F46E5;">重置您的密碼</h2>
+    <p>親愛的 {{username}}，</p>
+    <p>我們收到了重置您 BookClub 帳號密碼的請求。請點擊下方按鈕設定新密碼：</p>
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{reset_url}}" 
+           style="background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            重置密碼
+        </a>
+    </div>
+    <p style="color: #666; font-size: 14px;">如果按鈕無法點擊，請複製以下連結到瀏覽器：</p>
+    <p style="color: #4F46E5; word-break: break-all; font-size: 14px;">{{reset_url}}</p>
+    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+    <p style="color: #999; font-size: 12px;">此連結將在 1 小時內有效。如果您沒有要求重置密碼，請忽略此郵件，您的密碼將保持不變。</p>
+</body>
+</html>
+```
+
+5. 點擊 **Save** 儲存模板
+
+**✅ 步驟 5：最終檢查 `.env` 設定**
+
+確認 `backend/.env` 包含以下完整設定：
+```env
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+SENDGRID_FROM_EMAIL=your-verified-email@example.com
+SENDGRID_VERIFICATION_TEMPLATE_ID=d-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+SENDGRID_PASSWORD_RESET_TEMPLATE_ID=d-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+**✅ 完成！** 您已成功設定 SendGrid，可以開始測試電子郵件功能了。
+
+> **📧 SendGrid 免費方案限制**：
+> - 每月可免費發送 **100 封電子郵件**
+> - 每日發送上限：100 封
+> - 足夠用於開發與測試
+> - 無需綁定信用卡
+> - 如需更多額度，可升級付費方案或使用多個免費帳號測試
+
+##### 5. Cloudinary 圖片儲存服務（可選）
+
+如果需要使用頭像上傳、讀書會封面等圖片功能，請設定 Cloudinary：
+
+```env
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
-
-# === Google OAuth (可選) ===
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
-> **⚠️ 重要提醒**：
-> - 請務必修改 `SECRET_KEY` 與 `POSTGRES_PASSWORD` 為強密碼
-> - **SendGrid 為必要服務**：新使用者註冊後需要透過電子郵件驗證帳號，未驗證的帳號將無法登入系統
-> - Cloudinary、Google OAuth 為可選服務，如不需要可留空
-> - 切勿將 `.env` 檔案提交到版本控制系統
+**如何取得 Cloudinary API**（可選）：
+1. 前往 [Cloudinary 官網](https://cloudinary.com/) 註冊免費帳號
+2. 登入後在 Dashboard 可看到 Cloud Name、API Key、API Secret
+3. 複製這些資訊填入 `.env` 檔案
 
-> **💡 開發環境替代方案**：
-> 
-> 如果您不想設定 SendGrid，有以下選擇：
-> 
-> 1. **使用雲端部署版本測試**（推薦）
->    - 直接使用已部署的線上版本進行功能測試
->    - 雲端版本已完整設定所有服務，可直接註冊使用
-> 
-> 2. **手動修改資料庫（僅限開發環境）**
->    - 註冊帳號後，使用資料庫管理工具（如 pgAdmin、DBeaver）連接到資料庫
->    - 在 `users` 資料表中，將您的帳號的 `is_verified` 欄位值改為 `true`
->    - **⚠️ 警告**：此方法僅適用於本地開發環境測試，切勿在生產環境使用
->    - 修改後即可正常登入，無需驗證電子郵件
+> 💡 **不設定 Cloudinary**：圖片將儲存在本地 `backend/uploads/` 目錄（適合開發測試）
+
+
+
+---
+
+#### ⚠️ 重要提醒
+
+| 項目 | 必要性 | 說明 |
+|------|--------|------|
+| **SendGrid API** | 🔴 **必要** | 用於帳號驗證、密碼重置等電子郵件功能。**未設定將無法註冊新用戶** |
+| **SECRET_KEY** | 🔴 **必要** | JWT 加密金鑰，務必改為強密碼（至少 32 字元） |
+| **POSTGRES_PASSWORD** | 🔴 **必要** | 資料庫密碼，務必改為強密碼 |
+| **Cloudinary** | 🟡 **可選** | 圖片儲存服務，不設定時圖片存於本地 |
+| **Google OAuth** | 🟡 **可選** | Google 登入功能，不設定時僅支援一般註冊登入 |
+
+> **🔒 安全性警告**：
+> - 切勿將 `.env` 檔案提交到版本控制系統（已加入 `.gitignore`）
+> - 生產環境必須使用強密碼與安全的 API Key
+> - 定期更換 SECRET_KEY 與 API Keys
+
+---
+
+#### 💡 開發環境替代方案（不想設定 SendGrid？）
+
+如果您不想立即設定 SendGrid，有以下選擇：
+
+**方案 1：使用雲端測試環境**（🌟 最推薦）
+- **網址**：[https://bookclub-frontend-rouge.vercel.app/](https://bookclub-frontend-rouge.vercel.app/)
+- **測試帳號**：`TestUser@gmail.com` / 密碼：`TestUser1234`
+- **優點**：
+  - ✅ 無需任何本地設定或 API Key
+  - ✅ 所有功能（SendGrid、Cloudinary）都已完整設定
+  - ✅ 可立即體驗完整的註冊、驗證、登入流程
+  - ✅ 適合快速體驗與功能測試
+- 詳細資訊請見：[雲端測試環境](#-雲端測試環境)
+
+**方案 2：手動修改資料庫**（僅限本地開發環境）
+1. 先完成步驟 3～4 啟動後端服務
+2. 在前端註冊新帳號（會顯示需要驗證電子郵件）
+3. 使用資料庫管理工具（pgAdmin、DBeaver 等）連接到 PostgreSQL
+   - Host: `localhost`
+   - Port: `5432`
+   - Database: `bookclub_db`（依您的設定）
+   - User: `postgres`（依您的設定）
+   - Password: 您在 `.env` 設定的密碼
+4. 開啟 `users` 資料表
+5. 找到您剛註冊的帳號，將 `is_verified` 欄位值改為 `true`
+6. 返回前端即可登入
+
+> **⚠️ 警告**：方案 2 僅適用於本地開發環境測試，**切勿在生產環境使用**
+
+**方案 3：正式設定 SendGrid**（建議正式開發時使用）
+- 按照上述步驟完整設定 SendGrid
+- 可測試完整的電子郵件驗證流程
+- 免費方案每月 100 封信，足夠開發測試使用
 
 ### 🐳 步驟 3: 啟動後端服務
 
@@ -169,10 +494,62 @@ npm run dev
 
 完成上述步驟後，請確認：
 
-- ✅ 後端 API 文檔可正常訪問：http://localhost:8000/docs
-- ✅ 前端頁面可正常顯示：http://localhost:5173
-- ✅ 可以在前端註冊新帳號並登入
-- ✅ Docker 容器正常運行：`docker-compose ps` 顯示兩個容器為 `Up` 狀態
+### 基本服務檢查
+
+- ✅ **後端 API 文檔可正常訪問**：http://localhost:8000/docs
+- ✅ **前端頁面可正常顯示**：http://localhost:5173
+- ✅ **Docker 容器正常運行**：執行 `docker-compose ps` 顯示兩個容器為 `Up` 狀態
+
+### 功能測試
+
+- ✅ **註冊功能**：可以在前端註冊新帳號
+- ✅ **電子郵件驗證**（如已設定 SendGrid）：
+  - 註冊後應收到驗證信
+  - 點擊驗證連結後帳號狀態變為已驗證
+- ✅ **登入功能**：已驗證的帳號可以正常登入
+- ✅ **個人資料**：登入後可查看與編輯個人資料
+
+### 📧 SendGrid 設定確認
+
+如果您已設定 SendGrid，請測試電子郵件功能：
+
+1. **註冊新帳號**
+   ```
+   前往 http://localhost:5173/register
+   填寫註冊表單並提交
+   ```
+
+2. **檢查電子郵件**
+   - 查看您填寫的電子郵件信箱
+   - 應該會收到一封來自 SendGrid 的驗證信
+   - 如果沒有收到，檢查垃圾郵件資料夾
+
+3. **驗證帳號**
+   - 點擊驗證信中的連結
+   - 應該會跳轉到前端並顯示驗證成功訊息
+
+4. **登入測試**
+   - 使用已驗證的帳號登入
+   - 應該可以成功登入並進入系統
+
+### ⚠️ 常見驗證問題
+
+| 問題 | 可能原因 | 解決方案 |
+|------|---------|---------|
+| 註冊後顯示「請驗證電子郵件」但未收到信 | SendGrid 未正確設定 | 檢查 `.env` 中的 SendGrid 設定，確認 API Key 正確 |
+| 收到驗證信但點擊連結無效 | 前端 URL 設定錯誤 | 確認 SendGrid 模板中的驗證連結格式正確 |
+| 已驗證但仍無法登入 | 資料庫狀態未更新 | 檢查資料庫 `users` 表中 `is_verified` 欄位 |
+| 完全無法發送郵件 | SendGrid API Key 無效或額度用盡 | 登入 SendGrid 檢查 API Key 狀態與發送額度 |
+
+### 💡 快速測試建議
+
+**如果您已正確設定 SendGrid**：
+- 直接測試完整的註冊→驗證→登入流程
+
+**如果您暫時未設定 SendGrid**：
+- 先使用「手動修改資料庫」方案完成第一次登入測試
+- 確認其他功能正常運作
+- 之後再設定 SendGrid 完整測試電子郵件功能
 
 ---
 
@@ -421,44 +798,64 @@ Password: 依 .env 設定
 ```
 
 #### 推薦的資料庫管理工具
-- [**pgAdmin**](https://www.pgadmin.org/) - 功能完整的 PostgreSQL 管理工具
-- [**DBeaver**](https://dbeaver.io/) - 通用資料庫工具，支援多種資料庫
+- [**pgAdmin**](https://www.pgadmin.org/) - 功能完整的 PostgreSQL 管理工具（免費）
+- [**DBeaver**](https://dbeaver.io/) - 通用資料庫工具，支援多種資料庫（免費）
 - [**TablePlus**](https://tableplus.com/) - 現代化的資料庫管理介面（macOS/Windows）
 - [**Postico**](https://eggerapps.at/postico/) - 簡潔的 PostgreSQL 客戶端（macOS）
 
-#### 開發環境：跳過電子郵件驗證
+#### 開發環境：手動驗證帳號（跳過電子郵件驗證）
 
-**⚠️ 僅限本地開發環境使用**
+**⚠️ 僅限本地開發環境使用，切勿在生產環境使用**
 
-如果您沒有設定 SendGrid，可以手動修改資料庫來跳過電子郵件驗證流程：
+如果您暫時沒有設定 SendGrid，可以手動修改資料庫來跳過電子郵件驗證：
 
-1. **註冊新帳號**
-   - 在前端註冊頁面建立新帳號
-   - 系統會顯示需要驗證電子郵件的訊息
+**步驟 1：註冊新帳號**
+- 在前端註冊頁面 (http://localhost:5173/register) 建立新帳號
+- 系統會顯示需要驗證電子郵件的訊息（可以忽略）
 
-2. **使用資料庫管理工具連接**
+**步驟 2：使用資料庫管理工具連接**
+1. 開啟您的資料庫管理工具（pgAdmin、DBeaver 等）
+2. 建立新的連線，使用以下資訊：
    ```
    Host: localhost
    Port: 5432
-   Database: bookclub_db
-   User: postgres
-   Password: （您在 .env 中設定的密碼）
+   Database: bookclub_db （或您在 .env 中設定的名稱）
+   Username: postgres （或您在 .env 中設定的使用者）
+   Password: （您在 .env 中的 POSTGRES_PASSWORD）
    ```
+3. 測試連線並儲存
 
-3. **修改驗證狀態**
-   - 開啟 `users` 資料表
-   - 找到您剛註冊的帳號
-   - 將 `is_verified` 欄位值改為 `true`
-   - 儲存變更
+**步驟 3：修改驗證狀態**
+1. 連接成功後，瀏覽到 `public` schema
+2. 開啟 `users` 資料表
+3. 找到您剛註冊的帳號（可依 `email` 或 `username` 欄位搜尋）
+4. 將該筆紀錄的 `is_verified` 欄位值從 `false` 改為 `true`
+5. 儲存變更
 
-4. **立即登入**
-   - 返回前端登入頁面
-   - 使用註冊的帳號密碼即可登入
+**步驟 4：立即登入**
+- 返回前端登入頁面 (http://localhost:5173/login)
+- 使用註冊的帳號密碼即可成功登入
+- 開始測試其他功能
+
+**使用 SQL 指令修改**（適合進階使用者）：
+```sql
+-- 查看所有未驗證的用戶
+SELECT id, username, email, is_verified FROM users WHERE is_verified = false;
+
+-- 修改特定用戶的驗證狀態（請替換 your_email@example.com）
+UPDATE users 
+SET is_verified = true 
+WHERE email = 'your_email@example.com';
+
+-- 確認修改結果
+SELECT id, username, email, is_verified FROM users WHERE email = 'your_email@example.com';
+```
 
 > **⚠️ 重要警告**：
-> - 此方法**僅適用於本地開發環境**測試
-> - **切勿在生產環境**使用此方法
-> - 建議使用[雲端部署版本](#-部署指南)進行完整功能測試
+> - 此方法**僅適用於本地開發環境**進行快速測試
+> - **絕對不要在生產環境**使用此方法
+> - 正式開發時，建議設定 SendGrid 以測試完整的電子郵件驗證流程
+> - 或使用[雲端部署版本](#-部署指南)進行完整功能測試
 
 ---
 
@@ -563,42 +960,118 @@ Password: 依 .env 設定
 
 ## ⚠️ 常見問題排解
 
-### 電子郵件驗證相關
+### 🔴 電子郵件驗證相關（最常見問題）
 
-#### ❌ 註冊後無法收到驗證信
-```bash
-# 可能原因：
+#### ❌ 問題：註冊後無法收到驗證信
+
+**可能原因**：
 1. SendGrid API Key 未設定或設定錯誤
-2. SendGrid 模板 ID 不正確
-3. SendGrid 寄件者信箱未驗證
+2. SendGrid 寄件者電子郵件未驗證
+3. SendGrid 電子郵件模板 ID 不正確
+4. SendGrid 免費額度已用盡
 
-# 解決方案：
-方案 1：設定 SendGrid（推薦用於正式開發）
-- 前往 SendGrid 官網註冊帳號
-- 取得 API Key 並設定在 .env 檔案中
-- 驗證寄件者信箱
-- 建立電子郵件模板並取得 Template ID
+**解決步驟**：
 
-方案 2：手動修改資料庫（僅限本地測試）
-- 使用資料庫管理工具連接到 PostgreSQL
-- 在 users 資料表中將 is_verified 改為 true
-- 詳細步驟請參考「開發環境：跳過電子郵件驗證」章節
-
-方案 3：使用雲端部署版本（推薦用於快速測試）
-- 直接使用已部署的線上版本測試功能
-- 所有服務已完整設定，可正常註冊與驗證
-```
-
-#### ❌ 已註冊但無法登入（顯示帳號未驗證）
+**步驟 1：檢查 SendGrid API Key**
 ```bash
-# 原因：
-註冊的帳號尚未通過電子郵件驗證
+# 檢查 backend/.env 檔案
+cat backend/.env | grep SENDGRID_API_KEY
 
-# 解決方案：
-1. 檢查註冊時填寫的信箱，尋找驗證信
-2. 如果沒有收到驗證信，使用上述「方案 2」手動修改資料庫
-3. 或使用雲端部署版本重新註冊測試
+# API Key 應該是 SG. 開頭的完整字串
+# 正確範例: SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+
+**步驟 2：驗證 SendGrid 設定**
+1. 登入 [SendGrid Dashboard](https://app.sendgrid.com/)
+2. 前往 **Settings** → **API Keys**，確認 API Key 狀態為 Active
+3. 前往 **Settings** → **Sender Authentication**，確認寄件者電子郵件已驗證（綠色勾勾）
+4. 前往 **Email API** → **Dynamic Templates**，確認模板 ID 正確
+
+**步驟 3：檢查發送額度**
+1. 在 SendGrid Dashboard 查看「Email Activity」
+2. 確認免費額度未超過（免費版每月 100 封）
+
+**步驟 4：查看後端日誌**
+```bash
+cd backend
+docker-compose logs -f api | grep -i sendgrid
+# 查看是否有 SendGrid 相關錯誤訊息
+```
+
+**步驟 5：重啟後端服務**
+```bash
+cd backend
+docker-compose restart api
+```
+
+---
+
+#### ❌ 問題：已註冊但無法登入（顯示帳號未驗證）
+
+**原因**：註冊的帳號尚未通過電子郵件驗證
+
+**解決方案**：
+
+**方案 A：正常流程（推薦）**
+1. 檢查註冊時填寫的電子郵件信箱
+2. 查看收件匣與垃圾郵件資料夾
+3. 點擊驗證信中的連結完成驗證
+
+**方案 B：重新發送驗證信**
+- 使用 API 文檔手動觸發重新發送（開發中功能）
+- 或刪除帳號後重新註冊
+
+**方案 C：手動修改資料庫（僅限開發環境）**
+1. 使用資料庫管理工具連接到 PostgreSQL
+   ```
+   Host: localhost
+   Port: 5432
+   Database: bookclub_db
+   User: postgres
+   Password: （您在 .env 設定的密碼）
+   ```
+2. 開啟 `users` 資料表
+3. 找到您的帳號，將 `is_verified` 欄位改為 `true`
+4. 儲存後即可登入
+
+> **⚠️ 警告**：方案 C 僅適用於本地開發測試，**絕對不要在生產環境使用**
+
+---
+
+#### ❌ 問題：不想設定 SendGrid，有其他方案嗎？
+
+**方案 1：使用雲端測試環境**（🌟 最推薦，零設定）
+
+**完全不需要本地設定**，立即體驗所有功能：
+- **網址**：[https://bookclub-frontend-rouge.vercel.app/](https://bookclub-frontend-rouge.vercel.app/)
+- **測試帳號**：`TestUser@gmail.com`
+- **測試密碼**：`TestUser1234`
+- **優點**：
+  - ✅ 無需設定 Docker、Node.js、SendGrid 等任何環境
+  - ✅ 所有服務（SendGrid、Cloudinary）都已完整設定
+  - ✅ 可測試完整的註冊→驗證→登入流程
+  - ✅ 可測試個人資料編輯、頭像上傳等所有功能
+  - ✅ 適合快速體驗、展示、功能測試
+
+詳細資訊請見：[雲端測試環境](#-雲端測試環境)
+
+---
+
+**方案 2：臨時使用手動驗證**（僅限本地開發）
+1. 先不設定 SendGrid，直接啟動專案
+2. 在前端註冊帳號（會顯示需驗證訊息）
+3. 使用資料庫管理工具手動將 `is_verified` 改為 `true`
+4. 即可正常登入測試其他功能
+5. **之後仍建議設定 SendGrid 測試完整流程**
+
+---
+
+**方案 3：設定 SendGrid**（正式開發建議）
+- 完整體驗真實的註冊驗證流程
+- 免費方案足夠開發測試使用
+- 設定步驟詳見「步驟 2: 設定後端環境變數」
+
+---
 
 ### 後端相關問題
 
@@ -743,6 +1216,15 @@ docker compose version
 
 ## 📝 專案特色與功能
 
+### 🌐 立即體驗
+
+**不想設定環境？** 直接使用我們的[雲端測試環境](https://bookclub-frontend-rouge.vercel.app/)體驗所有功能！
+
+- 測試帳號：`TestUser@gmail.com`
+- 測試密碼：`TestUser1234`
+
+---
+
 ### ✅ 已實現功能
 - ✅ **使用者管理**
   - 使用者註冊與登入（JWT 驗證）
@@ -844,10 +1326,6 @@ docker compose version
 <a href="https://github.com/JeterChan/BookClub/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=JeterChan/BookClub" alt="Contributors" />
 </a>
-<a href="https://github.com/jjwang1118">
-  <img src="https://github.com/jjwang1118.png?size=100" width="60px;" alt=""/>
-</a>
----
 
 ## 📄 授權
 
