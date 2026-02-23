@@ -1,29 +1,30 @@
 import os
 import secrets
-import smtplib
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from typing import Optional
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from sqlmodel import Session
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 
 from app.models.user import User
 
 
 class EmailService:
-    """電子郵件服務類別，使用 SMTP 處理郵件發送"""
+    """電子郵件服務類別，使用 Brevo API 處理郵件發送"""
 
     def __init__(self):
-        """初始化郵件服務，載入 SMTP 設定和模板引擎"""
-        self.smtp_host = os.getenv("SMTP_HOST", "smtp-relay.brevo.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.smtp_user = os.getenv("SMTP_USER")
-        self.smtp_password = os.getenv("SMTP_PASSWORD")
-        self.sender_email = os.getenv("SENDER_EMAIL", self.smtp_user)
+        """初始化郵件服務，載入 Brevo API 設定和模板引擎"""
+        self.api_key = os.getenv("BREVO_API_KEY")
+        self.sender_email = os.getenv("SENDER_EMAIL", "noreply@bookclub.com")
         self.sender_name = os.getenv("SENDER_NAME", "BookClub")
+        
+        # 設定 Brevo API 客戶端
+        configuration = sib_api_v3_sdk.Configuration()
+        configuration.api_key['api-key'] = self.api_key
+        self.api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
         
         # 設定模板引擎
         template_dir = Path(__file__).parent.parent / "templates" / "email"
@@ -37,7 +38,7 @@ class EmailService:
         text_content: Optional[str] = None
     ) -> bool:
         """
-        內部方法：透過 SMTP 發送郵件
+        內部方法：透過 Brevo API 發送郵件
 
         Args:
             to_email: 收件者 Email
@@ -48,41 +49,29 @@ class EmailService:
         Returns:
             bool: 發送成功返回 True，失敗返回 False
         """
-        if not all([self.smtp_user, self.smtp_password]):
-            print("⚠️  SMTP 憑證未設定，無法發送郵件。")
-            print("請設定環境變數：SMTP_USER 和 SMTP_PASSWORD")
+        if not self.api_key:
+            print("⚠️  Brevo API Key 未設定，無法發送郵件。")
+            print("請設定環境變數：BREVO_API_KEY")
             return False
 
         try:
-            # 建立郵件
-            message = MIMEMultipart("alternative")
-            message["Subject"] = subject
-            message["From"] = f"{self.sender_name} <{self.sender_email}>"
-            message["To"] = to_email
+            # 建立郵件物件
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                to=[{"email": to_email}],
+                sender={"name": self.sender_name, "email": self.sender_email},
+                subject=subject,
+                html_content=html_content,
+                text_content=text_content
+            )
             
-            # 添加純文字版本（備用）
-            if text_content:
-                part1 = MIMEText(text_content, "plain", "utf-8")
-                message.attach(part1)
+            # 透過 Brevo API 發送郵件
+            api_response = self.api_instance.send_transac_email(send_smtp_email)
             
-            # 添加 HTML 版本
-            part2 = MIMEText(html_content, "html", "utf-8")
-            message.attach(part2)
-            
-            # 連接 SMTP 伺服器並發送
-            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
-                server.starttls()  # 啟用 TLS 加密
-                server.login(self.smtp_user, self.smtp_password)
-                server.send_message(message)
-            
-            print(f"✅ Email sent successfully to {to_email}")
+            print(f"✅ 郵件發送成功！Message ID: {api_response.message_id}")
             return True
             
-        except smtplib.SMTPAuthenticationError:
-            print(f"❌ SMTP 認證失敗，請檢查 SMTP_USER 和 SMTP_PASSWORD")
-            return False
-        except smtplib.SMTPException as e:
-            print(f"❌ SMTP 錯誤，無法發送郵件至 {to_email}: {str(e)}")
+        except ApiException as e:
+            print(f"❌ Brevo API 錯誤: {e}")
             return False
         except Exception as e:
             print(f"❌ 發送郵件失敗至 {to_email}: {str(e)}")
