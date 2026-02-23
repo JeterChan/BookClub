@@ -1,3 +1,4 @@
+name: bookclub-backend
 services:
   db:
     image: postgres:15

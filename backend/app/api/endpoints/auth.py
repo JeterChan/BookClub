@@ -12,7 +12,7 @@ from app.models.password_reset import (
     VerifyResetTokenResponse
 )
 from app.services.user_service import UserService
-from app.services.email_service import EmailService
+from app.services.email_service import EmailService, email_service
 from app.services.password_reset_service import PasswordResetService
 from app.db.session import get_session
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_DAYS_REMEMBER
@@ -47,7 +47,7 @@ def register(
         log_auth_event("User Registered", user_id=new_user.id, email=new_user.email)
         
         token = EmailService.generate_verification_token(session, new_user)
-        background_tasks.add_task(EmailService.send_verification_email, new_user, token)
+        background_tasks.add_task(email_service.send_verification_email, new_user, token)
         
         return RegistrationResponse(message="註冊成功，請至信箱查收驗證信")
     except HTTPException:
@@ -88,7 +88,7 @@ def resend_verification_email(
         )
 
     token = EmailService.generate_verification_token(session, user)
-    background_tasks.add_task(EmailService.send_verification_email, user, token)
+    background_tasks.add_task(email_service.send_verification_email, user, token)
 
     return EmailVerificationResponse(message="如果該 email 已註冊，將會收到一封新的驗證信。", success=True)
 
@@ -171,7 +171,7 @@ async def forgot_password(
         
         try:
             token = PasswordResetService.create_reset_token(session, user, ip_address)
-            background_tasks.add_task(EmailService.send_password_reset_email, user, token)
+            background_tasks.add_task(email_service.send_password_reset_email, user, token)
         except HTTPException as e:
             # 直接重新拋出 HTTPException (包括 429 rate limit)
             raise e

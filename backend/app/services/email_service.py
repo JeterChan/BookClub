@@ -1,16 +1,92 @@
 import os
 import secrets
+import smtplib
 from datetime import datetime, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from typing import Optional
+from pathlib import Path
 
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from jinja2 import Environment, FileSystemLoader
 from sqlmodel import Session
 
 from app.models.user import User
 
 
 class EmailService:
-    """電子郵件服務類別，使用 SendGrid 處理郵件發送"""
+    """電子郵件服務類別，使用 SMTP 處理郵件發送"""
+
+    def __init__(self):
+        """初始化郵件服務，載入 SMTP 設定和模板引擎"""
+        self.smtp_host = os.getenv("SMTP_HOST", "smtp-relay.brevo.com")
+        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        self.smtp_user = os.getenv("SMTP_USER")
+        self.smtp_password = os.getenv("SMTP_PASSWORD")
+        self.sender_email = os.getenv("SENDER_EMAIL", self.smtp_user)
+        self.sender_name = os.getenv("SENDER_NAME", "BookClub")
+        
+        # 設定模板引擎
+        template_dir = Path(__file__).parent.parent / "templates" / "email"
+        self.template_env = Environment(loader=FileSystemLoader(str(template_dir)))
+
+    def _send_email(
+        self,
+        to_email: str,
+        subject: str,
+        html_content: str,
+        text_content: Optional[str] = None
+    ) -> bool:
+        """
+        內部方法：透過 SMTP 發送郵件
+
+        Args:
+            to_email: 收件者 Email
+            subject: 郵件主旨
+            html_content: HTML 郵件內容
+            text_content: 純文字郵件內容（備用）
+
+        Returns:
+            bool: 發送成功返回 True，失敗返回 False
+        """
+        if not all([self.smtp_user, self.smtp_password]):
+            print("⚠️  SMTP 憑證未設定，無法發送郵件。")
+            print("請設定環境變數：SMTP_USER 和 SMTP_PASSWORD")
+            return False
+
+        try:
+            # 建立郵件
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.sender_name} <{self.sender_email}>"
+            message["To"] = to_email
+            
+            # 添加純文字版本（備用）
+            if text_content:
+                part1 = MIMEText(text_content, "plain", "utf-8")
+                message.attach(part1)
+            
+            # 添加 HTML 版本
+            part2 = MIMEText(html_content, "html", "utf-8")
+            message.attach(part2)
+            
+            # 連接 SMTP 伺服器並發送
+            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                server.starttls()  # 啟用 TLS 加密
+                server.login(self.smtp_user, self.smtp_password)
+                server.send_message(message)
+            
+            print(f"✅ Email sent successfully to {to_email}")
+            return True
+            
+        except smtplib.SMTPAuthenticationError:
+            print(f"❌ SMTP 認證失敗，請檢查 SMTP_USER 和 SMTP_PASSWORD")
+            return False
+        except smtplib.SMTPException as e:
+            print(f"❌ SMTP 錯誤，無法發送郵件至 {to_email}: {str(e)}")
+            return False
+        except Exception as e:
+            print(f"❌ 發送郵件失敗至 {to_email}: {str(e)}")
+            return False
 
     @staticmethod
     def generate_verification_token(session: Session, user: User) -> str:
@@ -34,100 +110,118 @@ class EmailService:
 
         return token
 
-    @staticmethod
-    def send_verification_email(user: User, token: str) -> None:
+    def send_verification_email(self, user: User, token: str) -> bool:
         """
-        使用 SendGrid 發送包含驗證連結的電子郵件。
+        發送包含驗證連結的電子郵件。
 
         Args:
             user: 接收郵件的用戶物件
             token: 用於驗證的 token
+
+        Returns:
+            bool: 發送成功返回 True，失敗返回 False
         """
-        # 從環境變數讀取 SendGrid 設定
-        SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-        SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@example.com")
-        SENDGRID_TEMPLATE_ID = os.getenv("SENDGRID_VERIFICATION_TEMPLATE_ID")
         FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
-
-        if SENDGRID_API_KEY:
-            print(f"DEBUG: Loaded API Key starts with: {SENDGRID_API_KEY[:5]}...") # 只印出前 5 個字元
-        else:
-            print("DEBUG: SENDGRID_API_KEY is NOT loaded (None).")
-
-        if not all([SENDGRID_API_KEY, SENDGRID_TEMPLATE_ID]):
-            print("SendGrid API Key 或 Template ID 未設定，無法發送郵件。")
-            # 在生產環境中，這裡應該拋出一個更明確的錯誤或使用日誌記錄
-            return
-
-        # 建立驗證連結
         verification_url = f"{FRONTEND_URL}/verify-email?token={token}"
+        
+        # 渲染 HTML 模板
+        try:
+            template = self.template_env.get_template("verification.html")
+            html_content = template.render(
+                username=user.display_name,
+                verification_url=verification_url
+            )
+        except Exception as e:
+            print(f"❌ 載入郵件模板失敗: {str(e)}")
+            # 使用簡單的 HTML 作為備用
+            html_content = f"""
+            <html>
+                <body>
+                    <h2>嗨 {user.display_name}！</h2>
+                    <p>歡迎加入 BookClub！請點擊以下連結驗證您的帳號：</p>
+                    <p><a href="{verification_url}">驗證帳號</a></p>
+                    <p>此連結將在 24 小時後失效。</p>
+                </body>
+            </html>
+            """
+        
+        # 純文字版本
+        text_content = f"""
+嗨 {user.display_name}，
 
-        # 建立郵件訊息
-        message = Mail(
-            from_email=SENDGRID_FROM_EMAIL,
-            to_emails=user.email,
+歡迎加入 BookClub！請點擊以下連結驗證您的帳號：
+{verification_url}
+
+此連結將在 24 小時後失效。
+
+祝您閱讀愉快！
+BookClub 團隊
+        """
+        
+        return self._send_email(
+            to_email=user.email,
+            subject="BookClub - 請驗證您的帳號",
+            html_content=html_content,
+            text_content=text_content
         )
 
-        # 設定動態模板資料
-        message.dynamic_template_data = {
-            "display_name": user.display_name,
-            "verification_url": verification_url,
-        }
-        message.template_id = SENDGRID_TEMPLATE_ID
-
-        # 發送郵件
-        try:
-            sg = SendGridAPIClient(SENDGRID_API_KEY)
-            response = sg.send(message)
-            print(f"Verification email sent to {user.email}, Status Code: {response.status_code}")
-        except Exception as e:
-            print(f"Failed to send email to {user.email} using SendGrid: {e}")
-            # 在開發環境中，我們只記錄錯誤但不中斷流程
-            # 在生產環境中，您應該啟用此 raise 或使用適當的錯誤處理
-            # raise
-            pass
-
-    @staticmethod
-    def send_password_reset_email(user: User, token: str) -> None:
+    def send_password_reset_email(self, user: User, token: str) -> bool:
         """
-        使用 SendGrid 發送密碼重置郵件。
+        發送密碼重置郵件。
 
         Args:
             user: 接收郵件的用戶物件
             token: 密碼重置 token
+
+        Returns:
+            bool: 發送成功返回 True，失敗返回 False
         """
-        # 從環境變數讀取 SendGrid 設定
-        SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-        SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@example.com")
-        SENDGRID_PASSWORD_RESET_TEMPLATE_ID = os.getenv("SENDGRID_PASSWORD_RESET_TEMPLATE_ID")
         FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
-
-        if not all([SENDGRID_API_KEY, SENDGRID_PASSWORD_RESET_TEMPLATE_ID]):
-            print("SendGrid API Key 或 Password Reset Template ID 未設定，無法發送郵件。")
-            return
-
-        # 建立密碼重置連結
         reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
+        
+        # 渲染 HTML 模板
+        try:
+            template = self.template_env.get_template("password_reset.html")
+            html_content = template.render(
+                username=user.display_name,
+                reset_url=reset_url
+            )
+        except Exception as e:
+            print(f"❌ 載入郵件模板失敗: {str(e)}")
+            # 使用簡單的 HTML 作為備用
+            html_content = f"""
+            <html>
+                <body>
+                    <h2>嗨 {user.display_name}！</h2>
+                    <p>我們收到了您的密碼重設請求。請點擊以下連結重設您的密碼：</p>
+                    <p><a href="{reset_url}">重設密碼</a></p>
+                    <p>此連結將在 1 小時後失效。</p>
+                    <p>如果這不是您的操作，請忽略此郵件。</p>
+                </body>
+            </html>
+            """
+        
+        # 純文字版本
+        text_content = f"""
+嗨 {user.display_name}，
 
-        # 建立郵件訊息
-        message = Mail(
-            from_email=SENDGRID_FROM_EMAIL,
-            to_emails=user.email,
+我們收到了您的密碼重設請求。請點擊以下連結重設您的密碼：
+{reset_url}
+
+此連結將在 1 小時後失效。
+
+如果這不是您的操作，請忽略此郵件。
+
+BookClub 團隊
+        """
+        
+        return self._send_email(
+            to_email=user.email,
+            subject="BookClub - 重設您的密碼",
+            html_content=html_content,
+            text_content=text_content
         )
 
-        # 設定動態模板資料
-        message.dynamic_template_data = {
-            "display_name": user.display_name,
-            "reset_url": reset_url,
-            "expiry_hours": 1,
-        }
-        message.template_id = SENDGRID_PASSWORD_RESET_TEMPLATE_ID
 
-        # 發送郵件
-        try:
-            sg = SendGridAPIClient(SENDGRID_API_KEY)
-            response = sg.send(message)
-            print(f"Password reset email sent to {user.email}, Status Code: {response.status_code}")
-        except Exception as e:
-            print(f"Failed to send password reset email to {user.email} using SendGrid: {e}")
-            pass
+# 建立單例實例
+email_service = EmailService()

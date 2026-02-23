@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>驗證您的帳號</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px;">📚 BookClub</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="color: #333333; margin-top: 0;">嗨 {{ username }}！</h2>
+                            <p style="color: #666666; line-height: 1.6; font-size: 16px;">
+                                歡迎加入 BookClub！我們很高興您能加入我們的閱讀社群。
+                            </p>
+                            <p style="color: #666666; line-height: 1.6; font-size: 16px;">
+                                請點擊下方按鈕驗證您的帳號：
+                            </p>
+                            
+                            <!-- Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ verification_url }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                                            驗證帳號
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="color: #999999; font-size: 14px; line-height: 1.6;">
+                                此連結將在 24 小時後失效。如果按鈕無法點擊，請複製以下連結到瀏覽器：<br>
+                                <a href="{{ verification_url }}" style="color: #667eea; word-break: break-all;">{{ verification_url }}</a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="color: #999999; font-size: 12px; margin: 0;">
+                                © 2026 BookClub. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
